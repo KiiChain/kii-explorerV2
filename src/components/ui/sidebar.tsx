@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
+import { useRouter } from "next/navigation";
 
 import {
   DashboardIcon,
@@ -14,6 +15,7 @@ import {
   FaucetIcon,
   SmartContractsIcon,
   MenuIcon,
+  StakingIcon, // Import StakingIcon
 } from "./icons";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -58,6 +60,20 @@ function useSidebar() {
   return context;
 }
 
+// Movemos los iconos a un componente separado con 'use client'
+const Icons = {
+  DashboardIcon,
+  BlocksIcon,
+  UptimeIcon,
+  SupplyIcon,
+  ParametersIcon,
+  StateSyncIcon,
+  FaucetIcon,
+  SmartContractsIcon,
+  MenuIcon,
+  StakingIcon,
+};
+
 const SidebarProvider = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
@@ -79,12 +95,11 @@ const SidebarProvider = React.forwardRef<
     ref
   ) => {
     const isMobile = useIsMobile();
+    const router = useRouter();
     const [openMobile, setOpenMobile] = React.useState(false);
-
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen);
     const open = openProp ?? _open;
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value;
@@ -93,19 +108,18 @@ const SidebarProvider = React.forwardRef<
         } else {
           _setOpen(openState);
         }
+        if (isMobile) {
+          setOpenMobile(openState);
+        }
 
-        // This sets the cookie to keep the sidebar state.
         document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       },
-      [setOpenProp, open]
+      [setOpenProp, open, isMobile]
     );
 
-    // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
-      return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open);
-    }, [isMobile, setOpen, setOpenMobile]);
+      setOpen((prev) => !prev);
+    }, [setOpen]);
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -226,7 +240,7 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
+        className="group peer hidden md:block text-sidebar-foreground w-32"
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
@@ -287,22 +301,26 @@ const SidebarTrigger = React.forwardRef<
   const { toggleSidebar } = useSidebar();
 
   return (
-    <Button
-      ref={ref}
-      data-sidebar="trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("h-7 w-7", className)}
-      onClick={(event) => {
-        event.stopPropagation();
-        toggleSidebar();
-        onClick?.(event);
-      }}
-      {...props}
-    >
-      <MenuIcon className="text-[#F3F5FB]" />
-      <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    <div className="flex justify-center items-center pt-8">
+      <Button
+        ref={ref}
+        data-sidebar="trigger"
+        variant="ghost"
+        size="icon"
+        className={cn("h-7 w-7", className)}
+        onClick={(event) => {
+          event.stopPropagation();
+          toggleSidebar();
+          onClick?.(event);
+        }}
+        {...props}
+      >
+        <div className="flex justify-center items-center pt-8">
+          <MenuIcon className="text-[#F3F5FB]" />
+        </div>
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
+    </div>
   );
 });
 SidebarTrigger.displayName = "SidebarTrigger";
@@ -429,13 +447,34 @@ const SidebarContent = React.forwardRef<
       className={cn("flex flex-col flex-1 h-full overflow-y-auto", className)}
       {...props}
     >
-      <nav className="grid gap-0.5 px-2 h-full items-center justify-center mt-16">
+      <nav className="grid gap-0.5 px-2 h-[80%] items-center justify-center">
         <button onClick={toggleSidebar} className="w-full"></button>
         {menuItems.map((item) => (
           <SidebarMenuButton
             key={item.label}
             isActive={item.isActive}
             className="w-full justify-start gap-1 text-lg"
+            onClick={() => {
+              if (item.label === "Dashboard") {
+                window.location.href = "/";
+              } else if (item.label === "Staking") {
+                window.location.href = "/staking";
+              } else if (item.label === "Blocks") {
+                window.location.href = "/blocks";
+              } else if (item.label === "Uptime") {
+                window.location.href = "/uptime";
+              } else if (item.label === "Supply") {
+                window.location.href = "/supply";
+              } else if (item.label === "Parameters") {
+                window.location.href = "/parameters";
+              } else if (item.label === "State Sync") {
+                window.location.href = "/state-sync";
+              } else if (item.label === "Faucet") {
+                window.location.href = "/faucet";
+              } else if (item.label === "Smart Contracts") {
+                window.location.href = "/smart-contracts";
+              }
+            }}
           >
             {React.cloneElement(item.icon, { className: "text-base" })}
             <span className="text-lg">{item.label}</span>
@@ -775,36 +814,40 @@ SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 
 const menuItems = [
   {
-    icon: <DashboardIcon className="h-6 w-6" />,
+    icon: <Icons.DashboardIcon className="h-6 w-6" />,
     label: "Dashboard",
     isActive: true,
   },
   {
-    icon: <BlocksIcon className="h-6 w-6" />,
+    icon: <Icons.StakingIcon className="h-6 w-6" />,
+    label: "Staking",
+  },
+  {
+    icon: <Icons.BlocksIcon className="h-6 w-6" />,
     label: "Blocks",
   },
   {
-    icon: <UptimeIcon className="h-6 w-6" />,
+    icon: <Icons.UptimeIcon className="h-6 w-6" />,
     label: "Uptime",
   },
   {
-    icon: <SupplyIcon className="h-6 w-6" />,
+    icon: <Icons.SupplyIcon className="h-6 w-6" />,
     label: "Supply",
   },
   {
-    icon: <ParametersIcon className="h-6 w-6" />,
+    icon: <Icons.ParametersIcon className="h-6 w-6" />,
     label: "Parameters",
   },
   {
-    icon: <StateSyncIcon className="h-6 w-6" />,
+    icon: <Icons.StateSyncIcon className="h-6 w-6" />,
     label: "State Sync",
   },
   {
-    icon: <FaucetIcon className="h-6 w-6" />,
+    icon: <Icons.FaucetIcon className="h-6 w-6" />,
     label: "Faucet",
   },
   {
-    icon: <SmartContractsIcon className="h-6 w-6" />,
+    icon: <Icons.SmartContractsIcon className="h-6 w-6" />,
     label: "Smart Contracts",
   },
 ];

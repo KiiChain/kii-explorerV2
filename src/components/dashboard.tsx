@@ -1,4 +1,8 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { BlocksHeader } from "@/components/headerDashboard";
+import { useState } from "react";
 
 interface StatCardProps {
   title: string;
@@ -29,67 +33,67 @@ function StatCard({ title, value, unit }: StatCardProps) {
 }
 
 export function Dashboard() {
+  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
+    "blocks"
+  );
+
   return (
-    <div className="absolute inset-0 overflow-auto">
-      <div className="min-h-full w-full max-w-[2000px] mx-auto px-4 py-6 md:px-6 lg:px-8 xl:px-12 2xl:px-16">
-        <div className="grid gap-6 md:gap-8 xl:gap-10 2xl:gap-12 auto-rows-min">
-          {/* Primera fila - 4 cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 xl:gap-8">
-            <StatCard title="KII Price" value="N/A" unit="TESTNET" />
-            <StatCard title="Gas Price" value="2500" unit="Tekii" />
-            <StatCard title="Transactions" value="333,422" />
-            <StatCard title="Block Height" value="2,577,053" />
-          </div>
+    <div className="p-6 bg-[#05000F]">
+      <div className="px-6">
+        <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+      <div className="bg-[#05000F] p-6 rounded-xl mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8">
+          <StatCard title="KII Price" value="N/A" unit="TESTNET" />
+          <StatCard title="Gas Price" value="2500" unit="Tekii" />
+          <StatCard title="Transactions" value="333,422" />
+          <StatCard title="Block Height" value="2,577,053" />
+        </div>
 
-          {/* Segunda fila - 3 cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 xl:gap-8">
-            <StatCard title="Height" value="2,576,146" />
-            <StatCard title="Validators" value="3" />
-            <StatCard title="Supply" value="1,800,000,000" />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 mt-6">
+          <StatCard title="Height" value="2,576,146" />
+          <StatCard title="Validators" value="3" />
+          <StatCard title="Supply" value="1,800,000,000" />
+        </div>
 
-          {/* Tercera fila - 3 cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 xl:gap-8">
-            <StatCard title="Bonded Tokens" value="300,000" />
-            <StatCard title="Inflation" value="0%" />
-            <StatCard title="Community Pool" value="-" />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 mt-6">
+          <StatCard title="Bonded Tokens" value="300,000" />
+          <StatCard title="Inflation" value="0%" />
+          <StatCard title="Community Pool" value="-" />
+        </div>
 
-          {/* Wallet Status */}
+        <Card className="bg-[#1A1A1A]/40 border-0 mt-6">
+          <CardContent className="flex items-center p-6">
+            <span className="text-muted-foreground text-base">
+              Wallet not connected
+            </span>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-6">
           <Card className="bg-[#1A1A1A]/40 border-0">
-            <CardContent className="flex items-center p-4 md:p-6">
-              <span className="text-muted-foreground text-sm md:text-base">
-                Wallet not connected
-              </span>
+            <CardHeader className="p-6">
+              <CardTitle className="text-xl font-normal">
+                Latest Blocks
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {/* Contenido de Latest Blocks */}
             </CardContent>
           </Card>
-
-          {/* Latest Blocks & Transactions */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 xl:gap-8">
-            <Card className="bg-[#1A1A1A]/40 border-0">
-              <CardHeader className="p-4 md:p-6">
-                <CardTitle className="text-base md:text-lg xl:text-xl font-normal">
-                  Latest Blocks
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6">
-                {/* Contenido de Latest Blocks */}
-              </CardContent>
-            </Card>
-            <Card className="bg-[#1A1A1A]/40 border-0">
-              <CardHeader className="flex flex-row items-center justify-between p-4 md:p-6">
-                <CardTitle className="text-base md:text-lg xl:text-xl font-normal">
-                  Latest transactions
-                </CardTitle>
-                <span className="text-sm md:text-base text-muted-foreground hover:text-white cursor-pointer">
-                  View All
-                </span>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6">
-                {/* Contenido de Latest Transactions */}
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="bg-[#1A1A1A]/40 border-0">
+            <CardHeader className="flex flex-row items-center justify-between p-6">
+              <CardTitle className="text-xl font-normal">
+                Latest transactions
+              </CardTitle>
+              <span className="text-base text-muted-foreground hover:text-white cursor-pointer">
+                View All
+              </span>
+            </CardHeader>
+            <CardContent className="p-6">
+              {/* Contenido de Latest Transactions */}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
