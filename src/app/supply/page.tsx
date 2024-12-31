@@ -1,4 +1,4 @@
-import { Dashboard } from "@/components/dashboard";
+import { SupplyDashboard } from "@/components/Supply/SupplyDashboard";
 import {
   Sidebar,
   SidebarContent,
@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/ui/kiinvest-logo";
 
-export default function Page() {
+export default function SupplyPage() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -20,7 +20,7 @@ export default function Page() {
           <SidebarContent />
         </Sidebar>
         <main className="flex-1 relative">
-          <Dashboard />
+          <SupplyDashboard />
         </main>
       </div>
     </SidebarProvider>

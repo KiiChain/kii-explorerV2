@@ -1,4 +1,4 @@
-import { Dashboard } from "@/components/dashboard";
+import { BlocksDashboard } from "@/components/Blocks/BlocksDashboard";
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +20,7 @@ export default function Page() {
           <SidebarContent />
         </Sidebar>
         <main className="flex-1 relative">
-          <Dashboard />
+          <BlocksDashboard />
         </main>
       </div>
     </SidebarProvider>

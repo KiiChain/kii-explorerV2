@@ -1,4 +1,7 @@
-import { Dashboard } from "@/components/dashboard";
+"use client";
+
+import React from "react";
+import { StakingDashboard } from "@/components/Staking/StakingDashboard";
 import {
   Sidebar,
   SidebarContent,
@@ -8,7 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/ui/kiinvest-logo";
 
-export default function Page() {
+export default function StakingPage() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -20,7 +23,7 @@ export default function Page() {
           <SidebarContent />
         </Sidebar>
         <main className="flex-1 relative">
-          <Dashboard />
+          <StakingDashboard />
         </main>
       </div>
     </SidebarProvider>
