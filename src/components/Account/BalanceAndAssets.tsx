@@ -8,13 +8,11 @@ interface Asset {
 }
 
 interface BalanceAndAssetsProps {
-  balance: string;
   assets: Asset[];
   totalValue: string;
 }
 
 export function BalanceAndAssets({
-  balance,
   assets,
   totalValue,
 }: BalanceAndAssetsProps) {

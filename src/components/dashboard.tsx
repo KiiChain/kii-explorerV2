@@ -52,7 +52,6 @@ export function Dashboard() {
     "blocks"
   );
   const [account, setAccount] = useState<string>("");
-  const [balance, setBalance] = useState<string>("0");
   const [session, setSession] = useState<WalletSession | null>(null);
   const router = useRouter();
 
@@ -63,9 +62,6 @@ export function Dashboard() {
         const accounts = await provider.send("eth_requestAccounts", []);
         const account = accounts[0];
         setAccount(account);
-
-        const balance = await provider.getBalance(account);
-        setBalance(ethers.formatEther(balance));
 
         // Simular datos de la sesión
         setSession({

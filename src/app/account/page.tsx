@@ -49,7 +49,6 @@ export default function AccountPage() {
             <AddressCard account={account} />
 
             <BalanceAndAssets
-              balance={session?.balance || "0"}
               assets={[
                 {
                   name: "Balance",
