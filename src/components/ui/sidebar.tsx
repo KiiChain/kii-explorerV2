@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { useRouter } from "next/navigation";
 
 import {
   DashboardIcon,
@@ -95,7 +94,7 @@ const SidebarProvider = React.forwardRef<
     ref
   ) => {
     const isMobile = useIsMobile();
-    const router = useRouter();
+
     const [openMobile, setOpenMobile] = React.useState(false);
     const [_open, _setOpen] = React.useState(defaultOpen);
     const open = openProp ?? _open;
