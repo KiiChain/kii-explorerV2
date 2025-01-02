@@ -14,8 +14,8 @@ import {
 import { Logo } from "@/components/ui/kiinvest-logo";
 
 export default function Page() {
-  const [account, setAccount] = useState("");
-  const [session, setSession] = useState<WalletSession | null>(null);
+  const [account] = useState("");
+  const [session] = useState<WalletSession | null>(null);
   const router = useRouter();
 
   const connectWallet = async () => {
