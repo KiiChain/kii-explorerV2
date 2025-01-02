@@ -468,7 +468,7 @@ const SidebarContent = React.forwardRef<
               } else if (item.label === "Parameters") {
                 window.location.href = "/parameters";
               } else if (item.label === "State Sync") {
-                window.location.href = "/state-sync";
+                window.location.href = "/stateSync";
               } else if (item.label === "Faucet") {
                 window.location.href = "/faucet";
               } else if (item.label === "Smart Contracts") {
@@ -844,6 +844,9 @@ const menuItems = [
   {
     icon: <Icons.StateSyncIcon className="h-6 w-6" />,
     label: "State Sync",
+    onClick: () => {
+      window.location.href = "/stateSync";
+    },
   },
   {
     icon: <Icons.FaucetIcon className="h-6 w-6" />,
