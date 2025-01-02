@@ -11,7 +11,7 @@ interface BlocksHeaderProps {
 export function BlocksHeader({}: BlocksHeaderProps) {
   return (
     <div className="flex flex-col md:flex-row justify-center md:justify-between items-center w-full mt-8 px-4">
-      <div className="flex-1 max-w-3xl w-full mb-4 md:mb-0">
+      <div className="w-full max-w-3xl mb-4 md:mb-0">
         <div className="relative">
           <input
             type="text"
