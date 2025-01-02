@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { SupplyHeader } from "@/components/Supply/SupplyHeader";
+import { BlocksHeader } from "@/components/headerDashboard";
 
 interface BankSupply {
   id: string;
@@ -39,53 +39,43 @@ const initialSupplies: BankSupply[] = [
 ];
 
 export function SupplyDashboard() {
-  const [filter, setFilter] = useState("");
-
-  const filteredSupplies = initialSupplies.filter((supply) =>
-    supply.address.toLowerCase().includes(filter.toLowerCase())
+  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
+    "blocks"
   );
 
   return (
     <div className="p-6 bg-[#05000F]">
-      <SupplyHeader />
+      <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <div className="mt-8">
+      <div className="mt-24">
         <h2 className="text-xl font-semibold text-white mb-4">Bank Supply</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-8 mt-8 w-3/5">
           {initialSupplies.map((supply) => (
-            <Card
-              key={supply.id}
-              className="bg-gradient-to-br from-purple-400/20 to-transparent p-4 border-0"
-            >
-              <div className="h-24 flex flex-col justify-between">
-                <div className="text-sm text-gray-400 truncate">
-                  {supply.address}
+            <div key={supply.id}>
+              <Card className="bg-[#1A1A1A] px-2 pt-4 pb-2 border-0 rounded-lg shadow-lg w-40 h-52">
+                <div className="h-full w-full bg-transparent relative rounded-lg overflow-hidden">
+                  <div
+                    className="absolute bottom-0 left-0 w-full rounded-t-lg"
+                    style={{
+                      height: supply.percentage,
+                      background:
+                        "linear-gradient(to top, #625FFF, #D2AAFA, #C6C7F8)",
+                    }}
+                  ></div>
                 </div>
-                <div>
-                  <div className="text-lg font-semibold text-white">
-                    {supply.amount}
-                  </div>
-                  <div className="text-sm text-purple-400">
-                    {supply.percentage}
-                  </div>
-                </div>
+              </Card>
+              <div
+                className="text-sm text-gray-400 truncate mt-2 flex justify-center"
+                style={{ maxWidth: "90%" }}
+              >
+                {supply.address.slice(0, supply.address.length / 2)}...
               </div>
-            </Card>
+            </div>
           ))}
         </div>
 
         <div className="bg-[#231C32] rounded-lg p-6">
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search by address"
-              className="w-full px-4 py-2 bg-[#05000F] rounded-lg text-white placeholder-gray-400 focus:outline-none"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-          </div>
-
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -96,12 +86,12 @@ export function SupplyDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {filteredSupplies.map((supply) => (
+                {initialSupplies.map((supply) => (
                   <tr
                     key={supply.id}
-                    className="border-t border-[#2D4BA0] hover:bg-[#05000F]/50 transition-colors"
+                    className="border-t border-[#2D4BA0] bg-[#05000F] text-sm "
                   >
-                    <td className="py-4 px-4 text-[#F3F5FB]">
+                    <td className="py-4 px-4 text-[#D2AAFA]">
                       {supply.address}
                     </td>
                     <td className="py-4 px-4 text-[#F3F5FB]">

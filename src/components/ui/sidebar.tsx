@@ -837,6 +837,9 @@ const menuItems = [
   {
     icon: <Icons.ParametersIcon className="h-6 w-6" />,
     label: "Parameters",
+    onClick: () => {
+      window.location.href = "/parameters";
+    },
   },
   {
     icon: <Icons.StateSyncIcon className="h-6 w-6" />,

@@ -10,9 +10,8 @@ interface BlocksHeaderProps {
 
 export function BlocksHeader({}: BlocksHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row justify-center md:justify-between items-center w-full mt-8">
-      {/* Search Bar */}
-      <div className="flex-1 max-w-3xl">
+    <div className="flex flex-col md:flex-row justify-center md:justify-between items-center w-full mt-8 px-4">
+      <div className="flex-1 max-w-3xl w-full mb-4 md:mb-0">
         <div className="relative">
           <input
             type="text"
@@ -35,14 +34,12 @@ export function BlocksHeader({}: BlocksHeaderProps) {
         </div>
       </div>
 
-      {/* Right Side Controls */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 w-full justify-center md:justify-end">
         {/* Theme Toggle */}
         <button className="p-2">
           <LightModeIcon className="w-6 h-6 text-gray-400" />
         </button>
 
-        {/* KiiChain Oro Dropdown */}
         <button className="flex items-center gap-2 bg-[#231C32] px-4 py-2 rounded-lg">
           <svg
             className="w-4 h-4 text-[#D2AAFA]"
@@ -58,7 +55,6 @@ export function BlocksHeader({}: BlocksHeaderProps) {
           <span className="text-white">KiiChain Oro</span>
         </button>
 
-        {/* Window Control Button */}
         <button className="p-2 bg-[#231C32] rounded-lg">
           <WalletIcon className="w-6 h-6 text-gray-400" />
         </button>
