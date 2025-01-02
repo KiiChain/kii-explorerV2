@@ -10,19 +10,15 @@ export function BlocksDashboard() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Marcar que estamos en el cliente
     setIsClient(true);
   }, []);
 
   return (
     <div className="p-6">
-      {/* Header Component */}
       <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Solo renderizar en el cliente para evitar discrepancias de hidratación */}
       {isClient && (
         <>
-          {/* Grid de bloques - solo se muestra si activeTab es 'blocks' */}
           {activeTab === "blocks" && (
             <div className="grid grid-cols-3 gap-4 mt-6">
               {[...Array(10)].map((_, index) => (
@@ -45,7 +41,6 @@ export function BlocksDashboard() {
             </div>
           )}
 
-          {/* Contenido de Recent Transactions - se muestra si activeTab es 'transactions' */}
           {activeTab === "transactions" && (
             <div className="text-gray-400 mt-6">
               Recent Transactions Content
