@@ -79,9 +79,10 @@ export default function AccountPage() {
             />
 
             <WithdrawalsTable
+              account={account}
               withdrawals={[
                 {
-                  creationHeight: "0xa3f2...",
+                  creationHeight: "19436291",
                   initialBalance: "50,000 KII",
                   balance: "-1,000 KII",
                   completionTime: "2 Days 11 Hours 15 Minutes 32 Seconds",

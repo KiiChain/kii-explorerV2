@@ -7,13 +7,18 @@ interface Withdrawal {
 
 interface WithdrawalsTableProps {
   withdrawals: Withdrawal[];
+  account: string;
 }
 
-export function WithdrawalsTable({ withdrawals }: WithdrawalsTableProps) {
+export function WithdrawalsTable({
+  withdrawals,
+  account,
+}: WithdrawalsTableProps) {
   return (
     <div className="mt-8 p-6 bg-[#231C32]/40 rounded-lg">
       <div className="mb-6">
         <div className="text-white mb-4 text-xl">Withdrawals</div>
+
         <table className="w-full">
           <thead>
             <tr className="text-left text-gray-400">
@@ -24,12 +29,26 @@ export function WithdrawalsTable({ withdrawals }: WithdrawalsTableProps) {
             </tr>
           </thead>
           <tbody>
+            <tr>
+              <td colSpan={4} className="pb-4">
+                <div className="text-[#05000F] font-mono bg-[#F3F5FB] p-4 rounded-lg">
+                  {account}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="h-4"></td>
+            </tr>
             {withdrawals.map((withdrawal, index) => (
-              <tr key={index} className="border-b border-[#2D4BA0]">
-                <td className="py-4 text-white">{withdrawal.creationHeight}</td>
-                <td className="py-4 text-white">{withdrawal.initialBalance}</td>
-                <td className="py-4 text-white">{withdrawal.balance}</td>
-                <td className="py-4 text-white">{withdrawal.completionTime}</td>
+              <tr key={index} className="bg-[#05000F]">
+                <td className="p-4 text-white rounded-l-lg">
+                  {withdrawal.creationHeight}
+                </td>
+                <td className="p-4 text-white">{withdrawal.initialBalance}</td>
+                <td className="p-4 text-white">{withdrawal.balance}</td>
+                <td className="p-4 text-white rounded-r-lg">
+                  {withdrawal.completionTime}
+                </td>
               </tr>
             ))}
           </tbody>

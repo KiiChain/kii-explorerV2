@@ -14,7 +14,7 @@ import {
   FaucetIcon,
   SmartContractsIcon,
   MenuIcon,
-  StakingIcon, // Import StakingIcon
+  StakingIcon,
 } from "./icons";
 
 import { useIsMobile } from "@/hooks/use-mobile";
