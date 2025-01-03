@@ -109,7 +109,6 @@ export function MenuIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export const StakingIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 48 40" fill="none" {...props}>
-    <rect width="48" height="40" rx="8" fill="#05000F" />
     <path
       d="M30.1667 18.476C30.1534 19.046 29.9694 19.5894 29.6487 20C28.7054 21.3407 26.5287 22.286 24 22.286C21.4714 22.286 19.2947 21.3407 18.3514 20C18.0314 19.5894 17.846 19.0467 17.8334 18.476C17.8334 16.3734 20.596 14.6667 24 14.6667C27.404 14.6667 30.1667 16.3734 30.1667 18.476Z"
       stroke="#E0B1FF"

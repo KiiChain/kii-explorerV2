@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { BlocksHeader } from "@/components/headerDashboard";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 
 interface SmartContract {
   codeId: string;
@@ -26,13 +25,9 @@ const initialContracts: SmartContract[] = [
 ];
 
 export function SmartContractsDashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
-
   return (
-    <div className="p-6 bg-[#05000F] w-full">
-      <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
+    <div className="p-6 bg-[#05000F]">
+      <UptimeHeader />
 
       <div className="mt-24">
         <div className="bg-[#231C32] rounded-lg p-6">

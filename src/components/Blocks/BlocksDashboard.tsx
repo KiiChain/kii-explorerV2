@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { BlocksHeader } from "@/components/headerDashboard";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 
 export function BlocksDashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
+  const [activeTab] = useState<"blocks" | "transactions">("blocks");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -14,8 +12,8 @@ export function BlocksDashboard() {
   }, []);
 
   return (
-    <div className="p-6">
-      <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
+    <div className="p-6 bg-[#05000F]">
+      <UptimeHeader />
 
       {isClient && (
         <>

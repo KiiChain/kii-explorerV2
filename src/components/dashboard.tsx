@@ -1,11 +1,11 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { BlocksHeader } from "@/components/headerDashboard";
 import { useState } from "react";
 import { ethers } from "ethers";
-import { WalletIcon } from "./ui/icons";
+import { WalletIcon, ContractIcon } from "./ui/icons";
 import { useRouter } from "next/navigation";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 
 interface StatCardProps {
   title: string;
@@ -48,9 +48,6 @@ export interface WalletSession {
 }
 
 export function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
   const [account, setAccount] = useState<string>("");
   const [session, setSession] = useState<WalletSession | null>(null);
   const router = useRouter();
@@ -92,10 +89,9 @@ export function Dashboard() {
 
   return (
     <div className="p-6 bg-[#05000F]">
-      <div className="px-6">
-        <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-      <div className="bg-[#05000F] p-6 rounded-xl mb-6">
+      <UptimeHeader />
+      <div className="px-6"></div>
+      <div className="bg-[#05000F] pt-6 rounded-xl mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8">
           <StatCard title="KII Price" value="N/A" unit="TESTNET" />
           <StatCard title="Gas Price" value="2500" unit="Tekii" />
@@ -210,29 +206,142 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-6">
+        <div className="mt-6">
           <Card className="bg-[#231C32]/40 border-0">
-            <CardHeader className="p-6">
-              <CardTitle className="text-xl font-normal">
-                Latest Blocks
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {/* Contenido de Latest Blocks */}
-            </CardContent>
+            <div className="p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex gap-6 flex-1">
+                  <div className="text-white">Latest Blocks</div>
+                  <div className="text-white ml-[30%]">Latest transactions</div>
+                </div>
+                <div className="text-gray-400 hover:text-white cursor-pointer whitespace-nowrap ml-4">
+                  View All
+                </div>
+              </div>
+              <div className="mt-4">
+                <table className="w-full table-fixed">
+                  <tbody className="space-y-4">
+                    {[...Array(10)].map((_, index) => (
+                      <tr
+                        key={index}
+                        className="bg-[#05000F] rounded-lg mb-4 w-full"
+                      >
+                        <td className="p-4 grid grid-cols-12 gap-4 items-center">
+                          <span className="text-[#D2AAFA] col-span-2 flex items-center gap-2">
+                            <ContractIcon className="w-4 h-4" />
+                            <span className="text-[#F3F5FB]">2578179</span>
+                          </span>
+                          <div className="flex items-center gap-2 col-span-3">
+                            <span className="text-[#F3F5FB]">
+                              Fee Recipient
+                            </span>
+                            <span className="text-[#D2AAFA]">
+                              Kiichain Validator 1
+                            </span>
+                          </div>
+                          <span className="text-[#D2AAFA] col-span-2 flex items-center gap-2">
+                            <ContractIcon className="w-4 h-4" />
+                            <span className="text-[#F3F5FB]">
+                              0x4f02c2fb1798
+                            </span>
+                          </span>
+                          <div className="flex flex-col col-span-3">
+                            <span className="text-xs text-gray-400">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[#F3F5FB]">From:</span>
+                                <span className="text-[#D2AAFA]">
+                                  0xf61aE263853B62Ce48...
+                                </span>
+                              </div>
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              <div className="flex items-center gap-1">
+                                <span className="text-[#F3F5FB]">To:</span>
+                                <span className="text-[#D2AAFA]">
+                                  0x7f32360b4ea9bf2682...
+                                </span>
+                              </div>
+                            </span>
+                          </div>
+                          <span className="bg-[#231C32] text-[#D2AAFA] px-3 py-1 rounded-full col-span-2 text-center inline-block w-fit">
+                            2,500 KII
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </Card>
-          <Card className="bg-[#231C32]/40 border-0">
-            <CardHeader className="flex flex-row items-center justify-between p-6">
-              <CardTitle className="text-xl font-normal">
-                Latest transactions
-              </CardTitle>
-              <span className="text-base text-muted-foreground hover:text-white cursor-pointer">
-                View All
-              </span>
-            </CardHeader>
-            <CardContent className="p-6">
-              {/* Contenido de Latest Transactions */}
-            </CardContent>
+        </div>
+
+        {/* Application Versions Section */}
+        <div className="mt-6">
+          <Card className="bg-[#05000F] border-0">
+            <div className="p-6">
+              <h2 className="text-white text-xl mb-6">Application Versions</h2>
+
+              {/* Main Info Table */}
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 text-[#F3F5FB]">Name</td>
+                    <td className="py-4 text-[#F3F5FB]">Kiichain</td>
+                  </tr>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 text-[#F3F5FB]">App_name</td>
+                    <td className="py-4 text-[#F3F5FB]">Kiichaind</td>
+                  </tr>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 text-[#F3F5FB]">Version</td>
+                    <td className="py-4 text-[#F3F5FB]">26c1fe7</td>
+                  </tr>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 text-[#F3F5FB]">Git_commit</td>
+                    <td className="py-4 text-[#F3F5FB]">
+                      87eefca1ad86ec69374874c25558f430afdb5555c8
+                    </td>
+                  </tr>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 text-[#F3F5FB]">Build_tags</td>
+                    <td className="py-4 text-[#F3F5FB]">App_v1</td>
+                  </tr>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 text-[#F3F5FB]">Go_version</td>
+                    <td className="py-4 text-[#F3F5FB]">
+                      Go Version Go1.19 Linux/Amd64
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Cloud Google Table */}
+              <table className="w-full mt-4">
+                <tbody>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 w-1/4"></td>
+                    <td className="py-4 text-[#F3F5FB] w-1/4">
+                      Cloud.Google.Com/Go
+                    </td>
+                    <td className="py-4 text-[#F3F5FB] w-1/4">V0.110.0</td>
+                    <td className="py-4 text-[#D2AAFA]">
+                      H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
+                    </td>
+                  </tr>
+                  <tr className="border-b border-[#231C32]/50">
+                    <td className="py-4 w-1/4"></td>
+                    <td className="py-4 text-[#F3F5FB] w-1/4">
+                      Cloud.Google.Com/Go
+                    </td>
+                    <td className="py-4 text-[#F3F5FB] w-1/4">V0.110.0</td>
+                    <td className="py-4 text-[#D2AAFA]">
+                      H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </Card>
         </div>
       </div>

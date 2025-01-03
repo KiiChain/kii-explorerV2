@@ -1,19 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { BlocksHeader } from "@/components/headerDashboard";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { ParametersIcon } from "../ui/icons";
 
 export function StakingDashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
-
   return (
     <div className="p-6 bg-[#05000F]">
-      <div className="px-6">
-        <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
+      <UptimeHeader />
 
       {/* Stats Section */}
       <div className="bg-[#05000F] p-6 rounded-xl mb-6">

@@ -1,15 +1,11 @@
 "use client";
-import React, { useState } from "react";
-import { BlocksHeader } from "@/components/headerDashboard";
+
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 
 export function StateSyncDashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
-
   return (
     <div className="p-6 bg-[#05000F]">
-      <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <UptimeHeader />
 
       <div className="pt-24">
         <div className="bg-[#231C32] p-4 rounded-lg shadow-lg mb-4">

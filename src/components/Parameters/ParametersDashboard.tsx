@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { BlocksHeader } from "@/components/headerDashboard";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { ParameterCard } from "./ParameterCard";
 
 export function ParametersDashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
-
   return (
     <div className="p-6 bg-[#05000F]">
-      <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <UptimeHeader />
 
       <h2 className="text-xl font-semibold text-white mb-4 pt-24">
         Chain ID: kiichain-1
