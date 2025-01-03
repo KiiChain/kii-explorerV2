@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
+import { usePathname } from "next/navigation";
 
 import {
   DashboardIcon,
@@ -438,22 +439,44 @@ const SidebarContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar();
+  const pathname = usePathname();
+  const [isClient, setIsClient] = React.useState(false);
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col flex-1 h-full overflow-y-auto", className)}
+      className={cn(
+        "flex flex-col flex-1 h-full overflow-y-auto transition-all duration-300",
+        isMobile ? "w-full" : "w-60",
+        className
+      )}
       {...props}
     >
-      <nav className="grid gap-0.5 px-2 h-[80%] items-center justify-center">
-        <button onClick={toggleSidebar} className="w-full"></button>
+      <nav className="grid gap-0.5 px-2 py-4">
         {menuItems.map((item) => (
           <SidebarMenuButton
             key={item.label}
-            isActive={item.isActive}
-            className="w-full justify-start gap-1 text-lg"
+            isActive={
+              isClient &&
+              (pathname === "/"
+                ? item.label === "Dashboard"
+                : pathname.slice(1) ===
+                  item.label.toLowerCase().replace(" ", "-"))
+            }
+            className={cn(
+              "w-full justify-start gap-3 text-base md:text-lg p-3 md:p-2",
+              "transition-colors duration-200",
+              "hover:bg-[#231C32] hover:text-white rounded-lg"
+            )}
             onClick={() => {
+              if (isMobile) {
+                setOpenMobile(false);
+              }
               if (item.label === "Dashboard") {
                 window.location.href = "/";
               } else if (item.label === "Staking") {
@@ -475,7 +498,12 @@ const SidebarContent = React.forwardRef<
               }
             }}
           >
-            {React.cloneElement(item.icon, { className: "text-base" })}
+            {React.cloneElement(item.icon, {
+              className: cn(
+                "h-5 w-5 md:h-6 md:w-6",
+                "transition-transform duration-200"
+              ),
+            })}
             <span className="text-lg">{item.label}</span>
           </SidebarMenuButton>
         ))}
@@ -815,10 +843,9 @@ const menuItems = [
   {
     icon: <Icons.DashboardIcon className="h-6 w-6" />,
     label: "Dashboard",
-    isActive: true,
   },
   {
-    icon: <Icons.StakingIcon className="h-6 w-6" />,
+    icon: <Icons.StakingIcon className="h-6 w-6 text-current" />,
     label: "Staking",
   },
   {
@@ -857,6 +884,22 @@ const menuItems = [
   },
 ];
 
+const SidebarOverlay = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<"div">
+>(({ className, ...props }, ref) => {
+  const { setOpenMobile } = useSidebar();
+  return (
+    <div
+      ref={ref}
+      className={cn("fixed inset-0 z-40 bg-black/50 lg:hidden", className)}
+      onClick={() => setOpenMobile(false)}
+      {...props}
+    />
+  );
+});
+SidebarOverlay.displayName = "SidebarOverlay";
+
 export {
   Sidebar,
   SidebarContent,
@@ -882,4 +925,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  SidebarOverlay,
 };

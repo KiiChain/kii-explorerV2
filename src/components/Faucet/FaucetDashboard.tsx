@@ -1,18 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { BlocksHeader } from "@/components/headerDashboard";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { WalletIcon } from "@/components/ui/icons";
 
 export function FaucetDashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
   const [walletAddress, setWalletAddress] = useState("");
 
   return (
     <div className="p-6 bg-[#05000F]">
-      <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <UptimeHeader />
 
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="bg-[#231C32] p-16 rounded-lg shadow-lg w-full max-w-xl">

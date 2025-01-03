@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { BlocksHeader } from "@/components/headerDashboard";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 
 interface BankSupply {
   id: string;
@@ -39,13 +38,9 @@ const initialSupplies: BankSupply[] = [
 ];
 
 export function SupplyDashboard() {
-  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
-    "blocks"
-  );
-
   return (
     <div className="p-6 bg-[#05000F]">
-      <BlocksHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <UptimeHeader />
 
       <div className="mt-24">
         <h2 className="text-xl font-semibold text-white mb-4">Bank Supply</h2>
