@@ -14,12 +14,14 @@ export function FaucetDashboard() {
       <UptimeHeader />
 
       <div className="flex items-center justify-center min-h-[80vh]">
+
         <div
           className={`bg-[${theme.boxColor}] p-20 rounded-lg shadow-lg w-full max-w-xl`}
         >
           <h1
             className={`text-4xl font-bold text-[${theme.primaryTextColor}] mb-6`}
           >
+
             Testnet Oro Faucet
           </h1>
 

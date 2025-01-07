@@ -11,7 +11,9 @@ export function StakingDashboard() {
     <div className={`p-6 bg-[${theme.bgColor}]`}>
       <UptimeHeader />
 
+
       <div className={`bg-[${theme.boxColor}] px-6 rounded-xl mb-9 mt-12`}>
+
         <div className="grid grid-cols-4 gap-8">
           <div className="flex items-center gap-2">
             <ParametersIcon
@@ -94,9 +96,11 @@ export function StakingDashboard() {
       </div>
 
       <div className="flex gap-6 mb-9 pl-12">
+
         <button
           className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.secondaryTextColor}] hover:text-[${theme.accentColor}] rounded-lg flex items-center justify-center`}
         >
+
           Popular
         </button>
         <button
@@ -111,7 +115,9 @@ export function StakingDashboard() {
         </button>
       </div>
 
+
       <div className={`bg-[${theme.boxColor}] rounded-xl p-8`}>
+
         <table className="w-full">
           <thead>
             <tr className="text-left">
@@ -125,6 +131,7 @@ export function StakingDashboard() {
           </thead>
           <tbody className="">
             {[1, 2, 3].map((rank) => (
+
               <tr
                 key={rank}
                 className={`border-t p-4 m-4 bg-[${theme.bgColor}] mb-4`}
@@ -133,10 +140,12 @@ export function StakingDashboard() {
                 <td
                   className={`p-4 text-[${theme.accentColor}] font-bold text-center text-4xl`}
                 >
+
                   {rank}
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-7">
+
                     <div
                       className={`w-10 h-10 bg-[${theme.accentColor}] rounded-full`}
                     ></div>
@@ -145,6 +154,7 @@ export function StakingDashboard() {
                       <div
                         className={`text-[${theme.primaryTextColor}] text-sm`}
                       >
+
                         https://app.kiiglobal.io/
                       </div>
                     </div>
@@ -152,9 +162,11 @@ export function StakingDashboard() {
                 </td>
                 <td className="p-4">
                   <div>1000,00 KII</div>
+
                   <div className={`text-[${theme.primaryTextColor}] text-sm`}>
                     33.33%
                   </div>
+
                 </td>
                 <td className="p-4">-</td>
                 <td className="p-4">10%</td>
@@ -170,6 +182,7 @@ export function StakingDashboard() {
           </tbody>
         </table>
         <div className="pr-4 pt-4 mt-12">
+
           <div
             className={`flex gap-4 text-sm text-[${theme.secondaryTextColor}]`}
           >
@@ -181,6 +194,7 @@ export function StakingDashboard() {
             <span
               className={`bg-[${theme.bgColor}] rounded-lg p-3 text-[${theme.primaryTextColor}]`}
             >
+
               Top 67%
             </span>
           </div>
