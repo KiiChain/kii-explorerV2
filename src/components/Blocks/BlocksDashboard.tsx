@@ -5,7 +5,9 @@ import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { useTheme } from "@/context/ThemeContext";
 
 export function BlocksDashboard() {
-  const [activeTab] = useState<"blocks" | "transactions">("blocks");
+  const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
+    "blocks"
+  );
   const [isClient, setIsClient] = useState(false);
   const { theme } = useTheme();
 

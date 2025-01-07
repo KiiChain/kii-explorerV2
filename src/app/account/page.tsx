@@ -2,14 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { BlocksHeader } from "@/components/headerDashboard";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Logo } from "@/components/ui/kiinvest-logo";
+
 import { WalletSession } from "@/components/dashboard";
 import { AddressCard } from "@/components/Account/AddressCard";
 import { BalanceAndAssets } from "@/components/Account/BalanceAndAssets";
