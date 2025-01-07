@@ -8,7 +8,7 @@ export function StateSyncDashboard() {
       <UptimeHeader />
 
       <div className="pt-24">
-        <div className="bg-[#231C32] p-4 rounded-lg shadow-lg mb-4">
+        <div className="bg-[#231C32] p-10 rounded-lg shadow-lg mb-6">
           <h2 className="text-xl font-semibold text-white mb-2">
             What&apos;s State Sync?
           </h2>
@@ -25,7 +25,7 @@ export function StateSyncDashboard() {
           </p>
         </div>
 
-        <div className="bg-[#231C32] p-4 rounded-lg shadow-lg">
+        <div className="bg-[#231C32] p-10 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold text-white mb-2">
             Starting New Node From State Sync
           </h2>

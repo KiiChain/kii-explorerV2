@@ -61,7 +61,7 @@ export function SupplyDashboard() {
                 </div>
               </Card>
               <div
-                className="text-sm text-gray-400 truncate mt-2 flex justify-center"
+                className="text-sm text-white truncate mt-2 flex justify-center"
                 style={{ maxWidth: "90%" }}
               >
                 {supply.address.slice(0, supply.address.length / 2)}...
@@ -74,7 +74,7 @@ export function SupplyDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-gray-400">
+                <tr className="text-left text-[#F3F5FB]">
                   <th className="py-3 px-4">Wallet Address</th>
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">% of supply</th>

@@ -3,7 +3,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useState } from "react";
 import { ethers } from "ethers";
-import { WalletIcon, ContractIcon } from "./ui/icons";
+import {
+  WalletIcon,
+  ContractIcon,
+  HeightIcon,
+  CashIcon,
+  CommunityPoolIcon,
+  ValidatorsIcon,
+  BondedTokensIcon,
+  InflationIcon,
+} from "./ui/icons";
 import { useRouter } from "next/navigation";
 import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 
@@ -11,21 +20,54 @@ interface StatCardProps {
   title: string;
   value: string;
   unit?: string;
+  icon?: React.ReactNode;
+  variant?: "default" | "horizontal";
 }
 
-function StatCard({ title, value, unit }: StatCardProps) {
+function StatCard({
+  title,
+  value,
+  unit,
+  icon,
+  variant = "default",
+}: StatCardProps) {
+  if (variant === "horizontal") {
+    return (
+      <Card className="bg-[#231C32]/40 border-0">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {icon}
+              <span className="text-sm xl:text-base font-normal text-[#F3F5FB]">
+                {title}
+              </span>
+            </div>
+            <div className="text-xl md:text-2xl xl:text-3xl font-bold text-[#F3F5FB]">
+              {value}
+              {unit && (
+                <span className="pl-1 ml-1 text-[10px] xl:text-xs text-[#F3F5FB]">
+                  ({unit})
+                </span>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="bg-[#231C32]/40 border-0">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm xl:text-base font-normal text-muted-foreground">
+        <CardTitle className="text-sm xl:text-base font-normal text-[#F3F5FB]">
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-xl md:text-2xl xl:text-3xl font-bold text-white">
+        <div className="text-xl md:text-2xl xl:text-3xl font-bold text-[#F3F5FB]">
           {value}
           {unit && (
-            <span className="ml-1 text-xs xl:text-sm text-muted-foreground">
+            <span className="pl-1 ml-1 text-[10px] xl:text-xs text-[#F3F5FB]">
               ({unit})
             </span>
           )}
@@ -90,7 +132,7 @@ export function Dashboard() {
   return (
     <div className="p-6 bg-[#05000F]">
       <UptimeHeader />
-      <div className="px-6"></div>
+      <div className="px-6 pt-12"></div>
       <div className="bg-[#05000F] pt-6 rounded-xl mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8">
           <StatCard title="KII Price" value="N/A" unit="TESTNET" />
@@ -99,16 +141,46 @@ export function Dashboard() {
           <StatCard title="Block Height" value="2,577,053" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 mt-6">
-          <StatCard title="Height" value="2,576,146" />
-          <StatCard title="Validators" value="3" />
-          <StatCard title="Supply" value="1,800,000,000" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+          <StatCard
+            title="Height"
+            value="2,576,146"
+            icon={<HeightIcon className="w-5 h-5 text-[#F3F5FB]" />}
+            variant="horizontal"
+          />
+          <StatCard
+            title="Validators"
+            value="3"
+            icon={<ValidatorsIcon className="w-5 h-5 text-[#F3F5FB]" />}
+            variant="horizontal"
+          />
+          <StatCard
+            title="Supply"
+            value="1,800,000,000"
+            icon={<CashIcon className="w-5 h-5 text-[#F3F5FB]" />}
+            variant="horizontal"
+          />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 mt-6">
-          <StatCard title="Bonded Tokens" value="300,000" />
-          <StatCard title="Inflation" value="0%" />
-          <StatCard title="Community Pool" value="-" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+          <StatCard
+            title="Bonded Tokens"
+            value="300,000"
+            icon={<BondedTokensIcon className="w-5 h-5 text-[#F3F5FB]" />}
+            variant="horizontal"
+          />
+          <StatCard
+            title="Inflation"
+            value="0%"
+            icon={<InflationIcon className="w-4 h-4 text-[#F3F5FB]" />}
+            variant="horizontal"
+          />
+          <StatCard
+            title="Community Pool"
+            value="-"
+            icon={<CommunityPoolIcon className="w-5 h-5 text-[#F3F5FB]" />}
+            variant="horizontal"
+          />
         </div>
 
         <Card className="bg-[#231C32]/40 border-0 mt-6">
@@ -276,13 +348,11 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* Application Versions Section */}
         <div className="mt-6">
           <Card className="bg-[#05000F] border-0">
             <div className="p-6">
               <h2 className="text-white text-xl mb-6">Application Versions</h2>
 
-              {/* Main Info Table */}
               <table className="w-full">
                 <tbody>
                   <tr className="border-b border-[#231C32]/50">
@@ -316,7 +386,6 @@ export function Dashboard() {
                 </tbody>
               </table>
 
-              {/* Cloud Google Table */}
               <table className="w-full mt-4">
                 <tbody>
                   <tr className="border-b border-[#231C32]/50">

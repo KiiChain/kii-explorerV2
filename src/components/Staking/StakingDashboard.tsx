@@ -8,8 +8,7 @@ export function StakingDashboard() {
     <div className="p-6 bg-[#05000F]">
       <UptimeHeader />
 
-      {/* Stats Section */}
-      <div className="bg-[#05000F] p-6 rounded-xl mb-6">
+      <div className="bg-[#231C32] px-6 rounded-xl mb-9 mt-12">
         <div className="grid grid-cols-4 gap-8">
           <div className="flex items-center gap-2">
             <ParametersIcon className="h-20 w-20 text-[#E0B1FF]" />
@@ -81,8 +80,7 @@ export function StakingDashboard() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-6 mb-6 pl-12">
+      <div className="flex gap-6 mb-9 pl-12">
         <button className="px-4 py-2 bg-[#231C32] text-gray-600 hover:text-[#E0B1FF] rounded-lg flex items-center justify-center">
           Popular
         </button>
@@ -94,8 +92,7 @@ export function StakingDashboard() {
         </button>
       </div>
 
-      {/* Validators List */}
-      <div className="bg-[#231C32] rounded-xl p-6">
+      <div className="bg-[#231C32] rounded-xl p-8">
         <table className="w-full">
           <thead>
             <tr className="text-left">
@@ -107,16 +104,18 @@ export function StakingDashboard() {
               <th className="p-4">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="">
             {[1, 2, 3].map((rank) => (
-              <tr key={rank} className="border-t bg-[#05000F]">
-                <td className="p-4 text-purple-600 font-bold">{rank}</td>
+              <tr key={rank} className="border-t p-4 m-4 bg-[#05000F] mb-4">
+                <td className="p-4 text-[#E0B1FF] font-bold text-center text-4xl">
+                  {rank}
+                </td>
                 <td className="p-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-7">
                     <div className="w-10 h-10 bg-[#E0B1FF] rounded-full"></div>
                     <div>
                       <div className="font-medium">KiiAventador</div>
-                      <div className="text-gray-500 text-sm">
+                      <div className="text-white text-sm">
                         https://app.kiiglobal.io/
                       </div>
                     </div>
@@ -124,7 +123,7 @@ export function StakingDashboard() {
                 </td>
                 <td className="p-4">
                   <div>1000,00 KII</div>
-                  <div className="text-gray-500 text-sm">33.33%</div>
+                  <div className="text-white text-sm">33.33%</div>
                 </td>
                 <td className="p-4">-</td>
                 <td className="p-4">10%</td>
@@ -137,10 +136,14 @@ export function StakingDashboard() {
             ))}
           </tbody>
         </table>
-        <div className="pr-4 pt-4 border-t mt-6">
+        <div className="pr-4 pt-4 mt-12">
           <div className="flex gap-4 text-sm text-gray-600">
-            <span className="bg-[#05000F] rounded-lg p-3">Top 33%</span>
-            <span className="bg-[#05000F] rounded-lg p-3">Top 67%</span>
+            <span className="bg-[#05000F] rounded-lg p-3 text-white">
+              Top 33%
+            </span>
+            <span className="bg-[#05000F] rounded-lg p-3 text-white">
+              Top 67%
+            </span>
           </div>
         </div>
       </div>

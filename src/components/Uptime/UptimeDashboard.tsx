@@ -66,14 +66,16 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             </button>
           </div>
 
-          <div className="space-y-2 bg-[#231C32] mt-16 p-16 rounded-lg">
-            <input
-              type="text"
-              placeholder="Keywords to Filter Validators"
-              className="w-full mb-4 px-4 py-2 bg-[#05000F] rounded-lg text-white placeholder-gray-400"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
+          <div className="space-y-2 bg-[#231C32] mt-9 p-8 rounded-lg">
+            <div>
+              <input
+                type="text"
+                placeholder="Keywords to Filter Validators"
+                className="w-full mb-4 px-4 py-2 bg-[#05000F] rounded-lg text-[#F3F5FB] text-sm"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            </div>
             <div className="grid grid-cols-6 gap-4 py-2 text-white font-semibold px-8">
               <div>Validator</div>
               <div>Uptime</div>
@@ -88,7 +90,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
                 className="grid grid-cols-6 gap-4 py-4 px-8 items-center bg-[#05000F] rounded-lg border border-[#2D4BA0] hover:border-blue-400 transition-colors"
               >
                 <div className="text-white flex items-center gap-4">
-                  <span className="text-2xl font-semibold text-[#D2AAFA]">
+                  <span className="text-4xl font-semibold text-[#D2AAFA]">
                     {index + 1}
                   </span>
                   {validator.name}
@@ -104,9 +106,9 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
                 </div>
               </div>
             ))}
-            <div className="text-gray-400 pt-8 pl-16">
+            <div className="text-[#F3F5FB] pt-8 pl-16">
               Minimum Uptime per Window:{" "}
-              <span className="text-pink-400">50%</span>
+              <span className="text-[#D2AAFA]">50%</span>
             </div>
           </div>
         </>

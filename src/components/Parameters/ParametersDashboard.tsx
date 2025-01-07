@@ -71,15 +71,15 @@ export function ParametersDashboard() {
             <td className="text-[#F3F5FB] text-lg p-4">Name</td>
             <td className="text-[#F3F5FB] text-lg p-4">Kiichain</td>
           </tr>
-          <tr>
+          <tr className="border-t">
             <td className="text-[#F3F5FB] text-lg p-4">App_name</td>
             <td className="text-[#F3F5FB] text-lg p-4">kiichaind</td>
           </tr>
-          <tr>
+          <tr className="border-t">
             <td className="text-[#F3F5FB] text-lg p-4">Version</td>
             <td className="text-[#F3F5FB] text-lg p-4">2b0e7</td>
           </tr>
-          <tr>
+          <tr className="border-t">
             <td className="text-[#F3F5FB] text-lg p-4">Git_commit</td>
             <td className="text-[#F3F5FB] text-lg p-4">
               d7f6e1a3b9c6f7e7c3d8b4d6a5d4e5f6

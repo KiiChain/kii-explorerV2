@@ -50,24 +50,33 @@ export function SmartContractsDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {initialContracts.map((contract, index) => (
+                {Array.from({ length: 20 }, (_, index) => (
                   <tr
                     key={index}
                     className="border-b border-[#2D4BA0] bg-[#05000F] hover:bg-[#05000F]/50 transition-colors"
                   >
-                    <td className="py-6 px-2 sm:px-6 text-[#F3F5FB]">
-                      {contract.codeId}
+                    <td className="py-2 px-1 sm:px-3 text-[#F3F5FB] text-xs">
+                      {initialContracts[index % initialContracts.length].codeId}
                     </td>
-                    <td className="py-6 px-2 sm:px-6">
-                      <span className="text-[#00F9A6]">
-                        {contract.codeHash}
+                    <td className="py-2 px-1 sm:px-3">
+                      <span className="text-[#00F9A6] text-xs">
+                        {
+                          initialContracts[index % initialContracts.length]
+                            .codeHash
+                        }
                       </span>
                     </td>
-                    <td className="py-6 px-2 sm:px-6 text-[#F3F5FB] font-light">
-                      {contract.creator}
+                    <td className="py-2 px-1 sm:px-3 text-[#F3F5FB] font-light text-xs">
+                      {
+                        initialContracts[index % initialContracts.length]
+                          .creator
+                      }
                     </td>
-                    <td className="py-6 px-2 sm:px-6 text-[#F3F5FB] font-light">
-                      {contract.createdAt}
+                    <td className="py-2 px-1 sm:px-3 text-[#F3F5FB] font-light text-xs">
+                      {
+                        initialContracts[index % initialContracts.length]
+                          .createdAt
+                      }
                     </td>
                   </tr>
                 ))}
