@@ -7,11 +7,19 @@ import {
   WalletIcon,
   ContractIcon,
   HeightIcon,
+
   ValidatorsIcon,
   CashIcon,
   BondedTokensIcon,
   InflationIcon,
   CommunityPoolIcon,
+
+  CashIcon,
+  CommunityPoolIcon,
+  ValidatorsIcon,
+  BondedTokensIcon,
+  InflationIcon,
+
 } from "./ui/icons";
 import { useRouter } from "next/navigation";
 import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
@@ -23,8 +31,10 @@ interface StatCardProps {
   unit?: string;
   icon?: React.ReactNode;
   variant?: "default" | "horizontal";
+
   className?: string;
   style?: React.CSSProperties;
+
 }
 
 function StatCard({
@@ -34,15 +44,18 @@ function StatCard({
   icon,
   variant = "default",
 }: StatCardProps) {
+
   const { theme } = useTheme();
 
   if (variant === "horizontal") {
     return (
       <Card className={`bg-[${theme.boxColor}] border-0`}>
+
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {icon}
+
               <span
                 className={`text-sm xl:text-base font-normal text-[${theme.secondaryTextColor}]`}
               >
@@ -57,6 +70,7 @@ function StatCard({
                 <span
                   className={`pl-1 ml-1 text-[10px] xl:text-xs text-[${theme.secondaryTextColor}]`}
                 >
+
                   ({unit})
                 </span>
               )}
@@ -70,13 +84,16 @@ function StatCard({
   return (
     <Card className={`bg-[${theme.boxColor}] border-0`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+
         <CardTitle
           className={`text-sm xl:text-base font-normal text-[${theme.secondaryTextColor}]`}
         >
+
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent>
+
         <div
           className={`text-xl md:text-2xl xl:text-3xl font-bold text-[${theme.secondaryTextColor}]`}
         >
@@ -85,6 +102,7 @@ function StatCard({
             <span
               className={`pl-1 ml-1 text-[10px] xl:text-xs text-[${theme.secondaryTextColor}]`}
             >
+
               ({unit})
             </span>
           )}
@@ -151,6 +169,7 @@ export function Dashboard() {
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
       <UptimeHeader />
       <div className="px-6 pt-12"></div>
+
       <div
         className="pt-6 rounded-xl mb-6"
         style={{ backgroundColor: theme.bgColor }}
@@ -181,37 +200,44 @@ export function Dashboard() {
             value="2,577,053"
             style={{ backgroundColor: theme.boxColor }}
           />
+
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
           <StatCard
             title="Height"
             value="2,576,146"
+
             icon={
               <HeightIcon
                 className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
               />
             }
+
             variant="horizontal"
           />
           <StatCard
             title="Validators"
             value="3"
+
             icon={
               <ValidatorsIcon
                 className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
               />
             }
+
             variant="horizontal"
           />
           <StatCard
             title="Supply"
             value="1,800,000,000"
+
             icon={
               <CashIcon
                 className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
               />
             }
+
             variant="horizontal"
           />
         </div>
@@ -220,31 +246,37 @@ export function Dashboard() {
           <StatCard
             title="Bonded Tokens"
             value="300,000"
+
             icon={
               <BondedTokensIcon
                 className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
               />
             }
+
             variant="horizontal"
           />
           <StatCard
             title="Inflation"
             value="0%"
+
             icon={
               <InflationIcon
                 className={`w-4 h-4 text-[${theme.secondaryTextColor}]`}
               />
             }
+
             variant="horizontal"
           />
           <StatCard
             title="Community Pool"
             value="-"
+
             icon={
               <CommunityPoolIcon
                 className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
               />
             }
+
             variant="horizontal"
           />
         </div>
@@ -496,7 +528,6 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* Application Versions Section */}
         <div className="mt-6">
           <Card className={`bg-[${theme.bgColor}] border-0`}>
             <div className="p-6">
@@ -504,7 +535,6 @@ export function Dashboard() {
                 Application Versions
               </h2>
 
-              {/* Main Info Table */}
               <table className="w-full">
                 <tbody>
                   <tr className="border-b border-[#231C32]/50">
@@ -558,7 +588,6 @@ export function Dashboard() {
                 </tbody>
               </table>
 
-              {/* Cloud Google Table */}
               <table className="w-full mt-4">
                 <tbody>
                   <tr className="border-b border-[#231C32]/50">

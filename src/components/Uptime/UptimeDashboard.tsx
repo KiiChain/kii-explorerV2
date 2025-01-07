@@ -81,27 +81,33 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             </button>
           </div>
 
+
           <div
             className="space-y-2 mt-9 p-8 rounded-lg"
             style={{ backgroundColor: theme.boxColor }}
           >
+
             <div>
               <input
                 type="text"
                 placeholder="Keywords to Filter Validators"
+
                 className="w-full mb-4 px-4 py-2 rounded-lg text-sm"
                 style={{
                   backgroundColor: theme.bgColor,
                   color: theme.secondaryTextColor,
                 }}
+
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
               />
             </div>
+
             <div
               className="grid grid-cols-6 gap-4 py-2 font-semibold px-8"
               style={{ color: theme.primaryTextColor }}
             >
+
               <div>Validator</div>
               <div>Uptime</div>
               <div>Last Jailed Time</div>
@@ -119,11 +125,13 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
                   color: theme.primaryTextColor,
                 }}
               >
+
                 <div className="flex items-center gap-4">
                   <span
                     className="text-4xl font-semibold"
                     style={{ color: theme.accentColor }}
                   >
+
                     {index + 1}
                   </span>
                   {validator.name}
@@ -143,12 +151,14 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
                 </div>
               </div>
             ))}
+
             <div
               className="pt-8 pl-16"
               style={{ color: theme.secondaryTextColor }}
             >
               Minimum Uptime per Window:{" "}
               <span style={{ color: theme.accentColor }}>50%</span>
+
             </div>
           </div>
         </>

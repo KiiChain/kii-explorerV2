@@ -9,8 +9,8 @@ export function UptimeHeader() {
 
   return (
     <div className="flex justify-between items-center w-full">
-      <div className="flex-1 max-w-3xl">
-        <div className="relative">
+      <div className="flex-1">
+        <div className="relative w-3/4">
           <input
             type="text"
             placeholder="Search"

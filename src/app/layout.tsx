@@ -26,9 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={montserrat.variable}>
       <body>
+
         <ThemeProvider>
           <ContentWrapper>{children}</ContentWrapper>
         </ThemeProvider>
+
+     
       </body>
     </html>
   );

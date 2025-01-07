@@ -93,6 +93,7 @@ export function ParametersDashboard() {
             </td>
           </tr>
           <tr className="border-t">
+
             <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
               App_name
             </td>
@@ -113,6 +114,7 @@ export function ParametersDashboard() {
               Git_commit
             </td>
             <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+
               d7f6e1a3b9c6f7e7c3d8b4d6a5d4e5f6
             </td>
           </tr>

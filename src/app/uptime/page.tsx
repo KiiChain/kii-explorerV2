@@ -1,13 +1,5 @@
 import React from "react";
 import { UptimeDashboard } from "@/components/Uptime/UptimeDashboard";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Logo } from "@/components/ui/kiinvest-logo";
 
 // Assuming you have some data to pass to UptimeDashboard
 const validators = [
@@ -35,19 +27,8 @@ const validators = [
 
 export default function UptimePage() {
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full overflow-hidden bg-background">
-        <Sidebar>
-          <SidebarHeader className="flex items-center justify-between p-4">
-            <Logo />
-            <SidebarTrigger />
-          </SidebarHeader>
-          <SidebarContent />
-        </Sidebar>
-        <main className="flex-1 relative">
-          <UptimeDashboard validators={validators} />
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="p-6">
+      <UptimeDashboard validators={validators} />
+    </div>
   );
 }

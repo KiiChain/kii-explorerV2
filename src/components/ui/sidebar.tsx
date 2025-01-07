@@ -298,7 +298,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, isMobile } = useSidebar();
 
   return (
     <div className="flex justify-center items-center pt-8">
@@ -309,9 +309,11 @@ const SidebarTrigger = React.forwardRef<
         size="icon"
         className={cn("h-7 w-7", className)}
         onClick={(event) => {
-          event.stopPropagation();
-          toggleSidebar();
-          onClick?.(event);
+          if (isMobile) {
+            event.stopPropagation();
+            toggleSidebar();
+            onClick?.(event);
+          }
         }}
         {...props}
       >
