@@ -1,0 +1,46 @@
+import type { Metadata } from "next";
+import { Montserrat } from "next/font/google";
+import "./globals.css";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Logo } from "@/components/ui/kiinvest-logo";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-montserrat",
+});
+
+export const metadata: Metadata = {
+  title: "KiiChain",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={montserrat.variable}>
+      <body>
+        <SidebarProvider defaultOpen={true}>
+          <div className="flex h-screen w-full overflow-hidden bg-background">
+            <Sidebar>
+              <SidebarHeader className="flex items-center justify-between p-4">
+                <Logo />
+                <SidebarTrigger />
+              </SidebarHeader>
+              <SidebarContent />
+            </Sidebar>
+            {children}
+          </div>
+        </SidebarProvider>
+      </body>
+    </html>
+  );
+}
