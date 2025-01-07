@@ -9,10 +9,12 @@ import { WithdrawalsTable } from "@/components/Account/WithdrawalsTable";
 import { StakesTable } from "@/components/Account/StakesTable";
 import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function AccountPage() {
   const [account, setAccount] = useState("");
   const [session, setSession] = useState<WalletSession | null>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const savedSession = localStorage.getItem("walletSession");
@@ -25,7 +27,7 @@ export default function AccountPage() {
   }, []);
 
   return (
-    <div className="p-6 bg-[#05000F]">
+    <div className={`p-6 bg-[${theme.bgColor}]`}>
       <BlocksHeader activeTab="blocks" onTabChange={() => {}} />
       <AddressCard account={account} />
       <BalanceAndAssets

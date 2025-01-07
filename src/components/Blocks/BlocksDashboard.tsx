@@ -2,19 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
+import { useTheme } from "@/context/ThemeContext";
 
 export function BlocksDashboard() {
   const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
     "blocks"
   );
   const [isClient, setIsClient] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   return (
-    <div className="p-6 bg-[#05000F]">
+    <div className={`p-6 bg-[${theme.bgColor}]`}>
       <UptimeHeader />
 
       {isClient && (
@@ -23,9 +25,11 @@ export function BlocksDashboard() {
             <button
               className={`px-4 py-2 flex items-center justify-center ${
                 activeTab === "blocks"
-                  ? "bg-[#231C32] text-[#D2AAFA]"
-                  : "bg-[#05000F] hover:bg-[#231C32] text-[#D2AAFA]"
-              } hover:text-[#E0B1FF] rounded-lg`}
+
+                  ? `bg-[${theme.boxColor}] text-[${theme.accentColor}]`
+                  : `bg-[${theme.bgColor}] hover:bg-[${theme.boxColor}] text-[${theme.accentColor}]`
+              } hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
+
               onClick={() => setActiveTab("blocks")}
             >
               Blocks
@@ -33,9 +37,11 @@ export function BlocksDashboard() {
             <button
               className={`px-4 py-2 ${
                 activeTab === "transactions"
-                  ? "bg-[#231C32] text-white"
-                  : "bg-[#05000F] hover:bg-[#231C32] text-gray-400"
-              } hover:text-[#E0B1FF] rounded-lg`}
+
+                  ? `bg-[${theme.boxColor}] text-[${theme.primaryTextColor}]`
+                  : `bg-[${theme.bgColor}] hover:bg-[${theme.boxColor}] text-[${theme.secondaryTextColor}]`
+              } hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
+
               onClick={() => setActiveTab("transactions")}
             >
               Recent Transactions
@@ -47,16 +53,25 @@ export function BlocksDashboard() {
               {[...Array(20)].map((_, index) => (
                 <div
                   key={index + 1}
-                  className="bg-[#231C32] hover:bg-opacity-80 transition-colors duration-200 p-4 rounded-lg cursor-pointer"
+                  className={`bg-[${theme.boxColor}] hover:bg-opacity-80 transition-colors duration-200 p-4 rounded-lg cursor-pointer`}
                 >
                   <div className="flex flex-col gap-2 p-6">
-                    <div className="text-white font-semibold flex justify-between">
+
+                    <div
+                      className={`text-[${theme.primaryTextColor}] font-semibold flex justify-between`}
+                    >
                       <span>Block {index + 1}</span>
-                      <span className="text-[#7DD1F8] font-normal">
+                      <span
+                        className="font-normal"
+                        style={{ color: theme.quaternaryTextColor }}
+                      >
                         40s Ago
                       </span>
                     </div>
-                    <div className="text-[#F3F5FB] text-sm flex justify-between">
+                    <div
+                      className={`text-[${theme.secondaryTextColor}] text-sm flex justify-between`}
+                    >
+
                       <span>KiiChain Validator 1</span>
                       <span>5 Tx</span>
                     </div>
@@ -67,7 +82,7 @@ export function BlocksDashboard() {
           )}
 
           {activeTab === "transactions" && (
-            <div className="text-gray-400 mt-6">
+            <div className={`text-[${theme.secondaryTextColor}] mt-6`}>
               Recent Transactions Content
             </div>
           )}

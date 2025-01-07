@@ -1,5 +1,5 @@
-// src/components/Parameters/ParameterCard.tsx
 import React from "react";
+import { useTheme } from "@/context/ThemeContext";
 
 interface ParameterCardProps {
   title: string;
@@ -7,10 +7,12 @@ interface ParameterCardProps {
 }
 
 export function ParameterCard({ title, value }: ParameterCardProps) {
+  const { theme } = useTheme();
+
   return (
-    <div className="bg-[#231C32] p-4 rounded-lg shadow-lg">
-      <h3 className="text-gray-400 text-sm">{title}</h3>
-      <p className="text-[#F3F5FB] text-lg">{value}</p>
+    <div className={`bg-[${theme.boxColor}] p-4 rounded-lg shadow-lg`}>
+      <h3 className={`text-[${theme.secondaryTextColor}] text-sm`}>{title}</h3>
+      <p className={`text-[${theme.primaryTextColor}] text-lg`}>{value}</p>
     </div>
   );
 }

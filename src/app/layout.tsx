@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import {
@@ -9,16 +10,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/ui/kiinvest-logo";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-montserrat",
 });
-
-export const metadata: Metadata = {
-  title: "KiiChain",
-};
 
 export default function RootLayout({
   children,
@@ -28,21 +26,37 @@ export default function RootLayout({
   return (
     <html lang="en" className={montserrat.variable}>
       <body>
-        <SidebarProvider defaultOpen={true}>
-          <div className="flex h-screen w-full overflow-hidden bg-background">
-            <Sidebar>
-              <SidebarHeader className="flex items-center justify-between p-4">
-                <Logo />
-                <SidebarTrigger />
-              </SidebarHeader>
-              <SidebarContent />
-            </Sidebar>
-            <main className="flex-1 relative overflow-y-auto pl-28">
-              {children}
-            </main>
-          </div>
-        </SidebarProvider>
+
+        <ThemeProvider>
+          <ContentWrapper>{children}</ContentWrapper>
+        </ThemeProvider>
+
+     
       </body>
     </html>
+  );
+}
+
+function ContentWrapper({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <div
+        className="flex h-screen w-full overflow-hidden"
+        style={{ backgroundColor: theme.bgColor }}
+      >
+        <Sidebar>
+          <SidebarHeader className="flex items-center justify-between p-4">
+            <Logo />
+            <SidebarTrigger />
+          </SidebarHeader>
+          <SidebarContent />
+        </Sidebar>
+        <main className="flex-1 relative overflow-y-auto pl-28">
+          {children}
+        </main>
+      </div>
+    </SidebarProvider>
   );
 }

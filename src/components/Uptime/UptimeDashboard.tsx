@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { UptimeHeader } from "./UptimeHeader";
+import { useTheme } from "@/context/ThemeContext";
 
 interface Validator {
   id: number;
@@ -20,6 +21,8 @@ interface UptimeDashboardProps {
 export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
   validators,
 }) => {
+  const { theme } = useTheme();
+
   const [activeTab, setActiveTab] = useState<
     "overall" | "blocks" | "customize"
   >("overall");
@@ -35,48 +38,76 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
   );
 
   return (
-    <div className="p-6">
+    <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
       <UptimeHeader />
       {isClient && (
         <>
           <div className="flex space-x-4 mb-4 pt-16">
             <button
               className={`text-white px-4 py-2 rounded ${
-                activeTab === "overall" ? "bg-[#231C32]" : "bg-transparent"
-              } hover:text-[#D2AAFA]`}
+                activeTab === "overall" ? "bg-primary" : "bg-transparent"
+              } hover:text-[${theme.accentColor}]`}
               onClick={() => setActiveTab("overall")}
+              style={{
+                backgroundColor:
+                  activeTab === "overall" ? theme.boxColor : "transparent",
+              }}
             >
               Overall
             </button>
             <button
               className={`text-white px-4 py-2 rounded ${
-                activeTab === "blocks" ? "bg-[#231C32]" : "bg-transparent"
-              } hover:text-[#D2AAFA]`}
+                activeTab === "blocks" ? "bg-primary" : "bg-transparent"
+              } hover:text-[${theme.accentColor}]`}
               onClick={() => setActiveTab("blocks")}
+              style={{
+                backgroundColor:
+                  activeTab === "blocks" ? theme.boxColor : "transparent",
+              }}
             >
               Blocks
             </button>
             <button
               className={`text-white px-4 py-2 rounded ${
-                activeTab === "customize" ? "bg-[#231C32]" : "bg-transparent"
-              } hover:text-[#D2AAFA]`}
+                activeTab === "customize" ? "bg-primary" : "bg-transparent"
+              } hover:text-[${theme.accentColor}]`}
               onClick={() => setActiveTab("customize")}
+              style={{
+                backgroundColor:
+                  activeTab === "customize" ? theme.boxColor : "transparent",
+              }}
             >
               Customize
             </button>
           </div>
 
-          <div className="space-y-2 bg-[#231C32] mt-9 p-8 rounded-lg">
+
+          <div
+            className="space-y-2 mt-9 p-8 rounded-lg"
+            style={{ backgroundColor: theme.boxColor }}
+          >
+
             <div>
               <input
                 type="text"
                 placeholder="Keywords to Filter Validators"
-                className="w-full mb-4 px-4 py-2 bg-[#05000F] rounded-lg text-[#F3F5FB] text-sm"
+
+                className="w-full mb-4 px-4 py-2 rounded-lg text-sm"
+                style={{
+                  backgroundColor: theme.bgColor,
+                  color: theme.secondaryTextColor,
+                }}
+
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-6 gap-4 py-2 text-white font-semibold px-8">
+
+            <div
+              className="grid grid-cols-6 gap-4 py-2 font-semibold px-8"
+              style={{ color: theme.primaryTextColor }}
+            >
+
               <div>Validator</div>
               <div>Uptime</div>
               <div>Last Jailed Time</div>
@@ -87,28 +118,47 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             {filteredValidators.map((validator, index) => (
               <div
                 key={validator.id}
-                className="grid grid-cols-6 gap-4 py-4 px-8 items-center bg-[#05000F] rounded-lg border border-[#2D4BA0] hover:border-blue-400 transition-colors"
+                className="grid grid-cols-6 gap-4 py-4 px-8 items-center rounded-lg border transition-colors"
+                style={{
+                  backgroundColor: theme.bgColor,
+                  borderColor: theme.borderColor,
+                  color: theme.primaryTextColor,
+                }}
               >
-                <div className="text-white flex items-center gap-4">
-                  <span className="text-4xl font-semibold text-[#D2AAFA]">
+
+                <div className="flex items-center gap-4">
+                  <span
+                    className="text-4xl font-semibold"
+                    style={{ color: theme.accentColor }}
+                  >
+
                     {index + 1}
                   </span>
                   {validator.name}
                 </div>
-                <div className="text-green-400">{validator.uptime}</div>
-                <div className="text-[#F3F5FB]">{validator.lastJailedTime}</div>
-                <div className="text-[#F3F5FB]">
+                <div style={{ color: "green" }}>{validator.uptime}</div>
+                <div style={{ color: theme.secondaryTextColor }}>
+                  {validator.lastJailedTime}
+                </div>
+                <div style={{ color: theme.secondaryTextColor }}>
                   {validator.signedPrecommits}
                 </div>
-                <div className="text-[#F3F5FB]">{validator.startHeight}</div>
-                <div className="text-[#F3F5FB]">
+                <div style={{ color: theme.secondaryTextColor }}>
+                  {validator.startHeight}
+                </div>
+                <div style={{ color: theme.secondaryTextColor }}>
                   {validator.tombstoned ? "True" : "False"}
                 </div>
               </div>
             ))}
-            <div className="text-[#F3F5FB] pt-8 pl-16">
+
+            <div
+              className="pt-8 pl-16"
+              style={{ color: theme.secondaryTextColor }}
+            >
               Minimum Uptime per Window:{" "}
-              <span className="text-[#D2AAFA]">50%</span>
+              <span style={{ color: theme.accentColor }}>50%</span>
+
             </div>
           </div>
         </>
