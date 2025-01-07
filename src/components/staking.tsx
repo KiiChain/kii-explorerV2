@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Card } from "@/components/ui/card";
+import { useTheme } from "@/context/ThemeContext";
 
 interface StakingStats {
   value: string;
@@ -50,19 +51,34 @@ const validators: ValidatorInfo[] = [
     },
     commission: "10%",
   },
-  // ... más validadores
 ];
 
 export function Staking() {
+  const { theme } = useTheme();
+
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Stats Cards */}
+    <div
+      className="flex flex-col gap-6 p-6"
+      style={{ backgroundColor: theme.bgColor }}
+    >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="p-4">
+          <Card
+            key={stat.label}
+            className="p-4"
+            style={{ backgroundColor: theme.boxColor }}
+          >
             <div className="flex flex-col gap-1">
-              <span className="text-2xl font-semibold">{stat.value}</span>
-              <span className="text-sm text-muted-foreground">
+              <span
+                className="text-2xl font-semibold"
+                style={{ color: theme.primaryTextColor }}
+              >
+                {stat.value}
+              </span>
+              <span
+                className="text-sm"
+                style={{ color: theme.secondaryTextColor }}
+              >
                 {stat.label}
               </span>
             </div>
@@ -70,51 +86,119 @@ export function Staking() {
         ))}
       </div>
 
-      {/* Validators Table */}
-      <Card>
+      <Card style={{ backgroundColor: theme.boxColor }}>
         <div className="flex items-center gap-4 p-4">
-          <button className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground">
+          <button
+            className="rounded-md bg-primary px-3 py-1 text-sm"
+            style={{ color: theme.primaryTextColor }}
+          >
             Popular
           </button>
-          <button className="rounded-md px-3 py-1 text-sm">Active</button>
-          <button className="rounded-md px-3 py-1 text-sm">Inactive</button>
+          <button
+            className="rounded-md px-3 py-1 text-sm"
+            style={{ color: theme.secondaryTextColor }}
+          >
+            Active
+          </button>
+          <button
+            className="rounded-md px-3 py-1 text-sm"
+            style={{ color: theme.secondaryTextColor }}
+          >
+            Inactive
+          </button>
         </div>
-        <div className="border-t">
+        <div className="border-t" style={{ borderColor: theme.borderColor }}>
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="p-4 text-left font-medium">Rank</th>
-                <th className="p-4 text-left font-medium">Validator</th>
-                <th className="p-4 text-left font-medium">Voting Power</th>
-                <th className="p-4 text-left font-medium">24h changes</th>
-                <th className="p-4 text-left font-medium">Commission</th>
-                <th className="p-4 text-left font-medium">Actions</th>
+              <tr
+                className="border-b"
+                style={{ backgroundColor: theme.accentColor }}
+              >
+                <th
+                  className="p-4 text-left font-medium"
+                  style={{ color: theme.primaryTextColor }}
+                >
+                  Rank
+                </th>
+                <th
+                  className="p-4 text-left font-medium"
+                  style={{ color: theme.primaryTextColor }}
+                >
+                  Validator
+                </th>
+                <th
+                  className="p-4 text-left font-medium"
+                  style={{ color: theme.primaryTextColor }}
+                >
+                  Voting Power
+                </th>
+                <th
+                  className="p-4 text-left font-medium"
+                  style={{ color: theme.primaryTextColor }}
+                >
+                  24h changes
+                </th>
+                <th
+                  className="p-4 text-left font-medium"
+                  style={{ color: theme.primaryTextColor }}
+                >
+                  Commission
+                </th>
+                <th
+                  className="p-4 text-left font-medium"
+                  style={{ color: theme.primaryTextColor }}
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {validators.map((validator) => (
-                <tr key={validator.rank} className="border-b">
-                  <td className="p-4">{validator.rank}</td>
+                <tr
+                  key={validator.rank}
+                  className="border-b"
+                  style={{ borderColor: theme.borderColor }}
+                >
+                  <td className="p-4" style={{ color: theme.primaryTextColor }}>
+                    {validator.rank}
+                  </td>
                   <td className="p-4">
                     <div className="flex flex-col">
-                      <span>{validator.name}</span>
-                      <span className="text-sm text-muted-foreground">
+                      <span style={{ color: theme.primaryTextColor }}>
+                        {validator.name}
+                      </span>
+                      <span
+                        className="text-sm"
+                        style={{ color: theme.secondaryTextColor }}
+                      >
                         {validator.url}
                       </span>
                     </div>
                   </td>
                   <td className="p-4">
                     <div className="flex flex-col">
-                      <span>{validator.votingPower.amount}</span>
-                      <span className="text-sm text-muted-foreground">
+                      <span style={{ color: theme.primaryTextColor }}>
+                        {validator.votingPower.amount}
+                      </span>
+                      <span
+                        className="text-sm"
+                        style={{ color: theme.secondaryTextColor }}
+                      >
                         {validator.votingPower.percentage}
                       </span>
                     </div>
                   </td>
-                  <td className="p-4">{validator.votingPower.percentage}</td>
-                  <td className="p-4">{validator.commission}</td>
+                  <td className="p-4" style={{ color: theme.primaryTextColor }}>
+                    {validator.votingPower.percentage}
+                  </td>
+                  <td className="p-4" style={{ color: theme.primaryTextColor }}>
+                    {validator.commission}
+                  </td>
                   <td className="p-4">
-                    <button className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">
+                    <button
+                      className="rounded-md bg-primary px-4 py-2 text-sm"
+                      style={{ color: theme.primaryTextColor }}
+                    >
                       Create Stake
                     </button>
                   </td>

@@ -1,3 +1,5 @@
+import { useTheme } from "@/context/ThemeContext";
+
 interface StakeProps {
   stakes: {
     validator: string;
@@ -7,13 +9,17 @@ interface StakeProps {
 }
 
 export function StakesTable({ stakes }: StakeProps) {
+  const { theme } = useTheme();
+
   return (
-    <div className="mt-8 p-6 bg-[#231C32]/40 rounded-lg">
+    <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
       <div className="mb-6">
-        <div className="text-white mb-4 text-xl">Stakes</div>
+        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
+          Stakes
+        </div>
         <table className="w-full">
           <thead>
-            <tr className="text-left text-gray-400">
+            <tr className={`text-left text-[${theme.secondaryTextColor}]`}>
               <th className="pb-4">Validator</th>
               <th className="pb-4">Stake</th>
               <th className="pb-4">Rewards</th>
@@ -24,16 +30,26 @@ export function StakesTable({ stakes }: StakeProps) {
             {stakes?.map((stake, index) => (
               <tr
                 key={index}
-                className="border-b border-[#2D4BA0] bg-[#05000F]"
+                className={`border-b border-[${theme.borderColor}] bg-[${theme.bgColor}]`}
               >
-                <td className="py-4 text-white">{stake.validator}</td>
-                <td className="py-4 text-white">{stake.amount}</td>
-                <td className="py-4 text-white">{stake.rewards}</td>
+                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                  {stake.validator}
+                </td>
+                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                  {stake.amount}
+                </td>
+                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                  {stake.rewards}
+                </td>
                 <td className="py-4">
-                  <button className="px-4 py-2 bg-[#231C32] text-[#D2AAFA] rounded-lg hover:opacity-80">
+                  <button
+                    className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
+                  >
                     Relocate
                   </button>
-                  <button className="ml-2 px-4 py-2 bg-[#231C32] text-[#D2AAFA] rounded-lg hover:opacity-80">
+                  <button
+                    className={`ml-2 px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
+                  >
                     Withdraw
                   </button>
                 </td>

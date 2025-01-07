@@ -1,6 +1,7 @@
 "use client";
 
 import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
+import { useTheme } from "@/context/ThemeContext";
 
 interface SmartContract {
   codeId: string;
@@ -25,16 +26,20 @@ const initialContracts: SmartContract[] = [
 ];
 
 export function SmartContractsDashboard() {
+  const { theme } = useTheme();
+
   return (
-    <div className="p-6 bg-[#05000F]">
+    <div className={`p-6 bg-[${theme.bgColor}]`}>
       <UptimeHeader />
 
       <div className="mt-24">
-        <div className="bg-[#231C32] rounded-lg p-6">
+        <div className={`bg-[${theme.boxColor}] rounded-lg p-6`}>
           <div className="overflow-x-auto w-full">
             <table className="min-w-full">
               <thead>
-                <tr className="text-left text-[#F3F5FB] border-b border-[#2D4BA0]">
+                <tr
+                  className={`text-left text-[${theme.primaryTextColor}] border-b border-[${theme.accentColor}]`}
+                >
                   <th className="py-4 px-2 sm:px-6 font-bold">
                     <b>Code ID</b>
                   </th>
@@ -53,21 +58,40 @@ export function SmartContractsDashboard() {
                 {initialContracts.map((contract, index) => (
                   <tr
                     key={index}
-                    className="border-b border-[#2D4BA0] bg-[#05000F] hover:bg-[#05000F]/50 transition-colors"
+                    className={`border-b border-[${theme.accentColor}]`}
+                    style={{ backgroundColor: theme.bgColor }}
                   >
-                    <td className="py-6 px-2 sm:px-6 text-[#F3F5FB]">
-                      {contract.codeId}
+                    <td
+                      className={`py-2 px-1 sm:px-3 text-[${theme.primaryTextColor}] text-xs`}
+                    >
+                      {initialContracts[index % initialContracts.length].codeId}
                     </td>
-                    <td className="py-6 px-2 sm:px-6">
-                      <span className="text-[#00F9A6]">
-                        {contract.codeHash}
+                    <td className="py-2 px-1 sm:px-3">
+                      <span
+                        style={{ color: theme.tertiaryTextColor }}
+                        className="text-xs"
+                      >
+                        {
+                          initialContracts[index % initialContracts.length]
+                            .codeHash
+                        }
                       </span>
                     </td>
-                    <td className="py-6 px-2 sm:px-6 text-[#F3F5FB] font-light">
-                      {contract.creator}
+                    <td
+                      className={`py-2 px-1 sm:px-3 text-[${theme.primaryTextColor}] font-light text-xs`}
+                    >
+                      {
+                        initialContracts[index % initialContracts.length]
+                          .creator
+                      }
                     </td>
-                    <td className="py-6 px-2 sm:px-6 text-[#F3F5FB] font-light">
-                      {contract.createdAt}
+                    <td
+                      className={`py-2 px-1 sm:px-3 text-[${theme.primaryTextColor}] font-light text-xs`}
+                    >
+                      {
+                        initialContracts[index % initialContracts.length]
+                          .createdAt
+                      }
                     </td>
                   </tr>
                 ))}
