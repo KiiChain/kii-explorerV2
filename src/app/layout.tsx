@@ -1,7 +1,7 @@
 "use client";
 
 import { Montserrat } from "next/font/google";
-import "./globals.css";
+import "../styles/globals.css";
 import {
   Sidebar,
   SidebarContent,
