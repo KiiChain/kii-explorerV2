@@ -8,6 +8,10 @@ export const darkTheme = {
   accentColor: "#D2AAFA",
   borderColor: "#2D4BA0",
   circleColor: "#787779",
+  faucetColor: "#05000F47",
+  faucetColor2: "#D2AAFA",
+  faucetTextColor: "#F3F5FB4D",
+  faucetTextColor2: "#231C32",
 };
 
 export const lightTheme = {
@@ -17,7 +21,11 @@ export const lightTheme = {
   secondaryTextColor: "#05000F",
   tertiaryTextColor: "#643B80",
   quaternaryTextColor: "#643B80",
-  accentColor: "#D2AAFA",
+  accentColor: "#643B80",
   borderColor: "#F3F5FB",
   circleColor: "#787779",
+  faucetColor: "#643B8033",
+  faucetColor2: "#643B80",
+  faucetTextColor: "#05000F",
+  faucetTextColor2: "#F3F5FB",
 };

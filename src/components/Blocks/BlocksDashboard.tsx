@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { useTheme } from "@/context/ThemeContext";
 
 export function BlocksDashboard() {
@@ -16,32 +15,39 @@ export function BlocksDashboard() {
   }, []);
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
-      <UptimeHeader />
-
+    <div style={{ backgroundColor: theme.bgColor }} className="p-6">
       {isClient && (
         <>
           <div className="flex gap-6 mt-12">
             <button
-              className={`px-4 py-2 flex items-center justify-center ${
-                activeTab === "blocks"
-
-                  ? `bg-[${theme.boxColor}] text-[${theme.accentColor}]`
-                  : `bg-[${theme.bgColor}] hover:bg-[${theme.boxColor}] text-[${theme.accentColor}]`
-              } hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
-
+              style={{
+                backgroundColor:
+                  activeTab === "blocks" ? theme.boxColor : theme.bgColor,
+                color: theme.accentColor,
+                boxShadow:
+                  activeTab === "blocks"
+                    ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                    : "none",
+              }}
+              className={`px-4 py-2 flex items-center justify-center hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
               onClick={() => setActiveTab("blocks")}
             >
               Blocks
             </button>
             <button
-              className={`px-4 py-2 ${
-                activeTab === "transactions"
-
-                  ? `bg-[${theme.boxColor}] text-[${theme.primaryTextColor}]`
-                  : `bg-[${theme.bgColor}] hover:bg-[${theme.boxColor}] text-[${theme.secondaryTextColor}]`
-              } hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
-
+              style={{
+                backgroundColor:
+                  activeTab === "transactions" ? theme.boxColor : theme.bgColor,
+                color:
+                  activeTab === "transactions"
+                    ? theme.primaryTextColor
+                    : theme.secondaryTextColor,
+                boxShadow:
+                  activeTab === "transactions"
+                    ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                    : "none",
+              }}
+              className={`px-4 py-2 hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
               onClick={() => setActiveTab("transactions")}
             >
               Recent Transactions
@@ -53,27 +59,32 @@ export function BlocksDashboard() {
               {[...Array(20)].map((_, index) => (
                 <div
                   key={index + 1}
-                  className={`bg-[${theme.boxColor}] hover:bg-opacity-80 transition-colors duration-200 p-4 rounded-lg cursor-pointer`}
+                  style={{
+                    backgroundColor: theme.boxColor,
+                    boxShadow:
+                      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                  }}
+                  className="hover:bg-opacity-80 transition-colors duration-200 p-4 rounded-lg cursor-pointer"
                 >
                   <div className="flex flex-col gap-2 p-6">
-
-                    <div
-                      className={`text-[${theme.primaryTextColor}] font-semibold flex justify-between`}
-                    >
-                      <span>Block {index + 1}</span>
+                    <div className="font-semibold flex justify-between">
+                      <span style={{ color: theme.primaryTextColor }}>
+                        Block {index + 1}
+                      </span>
                       <span
-                        className="font-normal"
                         style={{ color: theme.quaternaryTextColor }}
+                        className="font-normal"
                       >
                         40s Ago
                       </span>
                     </div>
-                    <div
-                      className={`text-[${theme.secondaryTextColor}] text-sm flex justify-between`}
-                    >
-
-                      <span>KiiChain Validator 1</span>
-                      <span>5 Tx</span>
+                    <div className="text-sm flex justify-between">
+                      <span style={{ color: theme.secondaryTextColor }}>
+                        KiiChain Validator 1
+                      </span>
+                      <span style={{ color: theme.secondaryTextColor }}>
+                        5 Tx
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -82,7 +93,7 @@ export function BlocksDashboard() {
           )}
 
           {activeTab === "transactions" && (
-            <div className={`text-[${theme.secondaryTextColor}] mt-6`}>
+            <div style={{ color: theme.secondaryTextColor }} className="mt-6">
               Recent Transactions Content
             </div>
           )}

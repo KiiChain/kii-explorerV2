@@ -1,49 +1,49 @@
 "use client";
 
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { useTheme } from "@/context/ThemeContext";
 
 export function StateSyncDashboard() {
   const { theme } = useTheme();
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
-      <UptimeHeader />
-
-      <div className="pt-24">
-
+    <div style={{ backgroundColor: theme.bgColor }} className="px-6">
+      <div className="pt-20">
         <div
-          className={`bg-[${theme.boxColor}] p-10 rounded-lg shadow-lg mb-6`}
+          style={{ backgroundColor: theme.boxColor }}
+          className="p-10 rounded-lg shadow-lg mb-6"
         >
           <h2
-            className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-2`}
+            style={{ color: theme.primaryTextColor }}
+            className="text-xl font-semibold mb-2"
           >
-
             What&apos;s State Sync?
           </h2>
-          <p className={`text-[${theme.primaryTextColor}]`}>
+          <p style={{ color: theme.primaryTextColor }}>
             The Tendermint Core 0.34 release includes support for State Sync,
             which allows a new node to join a network by fetching a snapshot of
             the application state at a recent height instead of fetching and
             replaying all historical blocks. This can reduce the time needed to
             sync with the network from days to minutes. Click{" "}
-            <a href="#" className={`text-[${theme.accentColor}]`}>
+            <a href="#" style={{ color: theme.accentColor }}>
               here
             </a>{" "}
             for more information.
           </p>
         </div>
 
-
-        <div className={`bg-[${theme.boxColor}] p-10 rounded-lg shadow-lg`}>
+        <div
+          style={{ backgroundColor: theme.boxColor }}
+          className="p-10 rounded-lg shadow-lg"
+        >
           <h2
-            className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-2`}
+            style={{ color: theme.primaryTextColor }}
+            className="text-xl font-semibold mb-2"
           >
-
             Starting New Node From State Sync
           </h2>
           <ol
-            className={`list-decimal list-inside text-[${theme.primaryTextColor}]`}
+            style={{ color: theme.primaryTextColor }}
+            className="list-decimal list-inside"
           >
             <li>
               Install Binary (Kiichain Version: 71882bc)
@@ -62,7 +62,7 @@ export function StateSyncDashboard() {
           </ol>
 
           <div
-            style={{ backgroundColor: theme.bgColor }}
+            style={{ backgroundColor: "#05000F" }}
             className="p-4 rounded-lg shadow-lg mt-4 overflow-x-auto"
           >
             <div className="flex space-x-2 mb-2 pl-8 py-8">
@@ -71,7 +71,7 @@ export function StateSyncDashboard() {
                 style={{
                   width: "14px",
                   height: "14px",
-                  backgroundColor: theme.circleColor,
+                  backgroundColor: "#787779",
                   opacity: 1,
                 }}
               ></div>
@@ -80,7 +80,7 @@ export function StateSyncDashboard() {
                 style={{
                   width: "14px",
                   height: "14px",
-                  backgroundColor: theme.circleColor,
+                  backgroundColor: "#787779",
                   opacity: 1,
                 }}
               ></div>
@@ -89,26 +89,49 @@ export function StateSyncDashboard() {
                 style={{
                   width: "14px",
                   height: "14px",
-                  backgroundColor: theme.circleColor,
+                  backgroundColor: "#787779",
                   opacity: 1,
                 }}
               ></div>
             </div>
-            <pre className={`text-[${theme.primaryTextColor}] pl-8 pb-8`}>
+            <pre className="pl-8 pb-8">
               <code>
-                {`[state-sync]
-> enable = true
->
-> rpc_servers = "https://a.sentry.testnet.kiivalidator.com:26658,https://b.sentry.testnet.kiivalidator.com:26658"
-> trust_height = 800000
-> trust_hash = "1697AC815D2A0367173530BEAD5D126868736AD172613586CF43240D8EF2E050"
->
-> `}
-                <span style={{ color: theme.tertiaryTextColor }}>
+                <span style={{ color: "#787779" }}>{"> "}</span>
+                <span style={{ color: "#FFFFFF" }}>[state-sync]</span>
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <span style={{ color: "#FFFFFF" }}> enable = </span>
+                <span style={{ color: "#FFFFFF" }}>true</span>
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <span style={{ color: "#FFFFFF" }}> rpc_servers = </span>
+                <span style={{ color: "#FFFFFF" }}>
+                  &quot;https://a.sentry.testnet.kiivalidator.com:26658,https://b.sentry.testnet.kiivalidator.com:26658&quot;
+                </span>
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <span style={{ color: "#FFFFFF" }}> trust_height = </span>
+                <span style={{ color: "#FFFFFF" }}>800000</span>
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <span style={{ color: "#FFFFFF" }}> trust_hash = </span>
+                <span style={{ color: "#FFFFFF" }}>
+                  &quot;1697AC815D2A0367173530BEAD5D126868736AD172613586CF43240D8EF2E050&quot;
+                </span>
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <span style={{ color: "#00F9A6" }}>
+                  {" "}
                   # 2/3 of unbonding time
                 </span>
-                {`
-> trust_period = "168h"`}
+                <br />
+                <span style={{ color: "#787779" }}>{">"}</span>
+                <span style={{ color: "#FFFFFF" }}> trust_period = </span>
+                <span style={{ color: "#FFFFFF" }}>&quot;168h&quot;</span>
               </code>
             </pre>
           </div>

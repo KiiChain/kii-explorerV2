@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { WalletIcon } from "@/components/ui/icons";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -10,32 +9,40 @@ export function FaucetDashboard() {
   const { theme } = useTheme();
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
-      <UptimeHeader />
-
+    <div style={{ backgroundColor: theme.bgColor }} className="p-6">
       <div className="flex items-center justify-center min-h-[80vh]">
-
         <div
-          className={`bg-[${theme.boxColor}] p-20 rounded-lg shadow-lg w-full max-w-xl`}
+          style={{ backgroundColor: theme.boxColor }}
+          className="p-20 rounded-lg shadow-lg w-full max-w-xl"
         >
           <h1
-            className={`text-4xl font-bold text-[${theme.primaryTextColor}] mb-6`}
+            style={{ color: theme.primaryTextColor }}
+            className="text-4xl font-bold mb-6"
           >
-
             Testnet Oro Faucet
           </h1>
 
           <div className="space-y-6">
             <div>
-              <h2 className={`text-xl text-[${theme.primaryTextColor}] mb-4`}>
+              <h2
+                style={{ color: theme.primaryTextColor }}
+                className="text-xl mb-4"
+              >
                 How to use KiiChain&apos;s faucet?
               </h2>
               <ol
-                className={`list-decimal list-inside text-[${theme.primaryTextColor}] space-y-2 ml-4`}
+                style={{ color: theme.primaryTextColor }}
+                className="list-decimal list-inside space-y-2 ml-4"
               >
                 <li>
                   Set up your testnet wallet{" "}
-                  <a href="#" style={{ color: theme.tertiaryTextColor }}>
+                  <a
+                    href="#"
+                    style={{
+                      color: theme.tertiaryTextColor,
+                      fontWeight: "bold",
+                    }}
+                  >
                     here.
                   </a>
                 </li>
@@ -47,7 +54,8 @@ export function FaucetDashboard() {
             <div className="space-y-4">
               <div>
                 <label
-                  className={`flex items-center text-[${theme.primaryTextColor}] mb-2`}
+                  style={{ color: theme.primaryTextColor }}
+                  className="flex items-center mb-2"
                 >
                   <WalletIcon className="w-5 h-5 mr-2" />
                   Wallet Address
@@ -55,16 +63,22 @@ export function FaucetDashboard() {
                 <input
                   type="text"
                   placeholder="Enter Wallet Address"
-                  style={{ backgroundColor: theme.bgColor }}
-                  className={`w-full px-4 py-3 rounded-lg text-[${theme.secondaryTextColor}] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[${theme.accentColor}]`}
+                  style={{
+                    backgroundColor: theme.faucetColor,
+                    color: theme.faucetTextColor,
+                  }}
+                  className="w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 shadow-lg"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
                 />
               </div>
 
               <button
-                className={`w-full py-3 bg-[${theme.accentColor}] text-left font-bold rounded-lg hover:opacity-90 transition-opacity pl-4`}
-                style={{ color: theme.boxColor }}
+                style={{
+                  backgroundColor: theme.faucetColor2,
+                  color: theme.faucetTextColor2,
+                }}
+                className="w-full py-3 text-left font-bold rounded-lg hover:opacity-90 transition-opacity pl-4 shadow-lg"
                 onClick={() => {}}
               >
                 Claim your tokens

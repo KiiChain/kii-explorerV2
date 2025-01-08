@@ -1,7 +1,6 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { useTheme } from "@/context/ThemeContext";
 
 interface BankSupply {
@@ -42,12 +41,11 @@ export function SupplyDashboard() {
   const { theme } = useTheme();
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
-      <UptimeHeader />
-
-      <div className="mt-24">
+    <div className="px-6" style={{ backgroundColor: theme.bgColor }}>
+      <div className="mt-20">
         <h2
-          className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-4`}
+          className="text-xl font-semibold mb-4"
+          style={{ color: theme.primaryTextColor }}
         >
           Bank Supply
         </h2>
@@ -56,7 +54,8 @@ export function SupplyDashboard() {
           {initialSupplies.map((supply) => (
             <div key={supply.id}>
               <Card
-                className={`bg-[${theme.boxColor}] px-2 pt-4 pb-2 border-0 rounded-lg shadow-lg w-40 h-52`}
+                className="px-2 pt-4 pb-2 border-0 rounded-lg shadow-lg w-40 h-52"
+                style={{ backgroundColor: theme.boxColor }}
               >
                 <div className="h-full w-full bg-transparent relative rounded-lg overflow-hidden">
                   <div
@@ -69,10 +68,8 @@ export function SupplyDashboard() {
                 </div>
               </Card>
               <div
-
-                className={`text-sm text-[${theme.primaryTextColor}] truncate mt-2 flex justify-center`}
-
-                style={{ maxWidth: "90%" }}
+                className="text-sm truncate mt-2 flex justify-center"
+                style={{ maxWidth: "90%", color: theme.primaryTextColor }}
               >
                 {supply.address.slice(0, supply.address.length / 2)}...
               </div>
@@ -80,13 +77,17 @@ export function SupplyDashboard() {
           ))}
         </div>
 
-        <div className={`bg-[${theme.boxColor}] rounded-lg p-6`}>
+        <div
+          className="rounded-lg p-6 shadow-lg"
+          style={{ backgroundColor: theme.boxColor }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-
-                <tr className={`text-left text-[${theme.secondaryTextColor}]`}>
-
+                <tr
+                  className="text-left"
+                  style={{ color: theme.secondaryTextColor }}
+                >
                   <th className="py-3 px-4">Wallet Address</th>
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">% of supply</th>
@@ -96,22 +97,26 @@ export function SupplyDashboard() {
                 {initialSupplies.map((supply) => (
                   <tr
                     key={supply.id}
-                    className={`border-t border-[${theme.accentColor}]`}
-                    style={{ backgroundColor: theme.bgColor }}
+                    style={{
+                      backgroundColor: theme.bgColor,
+                      borderTop: `1px solid ${theme.accentColor}`,
+                    }}
                   >
                     <td
-                      className={`py-4 px-4 text-[${theme.accentColor}]`}
+                      className="py-4 px-4"
                       style={{ color: theme.accentColor }}
                     >
                       {supply.address}
                     </td>
                     <td
-                      className={`py-4 px-4 text-[${theme.primaryTextColor}]`}
+                      className="py-4 px-4"
+                      style={{ color: theme.primaryTextColor }}
                     >
                       {supply.amount}
                     </td>
                     <td
-                      className={`py-4 px-4 text-[${theme.primaryTextColor}]`}
+                      className="py-4 px-4"
+                      style={{ color: theme.primaryTextColor }}
                     >
                       {supply.percentage}
                     </td>
