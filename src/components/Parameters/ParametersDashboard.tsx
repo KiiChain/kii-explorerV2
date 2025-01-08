@@ -1,6 +1,5 @@
 "use client";
 
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { ParameterCard } from "./ParameterCard";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -8,11 +7,10 @@ export function ParametersDashboard() {
   const { theme } = useTheme();
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
-      <UptimeHeader />
-
+    <div style={{ backgroundColor: theme.bgColor }} className="px-6">
       <h2
-        className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-4 pt-24`}
+        style={{ color: theme.primaryTextColor }}
+        className="text-xl font-semibold mb-4 pt-20"
       >
         Chain ID: kiichain-1
       </h2>
@@ -24,7 +22,8 @@ export function ParametersDashboard() {
       </div>
 
       <h2
-        className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-4 pt-8`}
+        style={{ color: theme.primaryTextColor }}
+        className="text-xl font-semibold mb-4 pt-8"
       >
         Staking Parameters
       </h2>
@@ -37,7 +36,8 @@ export function ParametersDashboard() {
       </div>
 
       <h2
-        className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-4 pt-8`}
+        style={{ color: theme.primaryTextColor }}
+        className="text-xl font-semibold mb-4 pt-8"
       >
         Governance Parameters
       </h2>
@@ -51,7 +51,8 @@ export function ParametersDashboard() {
       </div>
 
       <h2
-        className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-4 pt-8`}
+        style={{ color: theme.primaryTextColor }}
+        className="text-xl font-semibold mb-4 pt-8"
       >
         Distribution Parameters
       </h2>
@@ -63,7 +64,8 @@ export function ParametersDashboard() {
       </div>
 
       <h2
-        className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-4 pt-8`}
+        style={{ color: theme.primaryTextColor }}
+        className="text-xl font-semibold mb-4 pt-8"
       >
         Slashing Parameters
       </h2>
@@ -76,45 +78,93 @@ export function ParametersDashboard() {
       </div>
 
       <h2
-        className={`text-xl font-semibold text-[${theme.primaryTextColor}] mb-4 pt-8`}
+        style={{ color: theme.primaryTextColor }}
+        className="text-xl font-semibold mb-4 pt-8"
       >
         Application Versions
       </h2>
       <table
-        className={`min-w-full bg-[${theme.bgColor}] rounded-lg shadow-lg`}
+        style={{ backgroundColor: theme.bgColor }}
+        className="min-w-full rounded-lg shadow-lg"
       >
         <tbody>
           <tr>
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               Name
             </td>
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               Kiichain
             </td>
           </tr>
           <tr className="border-t">
-
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               App_name
             </td>
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               kiichaind
             </td>
           </tr>
           <tr className="border-t">
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               Version
             </td>
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               2b0e7
             </td>
           </tr>
           <tr className="border-t">
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               Git_commit
             </td>
-            <td className={`text-[${theme.secondaryTextColor}] text-lg p-4`}>
-
+            <td
+              style={{
+                color: theme.secondaryTextColor,
+                backgroundColor: theme.boxColor,
+              }}
+              className="text-lg p-4 shadow-lg"
+            >
               d7f6e1a3b9c6f7e7c3d8b4d6a5d4e5f6
             </td>
           </tr>
