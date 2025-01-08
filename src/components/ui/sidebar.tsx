@@ -4,6 +4,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/context/ThemeContext";
 
 import {
   DashboardIcon,
@@ -15,7 +16,7 @@ import {
   FaucetIcon,
   SmartContractsIcon,
   MenuIcon,
-  StakingIcon, // Import StakingIcon
+  StakingIcon,
 } from "./icons";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -60,7 +61,6 @@ function useSidebar() {
   return context;
 }
 
-// Movemos los iconos a un componente separado con 'use client'
 const Icons = {
   DashboardIcon,
   BlocksIcon,
@@ -95,6 +95,7 @@ const SidebarProvider = React.forwardRef<
     ref
   ) => {
     const isMobile = useIsMobile();
+    const { theme } = useTheme();
 
     const [openMobile, setOpenMobile] = React.useState(false);
     const [_open, _setOpen] = React.useState(defaultOpen);
@@ -162,6 +163,8 @@ const SidebarProvider = React.forwardRef<
               {
                 "--sidebar-width": SIDEBAR_WIDTH,
                 "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+                backgroundColor: theme.bgColor,
+                color: theme.primaryTextColor,
                 ...style,
               } as React.CSSProperties
             }
@@ -201,14 +204,16 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+    const { theme } = useTheme();
 
     if (collapsible === "none") {
       return (
         <div
-          className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
-            className
-          )}
+          className={cn("flex h-full w-[--sidebar-width] flex-col", className)}
+          style={{
+            backgroundColor: theme.boxColor,
+            color: theme.primaryTextColor,
+          }}
           ref={ref}
           {...props}
         >
@@ -223,10 +228,12 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-[--sidebar-width] p-0 [&>button]:hidden"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+                backgroundColor: theme.boxColor,
+                color: theme.primaryTextColor,
               } as React.CSSProperties
             }
             side={side}
@@ -240,11 +247,14 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground w-32"
+        className="group peer hidden md:block w-32"
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
+        style={{
+          color: theme.primaryTextColor,
+        }}
       >
         {/* This is what handles the sidebar gap on desktop */}
         <div
@@ -269,11 +279,19 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
+          style={{
+            backgroundColor: theme.boxColor,
+            borderColor: theme.borderColor,
+          }}
           {...props}
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow"
+            style={{
+              backgroundColor: theme.bgColor,
+              borderColor: theme.borderColor,
+            }}
           >
             <div className="relative">
               {state === "collapsed" && (
@@ -299,9 +317,10 @@ const SidebarTrigger = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar, isMobile } = useSidebar();
+  const { theme } = useTheme();
 
   return (
-    <div className="flex justify-center items-center pt-8">
+    <div className="flex justify-center items-center">
       <Button
         ref={ref}
         data-sidebar="trigger"
@@ -317,8 +336,8 @@ const SidebarTrigger = React.forwardRef<
         }}
         {...props}
       >
-        <div className="flex justify-center items-center pt-8">
-          <MenuIcon className="text-[#F3F5FB]" />
+        <div className="flex justify-center items-center">
+          <MenuIcon style={{ color: theme.primaryTextColor }} />
         </div>
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
@@ -444,6 +463,7 @@ const SidebarContent = React.forwardRef<
   const pathname = usePathname();
   const [isClient, setIsClient] = React.useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
+  const { theme } = useTheme();
 
   React.useEffect(() => {
     setIsClient(true);
@@ -460,55 +480,69 @@ const SidebarContent = React.forwardRef<
       {...props}
     >
       <nav className="grid gap-0.5 px-2 py-4">
-        {menuItems.map((item) => (
-          <SidebarMenuButton
-            key={item.label}
-            isActive={
-              isClient &&
-              (pathname === "/"
-                ? item.label === "Dashboard"
-                : pathname.slice(1) ===
-                  item.label.toLowerCase().replace(" ", "-"))
-            }
-            className={cn(
-              "w-full justify-start gap-3 text-base md:text-lg p-3 md:p-2",
-              "transition-colors duration-200",
-              "hover:bg-[#231C32] hover:text-white rounded-lg"
-            )}
-            onClick={() => {
-              if (isMobile) {
-                setOpenMobile(false);
-              }
-              if (item.label === "Dashboard") {
-                window.location.href = "/";
-              } else if (item.label === "Staking") {
-                window.location.href = "/staking";
-              } else if (item.label === "Blocks") {
-                window.location.href = "/blocks";
-              } else if (item.label === "Uptime") {
-                window.location.href = "/uptime";
-              } else if (item.label === "Supply") {
-                window.location.href = "/supply";
-              } else if (item.label === "Parameters") {
-                window.location.href = "/parameters";
-              } else if (item.label === "State Sync") {
-                window.location.href = "/stateSync";
-              } else if (item.label === "Faucet") {
-                window.location.href = "/faucet";
-              } else if (item.label === "Smart Contracts") {
-                window.location.href = "/smart-contracts";
-              }
-            }}
-          >
-            {React.cloneElement(item.icon, {
-              className: cn(
-                "h-5 w-5 md:h-6 md:w-6",
-                "transition-transform duration-200"
-              ),
-            })}
-            <span className="text-lg">{item.label}</span>
-          </SidebarMenuButton>
-        ))}
+        {menuItems.map((item) => {
+          const isActive =
+            isClient &&
+            (pathname === "/"
+              ? item.label === "Dashboard"
+              : pathname.slice(1) ===
+                item.label.toLowerCase().replace(" ", "-"));
+
+          return (
+            <SidebarMenuButton
+              key={item.label}
+              isActive={isActive}
+              className={cn(
+                "w-full justify-start gap-3 text-base md:text-lg p-3 md:p-2",
+                "transition-colors duration-200",
+                "hover:bg-[#231C32] hover:text-white rounded-lg"
+              )}
+              style={{
+                backgroundColor: isActive ? theme.boxColor : "transparent",
+                color: isActive
+                  ? theme.primaryTextColor
+                  : theme.secondaryTextColor,
+              }}
+              onClick={() => {
+                if (isMobile) {
+                  setOpenMobile(false);
+                }
+                if (item.label === "Dashboard") {
+                  window.location.href = "/";
+                } else if (item.label === "Staking") {
+                  window.location.href = "/staking";
+                } else if (item.label === "Blocks") {
+                  window.location.href = "/blocks";
+                } else if (item.label === "Uptime") {
+                  window.location.href = "/uptime";
+                } else if (item.label === "Supply") {
+                  window.location.href = "/supply";
+                } else if (item.label === "Parameters") {
+                  window.location.href = "/parameters";
+                } else if (item.label === "State Sync") {
+                  window.location.href = "/stateSync";
+                } else if (item.label === "Faucet") {
+                  window.location.href = "/faucet";
+                } else if (item.label === "Smart Contracts") {
+                  window.location.href = "/smart-contracts";
+                }
+              }}
+            >
+              {React.cloneElement(item.icon, {
+                className: cn(
+                  "h-5 w-5 md:h-6 md:w-6",
+                  "transition-transform duration-200"
+                ),
+                style: {
+                  color: isActive
+                    ? theme.primaryTextColor
+                    : theme.secondaryTextColor,
+                },
+              })}
+              <span className="text-lg">{item.label}</span>
+            </SidebarMenuButton>
+          );
+        })}
       </nav>
     </div>
   );
