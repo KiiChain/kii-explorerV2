@@ -1,6 +1,5 @@
 "use client";
 
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { useTheme } from "@/context/ThemeContext";
 
 interface SmartContract {
@@ -29,16 +28,21 @@ export function SmartContractsDashboard() {
   const { theme } = useTheme();
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
-      <UptimeHeader />
-
+    <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
       <div className="mt-24">
-        <div className={`bg-[${theme.boxColor}] rounded-lg p-6`}>
+        <div
+          className="rounded-lg p-6 shadow-lg"
+          style={{ backgroundColor: theme.boxColor }}
+        >
           <div className="overflow-x-auto w-full">
             <table className="min-w-full">
               <thead>
                 <tr
-                  className={`text-left text-[${theme.primaryTextColor}] border-b border-[${theme.accentColor}]`}
+                  className="text-left border-b"
+                  style={{
+                    color: theme.primaryTextColor,
+                    borderColor: theme.accentColor,
+                  }}
                 >
                   <th className="py-4 px-2 sm:px-6 font-bold">
                     <b>Code ID</b>
@@ -58,12 +62,15 @@ export function SmartContractsDashboard() {
                 {Array.from({ length: 20 }, (_, index) => (
                   <tr
                     key={index}
-                    className={`border-b border-[${theme.accentColor}]`}
-                    style={{ backgroundColor: theme.bgColor }}
+                    className="border-b"
+                    style={{
+                      backgroundColor: theme.bgColor,
+                      borderColor: theme.accentColor,
+                    }}
                   >
-
                     <td
-                      className={`py-2 px-1 sm:px-3 text-[${theme.primaryTextColor}] text-xs`}
+                      className="py-2 px-1 sm:px-3 text-xs"
+                      style={{ color: theme.primaryTextColor }}
                     >
                       {initialContracts[index % initialContracts.length].codeId}
                     </td>
@@ -72,7 +79,6 @@ export function SmartContractsDashboard() {
                         style={{ color: theme.tertiaryTextColor }}
                         className="text-xs"
                       >
-
                         {
                           initialContracts[index % initialContracts.length]
                             .codeHash
@@ -81,9 +87,9 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className={`py-2 px-1 sm:px-3 text-[${theme.primaryTextColor}] font-light text-xs`}
+                      className="py-2 px-1 sm:px-3 font-light text-xs"
+                      style={{ color: theme.primaryTextColor }}
                     >
-
                       {
                         initialContracts[index % initialContracts.length]
                           .creator
@@ -91,9 +97,9 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className={`py-2 px-1 sm:px-3 text-[${theme.primaryTextColor}] font-light text-xs`}
+                      className="py-2 px-1 sm:px-3 font-light text-xs"
+                      style={{ color: theme.primaryTextColor }}
                     >
-
                       {
                         initialContracts[index % initialContracts.length]
                           .createdAt

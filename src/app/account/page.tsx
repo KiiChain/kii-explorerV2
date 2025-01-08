@@ -27,7 +27,7 @@ export default function AccountPage() {
   }, []);
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
+    <div className={`px-6 bg-[${theme.bgColor}]`}>
       <BlocksHeader activeTab="blocks" onTabChange={() => {}} />
       <AddressCard account={account} />
       <BalanceAndAssets

@@ -10,9 +10,16 @@ export function ParameterCard({ title, value }: ParameterCardProps) {
   const { theme } = useTheme();
 
   return (
-    <div className={`bg-[${theme.boxColor}] p-4 rounded-lg shadow-lg`}>
-      <h3 className={`text-[${theme.secondaryTextColor}] text-sm`}>{title}</h3>
-      <p className={`text-[${theme.primaryTextColor}] text-lg`}>{value}</p>
+    <div
+      style={{ backgroundColor: theme.boxColor }}
+      className="p-4 rounded-lg shadow-lg"
+    >
+      <h3 style={{ color: theme.secondaryTextColor }} className="text-sm">
+        {title}
+      </h3>
+      <p style={{ color: theme.primaryTextColor }} className="text-lg">
+        {value}
+      </p>
     </div>
   );
 }

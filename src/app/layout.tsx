@@ -1,7 +1,7 @@
 "use client";
 
 import { Montserrat } from "next/font/google";
-import "./globals.css";
+import "../styles/globals.css";
 import {
   Sidebar,
   SidebarContent,
@@ -9,8 +9,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Logo } from "@/components/ui/kiinvest-logo";
+import { Logo } from "@/components/ui/Logo";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -26,12 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={montserrat.variable}>
       <body>
-
         <ThemeProvider>
           <ContentWrapper>{children}</ContentWrapper>
         </ThemeProvider>
-
-     
       </body>
     </html>
   );
@@ -46,7 +44,7 @@ function ContentWrapper({ children }: { children: React.ReactNode }) {
         className="flex h-screen w-full overflow-hidden"
         style={{ backgroundColor: theme.bgColor }}
       >
-        <Sidebar>
+        <Sidebar className="mt-10">
           <SidebarHeader className="flex items-center justify-between p-4">
             <Logo />
             <SidebarTrigger />
@@ -54,6 +52,10 @@ function ContentWrapper({ children }: { children: React.ReactNode }) {
           <SidebarContent />
         </Sidebar>
         <main className="flex-1 relative overflow-y-auto pl-28">
+          <div className="px-12 pt-12">
+            <UptimeHeader />
+          </div>
+
           {children}
         </main>
       </div>

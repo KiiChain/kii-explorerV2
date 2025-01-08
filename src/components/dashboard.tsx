@@ -14,7 +14,6 @@ import {
   CommunityPoolIcon,
 } from "./ui/icons";
 import { useRouter } from "next/navigation";
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { useTheme } from "@/context/ThemeContext";
 
 interface StatCardProps {
@@ -39,25 +38,35 @@ function StatCard({
 
   if (variant === "horizontal") {
     return (
-      <Card className={`bg-[${theme.boxColor}] border-0`}>
+      <Card
+        style={{
+          backgroundColor: theme.boxColor,
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        }}
+        className="border-0"
+      >
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {icon}
 
               <span
-                className={`text-sm xl:text-base font-normal text-[${theme.secondaryTextColor}]`}
+                className="text-sm xl:text-base font-normal"
+                style={{ color: theme.secondaryTextColor }}
               >
                 {title}
               </span>
             </div>
             <div
-              className={`text-xl md:text-2xl xl:text-3xl font-bold text-[${theme.secondaryTextColor}]`}
+              className="text-xl md:text-2xl xl:text-3xl font-bold"
+              style={{ color: theme.secondaryTextColor }}
             >
               {value}
               {unit && (
                 <span
-                  className={`pl-1 ml-1 text-[10px] xl:text-xs text-[${theme.secondaryTextColor}]`}
+                  className="pl-1 ml-1 text-[10px] xl:text-xs"
+                  style={{ color: theme.secondaryTextColor }}
                 >
                   ({unit})
                 </span>
@@ -70,22 +79,32 @@ function StatCard({
   }
 
   return (
-    <Card className={`bg-[${theme.boxColor}] border-0`}>
+    <Card
+      style={{
+        backgroundColor: theme.boxColor,
+        boxShadow:
+          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      }}
+      className="border-0"
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle
-          className={`text-sm xl:text-base font-normal text-[${theme.secondaryTextColor}]`}
+          className="text-sm xl:text-base font-normal"
+          style={{ color: theme.secondaryTextColor }}
         >
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div
-          className={`text-xl md:text-2xl xl:text-3xl font-bold text-[${theme.secondaryTextColor}]`}
+          className="text-xl md:text-2xl xl:text-3xl font-bold"
+          style={{ color: theme.secondaryTextColor }}
         >
           {value}
           {unit && (
             <span
-              className={`pl-1 ml-1 text-[10px] xl:text-xs text-[${theme.secondaryTextColor}]`}
+              className="pl-1 ml-1 text-[10px] xl:text-xs"
+              style={{ color: theme.secondaryTextColor }}
             >
               ({unit})
             </span>
@@ -151,39 +170,20 @@ export function Dashboard() {
 
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
-      <UptimeHeader />
       <div className="px-6 pt-12"></div>
 
       <div
-        className="pt-6 rounded-xl mb-6"
+        className="rounded-xl mb-6"
         style={{ backgroundColor: theme.bgColor }}
       >
         <div
           className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8"
           style={{ backgroundColor: theme.bgColor }}
         >
-          <StatCard
-            title="KII Price"
-            value="N/A"
-            unit="TESTNET"
-            style={{ backgroundColor: theme.boxColor }}
-          />
-          <StatCard
-            title="Gas Price"
-            value="2500"
-            unit="Tekii"
-            style={{ backgroundColor: theme.boxColor }}
-          />
-          <StatCard
-            title="Transactions"
-            value="333,422"
-            style={{ backgroundColor: theme.boxColor }}
-          />
-          <StatCard
-            title="Block Height"
-            value="2,577,053"
-            style={{ backgroundColor: theme.boxColor }}
-          />
+          <StatCard title="KII Price" value="N/A" unit="TESTNET" />
+          <StatCard title="Gas Price" value="2500" unit="Tekii" />
+          <StatCard title="Transactions" value="333,422" />
+          <StatCard title="Block Height" value="2,577,053" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
@@ -192,7 +192,8 @@ export function Dashboard() {
             value="2,576,146"
             icon={
               <HeightIcon
-                className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
+                className="w-5 h-5"
+                style={{ color: theme.secondaryTextColor }}
               />
             }
             variant="horizontal"
@@ -202,7 +203,8 @@ export function Dashboard() {
             value="3"
             icon={
               <ValidatorsIcon
-                className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
+                className="w-5 h-5"
+                style={{ color: theme.secondaryTextColor }}
               />
             }
             variant="horizontal"
@@ -212,7 +214,8 @@ export function Dashboard() {
             value="1,800,000,000"
             icon={
               <CashIcon
-                className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
+                className="w-5 h-5"
+                style={{ color: theme.secondaryTextColor }}
               />
             }
             variant="horizontal"
@@ -225,7 +228,8 @@ export function Dashboard() {
             value="300,000"
             icon={
               <BondedTokensIcon
-                className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
+                className="w-5 h-5"
+                style={{ color: theme.secondaryTextColor }}
               />
             }
             variant="horizontal"
@@ -235,7 +239,8 @@ export function Dashboard() {
             value="0%"
             icon={
               <InflationIcon
-                className={`w-4 h-4 text-[${theme.secondaryTextColor}]`}
+                className="w-4 h-4"
+                style={{ color: theme.secondaryTextColor }}
               />
             }
             variant="horizontal"
@@ -245,7 +250,8 @@ export function Dashboard() {
             value="-"
             icon={
               <CommunityPoolIcon
-                className={`w-5 h-5 text-[${theme.secondaryTextColor}]`}
+                className="w-5 h-5"
+                style={{ color: theme.secondaryTextColor }}
               />
             }
             variant="horizontal"
@@ -253,14 +259,19 @@ export function Dashboard() {
         </div>
 
         <Card
+          style={{
+            backgroundColor: theme.boxColor,
+            boxShadow:
+              "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          }}
           className="border-0 mt-6"
-          style={{ backgroundColor: `${theme.boxColor}` }}
         >
           <CardContent className="p-6">
             {!account ? (
               <button
                 onClick={connectWallet}
-                className={`flex items-center gap-2 px-4 py-2 text-[${theme.primaryTextColor}] rounded-lg hover:opacity-80`}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:opacity-80"
+                style={{ color: theme.primaryTextColor }}
               >
                 <WalletIcon />
                 Wallet not connected
@@ -347,26 +358,39 @@ export function Dashboard() {
                       {session?.stakes.map((stake, index) => (
                         <tr
                           key={index}
-                          className={`border-t border-[${theme.borderColor}] bg-[${theme.bgColor}]`}
+                          className="border-t"
+                          style={{
+                            borderColor: theme.borderColor,
+                            backgroundColor: theme.bgColor,
+                          }}
                         >
                           <td
-                            className={`p-4 text-[${theme.primaryTextColor}]`}
+                            className="p-4"
+                            style={{ color: theme.primaryTextColor }}
                           >
                             {stake.validator}
                           </td>
                           <td
-                            className={`p-4 text-[${theme.primaryTextColor}]`}
+                            className="p-4"
+                            style={{ color: theme.primaryTextColor }}
                           >
                             {stake.amount}
                           </td>
                           <td
-                            className={`p-4 text-[${theme.primaryTextColor}]`}
+                            className="p-4"
+                            style={{ color: theme.primaryTextColor }}
                           >
                             {stake.rewards}
                           </td>
                           <td className="p-4">
                             <button
-                              className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
+                              className="px-4 py-2 rounded-lg hover:opacity-80"
+                              style={{
+                                backgroundColor: theme.boxColor,
+                                color: theme.accentColor,
+                                boxShadow:
+                                  "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                              }}
                             >
                               CLAIM REWARDS
                             </button>
@@ -379,7 +403,13 @@ export function Dashboard() {
 
                 <div className="flex justify-center gap-4 mt-8">
                   <button
-                    className={`px-8 py-3 bg-[${theme.boxColor}] text-[${theme.primaryTextColor}] rounded-lg hover:opacity-80`}
+                    className="px-8 py-3 rounded-lg hover:opacity-80"
+                    style={{
+                      backgroundColor: theme.boxColor,
+                      color: theme.primaryTextColor,
+                      boxShadow:
+                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                    }}
                     onClick={() => {
                       localStorage.setItem(
                         "walletSession",
@@ -391,7 +421,13 @@ export function Dashboard() {
                     My Account
                   </button>
                   <button
-                    className={`px-8 py-3 bg-[${theme.boxColor}] text-[${theme.primaryTextColor}] rounded-lg hover:opacity-80`}
+                    className="px-8 py-3 rounded-lg hover:opacity-80"
+                    style={{
+                      backgroundColor: theme.boxColor,
+                      color: theme.primaryTextColor,
+                      boxShadow:
+                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                    }}
                   >
                     Create Stake
                   </button>
@@ -402,14 +438,24 @@ export function Dashboard() {
         </Card>
 
         <div className="mt-6">
-          <Card className={`bg-[${theme.boxColor}] border-0`}>
-            <div className={`p-6 bg-[${theme.boxColor}]`}>
+          <Card
+            style={{
+              backgroundColor: theme.boxColor,
+              boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            }}
+            className="border-0"
+          >
+            <div className="p-6" style={{ backgroundColor: theme.boxColor }}>
               <div className="flex justify-between items-center">
                 <div className="flex gap-6 flex-1">
-                  <div className={`text-[${theme.primaryTextColor}]`}>
+                  <div style={{ color: theme.primaryTextColor }}>
                     Latest Blocks
                   </div>
-                  <div className={`text-[${theme.primaryTextColor}] ml-[30%]`}>
+                  <div
+                    style={{ color: theme.primaryTextColor }}
+                    className="ml-[30%]"
+                  >
                     Latest transactions
                   </div>
                 </div>
@@ -428,32 +474,28 @@ export function Dashboard() {
                       >
                         <td className="p-4 grid grid-cols-12 gap-4 items-center">
                           <span
-                            className={`text-[${theme.accentColor}] col-span-2 flex items-center gap-2`}
+                            className="col-span-2 flex items-center gap-2"
+                            style={{ color: theme.accentColor }}
                           >
                             <ContractIcon className="w-4 h-4" />
-                            <span
-                              className={`text-[${theme.secondaryTextColor}]`}
-                            >
+                            <span style={{ color: theme.secondaryTextColor }}>
                               2578179
                             </span>
                           </span>
                           <div className="flex items-center gap-2 col-span-3">
-                            <span
-                              className={`text-[${theme.secondaryTextColor}]`}
-                            >
+                            <span style={{ color: theme.secondaryTextColor }}>
                               Fee Recipient
                             </span>
-                            <span className={`text-[${theme.accentColor}]`}>
+                            <span style={{ color: theme.accentColor }}>
                               Kiichain Validator 1
                             </span>
                           </div>
                           <span
-                            className={`text-[${theme.accentColor}] col-span-2 flex items-center gap-2`}
+                            className="col-span-2 flex items-center gap-2"
+                            style={{ color: theme.accentColor }}
                           >
                             <ContractIcon className="w-4 h-4" />
-                            <span
-                              className={`text-[${theme.secondaryTextColor}]`}
-                            >
+                            <span style={{ color: theme.secondaryTextColor }}>
                               0x4f02c2fb1798
                             </span>
                           </span>
@@ -461,11 +503,11 @@ export function Dashboard() {
                             <span className="text-xs text-gray-400">
                               <div className="flex items-center gap-1">
                                 <span
-                                  className={`text-[${theme.secondaryTextColor}]`}
+                                  style={{ color: theme.secondaryTextColor }}
                                 >
                                   From:
                                 </span>
-                                <span className={`text-[${theme.accentColor}]`}>
+                                <span style={{ color: theme.accentColor }}>
                                   0xf61aE263853B62Ce48...
                                 </span>
                               </div>
@@ -473,19 +515,24 @@ export function Dashboard() {
                             <span className="text-xs text-gray-400">
                               <div className="flex items-center gap-1">
                                 <span
-                                  className={`text-[${theme.secondaryTextColor}]`}
+                                  style={{ color: theme.secondaryTextColor }}
                                 >
                                   To:
                                 </span>
-                                <span className={`text-[${theme.accentColor}]`}>
+                                <span style={{ color: theme.accentColor }}>
                                   0x7f32360b4ea9bf2682...
                                 </span>
                               </div>
                             </span>
                           </div>
                           <span
-                            style={{ backgroundColor: theme.boxColor }}
-                            className={`text-[${theme.accentColor}] px-3 py-1 rounded-full col-span-2 text-center inline-block w-fit`}
+                            style={{
+                              backgroundColor: theme.boxColor,
+                              color: theme.accentColor,
+                              boxShadow:
+                                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                            }}
+                            className="px-3 py-1 rounded-full col-span-2 text-center inline-block w-fit"
                           >
                             2,500 KII
                           </span>
@@ -500,59 +547,105 @@ export function Dashboard() {
         </div>
 
         <div className="mt-6">
-          <Card className={`bg-[${theme.bgColor}] border-0`}>
+          <Card
+            style={{
+              backgroundColor: theme.bgColor,
+              boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            }}
+            className="border-0"
+          >
             <div className="p-6">
-              <h2 className={`text-[${theme.primaryTextColor}] text-xl mb-6`}>
+              <h2
+                className="text-xl mb-6"
+                style={{ color: theme.primaryTextColor }}
+              >
                 Application Versions
               </h2>
 
               <table className="w-full">
                 <tbody>
                   <tr className="border-b border-[#231C32]/50">
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Name
                     </td>
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Kiichain
                     </td>
                   </tr>
                   <tr className="border-b border-[#231C32]/50">
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       App_name
                     </td>
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Kiichaind
                     </td>
                   </tr>
                   <tr className="border-b border-[#231C32]/50">
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Version
                     </td>
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       26c1fe7
                     </td>
                   </tr>
                   <tr className="border-b border-[#231C32]/50">
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Git_commit
                     </td>
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       87eefca1ad86ec69374874c25558f430afdb5555c8
                     </td>
                   </tr>
                   <tr className="border-b border-[#231C32]/50">
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Build_tags
                     </td>
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       App_v1
                     </td>
                   </tr>
                   <tr className="border-b border-[#231C32]/50">
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Go_version
                     </td>
-                    <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                    <td
+                      className="py-4"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       Go Version Go1.19 Linux/Amd64
                     </td>
                   </tr>
@@ -564,32 +657,36 @@ export function Dashboard() {
                   <tr className="border-b border-[#231C32]/50">
                     <td className="py-4 w-1/4"></td>
                     <td
-                      className={`py-4 text-[${theme.secondaryTextColor}] w-1/4`}
+                      className="py-4 w-1/4"
+                      style={{ color: theme.secondaryTextColor }}
                     >
                       Cloud.Google.Com/Go
                     </td>
                     <td
-                      className={`py-4 text-[${theme.secondaryTextColor}] w-1/4`}
+                      className="py-4 w-1/4"
+                      style={{ color: theme.secondaryTextColor }}
                     >
                       V0.110.0
                     </td>
-                    <td className={`py-4 text-[${theme.accentColor}]`}>
+                    <td className="py-4" style={{ color: theme.accentColor }}>
                       H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
                     </td>
                   </tr>
                   <tr className="border-b border-[#231C32]/50">
                     <td className="py-4 w-1/4"></td>
                     <td
-                      className={`py-4 text-[${theme.secondaryTextColor}] w-1/4`}
+                      className="py-4 w-1/4"
+                      style={{ color: theme.secondaryTextColor }}
                     >
                       Cloud.Google.Com/Go
                     </td>
                     <td
-                      className={`py-4 text-[${theme.secondaryTextColor}] w-1/4`}
+                      className="py-4 w-1/4"
+                      style={{ color: theme.secondaryTextColor }}
                     >
                       V0.110.0
                     </td>
-                    <td className={`py-4 text-[${theme.accentColor}]`}>
+                    <td className="py-4" style={{ color: theme.accentColor }}>
                       H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
                     </td>
                   </tr>

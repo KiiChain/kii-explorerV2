@@ -1,29 +1,49 @@
 "use client";
 
-import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
-import { ParametersIcon } from "../ui/icons";
 import { useTheme } from "@/context/ThemeContext";
+import { useState } from "react";
 
 export function StakingDashboard() {
   const { theme } = useTheme();
+  const [activeButton, setActiveButton] = useState<
+    "popular" | "active" | "inactive" | null
+  >(null);
 
   return (
-    <div className={`p-6 bg-[${theme.bgColor}]`}>
-      <UptimeHeader />
-
-
-      <div className={`bg-[${theme.boxColor}] px-6 rounded-xl mb-9 mt-12`}>
-
+    <div
+      style={{ backgroundColor: theme.bgColor, color: theme.primaryTextColor }}
+      className="p-6"
+    >
+      <div
+        style={{
+          backgroundColor: theme.boxColor,
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        }}
+        className="p-6 rounded-xl mb-9 mt-12"
+      >
         <div className="grid grid-cols-4 gap-8">
           <div className="flex items-center gap-2">
-            <ParametersIcon
-              className={`h-20 w-20 text-[${theme.accentColor}]`}
-            />
+            <svg
+              width="20"
+              height="13"
+              viewBox="0 0 20 13"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1.14343 12.8333C0.651193 12.8333 0.305489 12.6015 0.106322 12.1378C-0.0928461 11.6742 -0.0121947 11.2621 0.348276 10.9015L5.00562 6.2424C5.21388 6.03406 5.46492 5.92043 5.75875 5.90149C6.05258 5.88255 6.31271 5.97724 6.53914 6.18558L9.77656 8.96967L16.1378 2.60604H15.4562C15.1344 2.60604 14.8648 2.49695 14.6475 2.27876C14.4301 2.06058 14.3211 1.79089 14.3203 1.46967C14.3196 1.14846 14.4286 0.878767 14.6475 0.660585C14.8663 0.442404 15.1359 0.333313 15.4562 0.333313H18.8641C19.1859 0.333313 19.4559 0.442404 19.674 0.660585C19.8921 0.878767 20.0008 1.14846 20 1.46967V4.87876C20 5.20073 19.8909 5.47081 19.6728 5.68899C19.4547 5.90717 19.1852 6.01588 18.8641 6.01512C18.543 6.01437 18.2734 5.90528 18.0553 5.68785C17.8372 5.47043 17.7281 5.20073 17.7281 4.87876V4.19694L10.6285 11.2992C10.4203 11.5075 10.1692 11.6212 9.87538 11.6401C9.58156 11.6591 9.32143 11.5644 9.09499 11.356L5.85757 8.57194L1.93859 12.4924C1.84393 12.5871 1.72579 12.6678 1.58418 12.7344C1.44256 12.8011 1.29565 12.8341 1.14343 12.8333Z"
+                fill={theme.accentColor}
+              />
+            </svg>
             <div>
-              <div className="text-2xl font-bold">0%</div>
-              <div className={`text-[${theme.secondaryTextColor}]`}>
-                Inflation
+              <div
+                className="text-2xl font-bold"
+                style={{ color: theme.primaryTextColor }}
+              >
+                0%
               </div>
+              <div style={{ color: theme.secondaryTextColor }}>Inflation</div>
             </div>
           </div>
 
@@ -41,8 +61,13 @@ export function StakingDashboard() {
               />
             </svg>
             <div>
-              <div className="text-2xl font-bold">21 Days</div>
-              <div className={`text-[${theme.secondaryTextColor}]`}>
+              <div
+                className="text-2xl font-bold"
+                style={{ color: theme.primaryTextColor }}
+              >
+                21 Days
+              </div>
+              <div style={{ color: theme.secondaryTextColor }}>
                 Unbonding Time
               </div>
             </div>
@@ -65,8 +90,13 @@ export function StakingDashboard() {
               />
             </svg>
             <div>
-              <div className="text-2xl font-bold">5%</div>
-              <div className={`text-[${theme.secondaryTextColor}]`}>
+              <div
+                className="text-2xl font-bold"
+                style={{ color: theme.primaryTextColor }}
+              >
+                5%
+              </div>
+              <div style={{ color: theme.secondaryTextColor }}>
                 Double Sign Slashing
               </div>
             </div>
@@ -86,8 +116,13 @@ export function StakingDashboard() {
               />
             </svg>
             <div>
-              <div className="text-2xl font-bold">1%</div>
-              <div className={`text-[${theme.secondaryTextColor}]`}>
+              <div
+                className="text-2xl font-bold"
+                style={{ color: theme.primaryTextColor }}
+              >
+                1%
+              </div>
+              <div style={{ color: theme.secondaryTextColor }}>
                 Downtime Slashing
               </div>
             </div>
@@ -96,31 +131,73 @@ export function StakingDashboard() {
       </div>
 
       <div className="flex gap-6 mb-9 pl-12">
-
         <button
-          className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.secondaryTextColor}] hover:text-[${theme.accentColor}] rounded-lg flex items-center justify-center`}
+          onClick={() => setActiveButton("popular")}
+          style={{
+            backgroundColor:
+              activeButton === "popular" ? theme.boxColor : "transparent",
+            color:
+              activeButton === "popular"
+                ? theme.accentColor
+                : theme.secondaryTextColor,
+            boxShadow:
+              activeButton === "popular"
+                ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                : "none",
+          }}
+          className="px-4 py-2 rounded-lg flex items-center justify-center hover:text-[#D2AAFA]"
         >
-
           Popular
         </button>
         <button
-          className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.secondaryTextColor}] hover:text-[${theme.accentColor}] rounded-lg flex items-center justify-center`}
+          onClick={() => setActiveButton("active")}
+          style={{
+            backgroundColor:
+              activeButton === "active" ? theme.boxColor : "transparent",
+            color:
+              activeButton === "active"
+                ? theme.accentColor
+                : theme.secondaryTextColor,
+            boxShadow:
+              activeButton === "active"
+                ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                : "none",
+          }}
+          className="px-4 py-2 rounded-lg flex items-center justify-center hover:text-[#D2AAFA]"
         >
           Active
         </button>
         <button
-          className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.secondaryTextColor}] hover:text-[${theme.accentColor}] rounded-lg flex items-center justify-center`}
+          onClick={() => setActiveButton("inactive")}
+          style={{
+            backgroundColor:
+              activeButton === "inactive" ? theme.boxColor : "transparent",
+            color:
+              activeButton === "inactive"
+                ? theme.accentColor
+                : theme.secondaryTextColor,
+            boxShadow:
+              activeButton === "inactive"
+                ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+                : "none",
+          }}
+          className="px-4 py-2 rounded-lg flex items-center justify-center hover:text-[#D2AAFA]"
         >
           Inactive
         </button>
       </div>
 
-
-      <div className={`bg-[${theme.boxColor}] rounded-xl p-8`}>
-
+      <div
+        style={{
+          backgroundColor: theme.boxColor,
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        }}
+        className="rounded-xl p-8"
+      >
         <table className="w-full">
           <thead>
-            <tr className="text-left">
+            <tr className="text-left" style={{ color: theme.primaryTextColor }}>
               <th className="p-4">Rank</th>
               <th className="p-4">Validator</th>
               <th className="p-4">Voting Power</th>
@@ -131,48 +208,65 @@ export function StakingDashboard() {
           </thead>
           <tbody className="">
             {[1, 2, 3].map((rank) => (
-
               <tr
                 key={rank}
-                className={`border-t p-4 m-4 bg-[${theme.bgColor}] mb-4`}
                 style={{ backgroundColor: theme.bgColor }}
+                className="border-t p-4 m-4 mb-4"
               >
                 <td
-                  className={`p-4 text-[${theme.accentColor}] font-bold text-center text-4xl`}
+                  style={{ color: theme.accentColor }}
+                  className="p-4 font-bold text-center text-4xl"
                 >
-
                   {rank}
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-7">
-
                     <div
-                      className={`w-10 h-10 bg-[${theme.accentColor}] rounded-full`}
+                      style={{ backgroundColor: theme.accentColor }}
+                      className="w-10 h-10 rounded-full"
                     ></div>
                     <div>
-                      <div className="font-medium">KiiAventador</div>
                       <div
-                        className={`text-[${theme.primaryTextColor}] text-sm`}
+                        className="font-medium"
+                        style={{ color: theme.primaryTextColor }}
                       >
-
+                        KiiAventador
+                      </div>
+                      <div
+                        style={{ color: theme.primaryTextColor }}
+                        className="text-sm"
+                      >
                         https://app.kiiglobal.io/
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="p-4">
-                  <div>1000,00 KII</div>
-
-                  <div className={`text-[${theme.primaryTextColor}] text-sm`}>
+                  <div style={{ color: theme.primaryTextColor }}>
+                    1000,00 KII
+                  </div>
+                  <div
+                    style={{ color: theme.primaryTextColor }}
+                    className="text-sm"
+                  >
                     33.33%
                   </div>
-
                 </td>
-                <td className="p-4">-</td>
-                <td className="p-4">10%</td>
+                <td className="p-4" style={{ color: theme.primaryTextColor }}>
+                  -
+                </td>
+                <td className="p-4" style={{ color: theme.primaryTextColor }}>
+                  10%
+                </td>
                 <td className="p-4">
                   <button
-                    className={`px-4 py-2 text-[${theme.accentColor}] bg-[${theme.boxColor}] rounded-lg`}
+                    style={{
+                      backgroundColor: theme.boxColor,
+                      color: theme.accentColor,
+                      boxShadow:
+                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                    }}
+                    className="px-4 py-2 rounded-lg"
                   >
                     Create Stake
                   </button>
@@ -182,19 +276,26 @@ export function StakingDashboard() {
           </tbody>
         </table>
         <div className="pr-4 pt-4 mt-12">
-
           <div
-            className={`flex gap-4 text-sm text-[${theme.secondaryTextColor}]`}
+            style={{ color: theme.secondaryTextColor }}
+            className="flex gap-4 text-sm"
           >
             <span
-              className={`bg-[${theme.bgColor}] rounded-lg p-3 text-[${theme.primaryTextColor}]`}
+              style={{
+                backgroundColor: theme.bgColor,
+                color: theme.primaryTextColor,
+              }}
+              className="rounded-lg p-3"
             >
               Top 33%
             </span>
             <span
-              className={`bg-[${theme.bgColor}] rounded-lg p-3 text-[${theme.primaryTextColor}]`}
+              style={{
+                backgroundColor: theme.bgColor,
+                color: theme.primaryTextColor,
+              }}
+              className="rounded-lg p-3"
             >
-
               Top 67%
             </span>
           </div>
