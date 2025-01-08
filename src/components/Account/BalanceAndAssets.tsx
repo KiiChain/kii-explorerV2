@@ -1,4 +1,5 @@
 import { ContractIcon } from "../ui/icons";
+import { useTheme } from "@/context/ThemeContext";
 
 interface Asset {
   name: string;
@@ -16,9 +17,13 @@ export function BalanceAndAssets({
   assets,
   totalValue,
 }: BalanceAndAssetsProps) {
+  const { theme } = useTheme();
+
   return (
-    <div className="mt-8 p-6 bg-[#231C32]/40 rounded-lg">
-      <div className="text-[#F3F5FB] mb-6 text-xl">Assets</div>
+    <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
+      <div className={`text-[${theme.primaryTextColor}] mb-6 text-xl`}>
+        Assets
+      </div>
       <div className="flex gap-12">
         <div className="flex-shrink-0 w-2/5 flex flex-col items-center justify-center">
           <div className="relative w-3/5 flex items-center justify-center">
@@ -33,7 +38,9 @@ export function BalanceAndAssets({
                 WebkitMask: "radial-gradient(transparent 40%, white 41%)",
               }}
             ></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#F3F5FB] text-4xl font-bold">
+            <div
+              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[${theme.primaryTextColor}] text-4xl font-bold`}
+            >
               99%
             </div>
           </div>
@@ -57,33 +64,42 @@ export function BalanceAndAssets({
           </div>
         </div>
 
-        {/* Right side - Assets List */}
         <div className="flex-grow">
           <div className="space-y-2">
             {assets.map((asset, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 bg-[#05000F] rounded-lg"
+                className={`flex items-center justify-between p-4 bg-[${theme.boxColor}] rounded-lg`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="text-[#F3F5FB]">
+                  <div className={`text-[${theme.primaryTextColor}]`}>
                     <ContractIcon width={16} height={16} />
                   </div>
                   <div>
-                    <div className="text-[#F3F5FB]">{asset.amount} KII</div>
+                    <div className={`text-[${theme.primaryTextColor}]`}>
+                      {asset.amount} KII
+                    </div>
                     <div className="text-xs text-gray-400">
                       {asset.percentage}
                     </div>
                   </div>
                 </div>
-                <div className="text-[#F3F5FB]">{asset.value}</div>
+                <div className={`text-[${theme.primaryTextColor}]`}>
+                  {asset.value}
+                </div>
               </div>
             ))}
           </div>
           <div className="mt-4">
-            <div className="flex items-center justify-end p-4 bg-[#05000F] rounded-lg">
-              <div className="text-[#F3F5FB]">Total Value:</div>
-              <div className="text-[#F3F5FB] ml-2">{totalValue}</div>
+            <div
+              className={`flex items-center justify-end p-4 bg-[${theme.boxColor}] rounded-lg`}
+            >
+              <div className={`text-[${theme.primaryTextColor}]`}>
+                Total Value:
+              </div>
+              <div className={`text-[${theme.primaryTextColor}] ml-2`}>
+                {totalValue}
+              </div>
             </div>
           </div>
         </div>

@@ -1,3 +1,5 @@
+import { useTheme } from "@/context/ThemeContext";
+
 interface Asset {
   name: string;
   amount: string;
@@ -9,17 +11,31 @@ interface AssetsTableProps {
 }
 
 export function AssetsTable({ assets }: AssetsTableProps) {
+  const { theme } = useTheme();
+
   return (
-    <div className="mt-8 p-6 bg-[#231C32]/40 rounded-lg">
+    <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
       <div className="mb-6">
-        <div className="text-white mb-4 text-xl">Assets</div>
+        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
+          Assets
+        </div>
         <table className="w-full">
           <tbody>
             {assets.map((asset, index) => (
               <tr key={index} className="border-b border-[#2D4BA0]">
-                <td className="py-4 text-gray-400">{asset.name}</td>
-                <td className="py-4 text-right text-white">{asset.amount}</td>
-                <td className="py-4 text-right text-gray-400">{asset.value}</td>
+                <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+                  {asset.name}
+                </td>
+                <td
+                  className={`py-4 text-right text-[${theme.primaryTextColor}]`}
+                >
+                  {asset.amount}
+                </td>
+                <td
+                  className={`py-4 text-right text-[${theme.secondaryTextColor}]`}
+                >
+                  {asset.value}
+                </td>
               </tr>
             ))}
           </tbody>
