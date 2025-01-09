@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
-import axios from "axios";
 
 interface Block {
   block: {
@@ -46,21 +45,21 @@ export function BlocksDashboard() {
 
     const fetchBlocks = async () => {
       try {
-        const latestResponse = await axios.get(
+        const latestResponse = await fetch(
           "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
         );
-        const latestHeight = parseInt(latestResponse.data.block.header.height);
+        const latestData = await latestResponse.json();
+        const latestHeight = parseInt(latestData.block.header.height);
 
         const blockPromises = Array.from({ length: 50 }, (_, i) =>
-          axios.get(
+          fetch(
             `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${
               latestHeight - i
             }`
-          )
+          ).then((res) => res.json())
         );
 
-        const responses = await Promise.all(blockPromises);
-        const blocks = responses.map((response) => response.data);
+        const blocks = await Promise.all(blockPromises);
         setBlocks(blocks);
       } catch (error) {
         console.error("Error fetching blocks:", error);
