@@ -2,6 +2,36 @@
 
 import React, { useState, useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import axios from "axios";
+
+interface Block {
+  block: {
+    header: {
+      height: string;
+      time: string;
+      chain_id: string;
+    };
+    data: {
+      txs: string[];
+    };
+  };
+}
+
+const getRelativeTime = (timestamp: string) => {
+  const diff = Date.now() - new Date(timestamp).getTime();
+  const seconds = Math.floor(diff / 1000);
+
+  if (seconds < 60) return `${seconds}s ago`;
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
 
 export function BlocksDashboard() {
   const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
@@ -9,9 +39,35 @@ export function BlocksDashboard() {
   );
   const [isClient, setIsClient] = useState(false);
   const { theme } = useTheme();
+  const [blocks, setBlocks] = useState<Block[]>([]);
 
   useEffect(() => {
     setIsClient(true);
+
+    const fetchBlocks = async () => {
+      try {
+        const latestResponse = await axios.get(
+          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
+        );
+        const latestHeight = parseInt(latestResponse.data.block.header.height);
+
+        const blockPromises = Array.from({ length: 50 }, (_, i) =>
+          axios.get(
+            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${
+              latestHeight - i
+            }`
+          )
+        );
+
+        const responses = await Promise.all(blockPromises);
+        const blocks = responses.map((response) => response.data);
+        setBlocks(blocks);
+      } catch (error) {
+        console.error("Error fetching blocks:", error);
+      }
+    };
+
+    fetchBlocks();
   }, []);
 
   return (
@@ -56,9 +112,9 @@ export function BlocksDashboard() {
 
           {activeTab === "blocks" && (
             <div className="grid grid-cols-5 gap-4 mt-7">
-              {[...Array(20)].map((_, index) => (
+              {blocks.map((block) => (
                 <div
-                  key={index + 1}
+                  key={block.block.header.height}
                   style={{
                     backgroundColor: theme.boxColor,
                     boxShadow:
@@ -69,21 +125,21 @@ export function BlocksDashboard() {
                   <div className="flex flex-col gap-2 p-6">
                     <div className="font-semibold flex justify-between">
                       <span style={{ color: theme.primaryTextColor }}>
-                        Block {index + 1}
+                        Block {block.block.header.height}
                       </span>
                       <span
                         style={{ color: theme.quaternaryTextColor }}
                         className="font-normal"
                       >
-                        40s Ago
+                        {getRelativeTime(block.block.header.time)}
                       </span>
                     </div>
                     <div className="text-sm flex justify-between">
                       <span style={{ color: theme.secondaryTextColor }}>
-                        KiiChain Validator 1
+                        {block.block.header.chain_id}
                       </span>
                       <span style={{ color: theme.secondaryTextColor }}>
-                        5 Tx
+                        {block.block.data.txs.length} Tx
                       </span>
                     </div>
                   </div>
