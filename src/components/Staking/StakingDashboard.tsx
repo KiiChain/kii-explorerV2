@@ -1,13 +1,44 @@
 "use client";
 
 import { useTheme } from "@/context/ThemeContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface Validator {
+  operator_address: string;
+  tokens: string;
+  description: {
+    moniker: string;
+    website: string;
+  };
+  commission: {
+    commission_rates: {
+      rate: string;
+    };
+  };
+}
 
 export function StakingDashboard() {
   const { theme } = useTheme();
   const [activeButton, setActiveButton] = useState<
     "popular" | "active" | "inactive" | null
   >(null);
+  const [validators, setValidators] = useState<Validator[]>([]);
+
+  useEffect(() => {
+    async function fetchValidators() {
+      try {
+        const response = await fetch(
+          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
+        );
+        const data = await response.json();
+        setValidators(data.validators);
+      } catch (error) {
+        console.error("Error fetching validators:", error);
+      }
+    }
+
+    fetchValidators();
+  }, []);
 
   return (
     <div
@@ -201,15 +232,14 @@ export function StakingDashboard() {
               <th className="p-4">Rank</th>
               <th className="p-4">Validator</th>
               <th className="p-4">Voting Power</th>
-              <th className="p-4">24h changes</th>
               <th className="p-4">Commission</th>
               <th className="p-4">Actions</th>
             </tr>
           </thead>
-          <tbody className="">
-            {[1, 2, 3].map((rank) => (
+          <tbody>
+            {validators.map((validator, index) => (
               <tr
-                key={rank}
+                key={validator.operator_address}
                 style={{ backgroundColor: theme.bgColor }}
                 className="border-t p-4 m-4 mb-4"
               >
@@ -217,7 +247,7 @@ export function StakingDashboard() {
                   style={{ color: theme.accentColor }}
                   className="p-4 font-bold text-center text-4xl"
                 >
-                  {rank}
+                  {index + 1}
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-7">
@@ -230,33 +260,25 @@ export function StakingDashboard() {
                         className="font-medium"
                         style={{ color: theme.primaryTextColor }}
                       >
-                        KiiAventador
+                        {validator.description.moniker}
                       </div>
                       <div
                         style={{ color: theme.primaryTextColor }}
                         className="text-sm"
                       >
-                        https://app.kiiglobal.io/
+                        {validator.description.website}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="p-4">
                   <div style={{ color: theme.primaryTextColor }}>
-                    1000,00 KII
-                  </div>
-                  <div
-                    style={{ color: theme.primaryTextColor }}
-                    className="text-sm"
-                  >
-                    33.33%
+                    {parseInt(validator.tokens).toLocaleString()} Tokens
                   </div>
                 </td>
                 <td className="p-4" style={{ color: theme.primaryTextColor }}>
-                  -
-                </td>
-                <td className="p-4" style={{ color: theme.primaryTextColor }}>
-                  10%
+                  {parseFloat(validator.commission.commission_rates.rate) * 100}
+                  %
                 </td>
                 <td className="p-4">
                   <button
