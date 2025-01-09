@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import {
   WalletIcon,
@@ -127,11 +127,143 @@ export interface WalletSession {
   }[];
 }
 
+interface GenesisResponse {
+  genesis: {
+    validators: Array<{
+      address: string;
+      power: string;
+      name: string;
+    }>;
+    app_state: {
+      bank: {
+        supply: Array<{
+          denom: string;
+          amount: string;
+        }>;
+      };
+    };
+  };
+}
+
+interface StakingPoolResponse {
+  pool: {
+    not_bonded_tokens: string;
+    bonded_tokens: string;
+  };
+}
+
+interface BlockResponse {
+  block: {
+    header: {
+      height: string;
+      time: string;
+      proposer_address: string;
+    };
+    data: {
+      txs: string[];
+    };
+  };
+  block_id: {
+    hash: string;
+  };
+}
+
+interface Transaction {
+  hash: string;
+  from: string;
+  to: string;
+  type: string;
+  status: string;
+  amount: string;
+  fee: string;
+  timestamp: string;
+}
+
+interface Block {
+  height: string;
+  hash: string;
+  timestamp: string;
+  txCount: number;
+  proposer: string;
+}
+
+interface TxResponse {
+  tx_responses: Array<{
+    txhash: string;
+    code: number;
+    timestamp: string;
+    tx: {
+      body: {
+        messages: Array<{
+          "@type": string;
+          from_address?: string;
+          to_address?: string;
+          amount?: Array<{
+            denom: string;
+            amount: string;
+          }>;
+        }>;
+      };
+    };
+  }>;
+}
+
 export function Dashboard() {
   const { theme } = useTheme();
   const [account, setAccount] = useState<string>("");
   const [session, setSession] = useState<WalletSession | null>(null);
+  const [validatorCount, setValidatorCount] = useState<number>(0);
+  const [bondedTokens, setBondedTokens] = useState<string>("0");
+  const [communityPool, setCommunityPool] = useState<string>("0");
+  const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
+  const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
+    []
+  );
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchChainData = async () => {
+      try {
+        const genesisResponse = await fetch(
+          "https://rpc.dos.sentry.testnet.v3.kiivalidator.com/genesis"
+        );
+        const genesisData: GenesisResponse = await genesisResponse.json();
+
+        const stakingResponse = await fetch(
+          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool"
+        );
+        const stakingData: StakingPoolResponse = await stakingResponse.json();
+
+        setValidatorCount(genesisData.genesis.validators.length);
+
+        const bondedKii = (
+          parseInt(stakingData.pool.bonded_tokens) / 1_000_000
+        ).toLocaleString();
+        setBondedTokens(bondedKii);
+
+        const communityPoolResponse = await fetch(
+          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool"
+        );
+        const communityPoolData = await communityPoolResponse.json();
+
+        const communityPoolAmount = communityPoolData.pool.find(
+          (item: { denom: string }) => item.denom === "ukii"
+        )?.amount;
+
+        const communityPoolKii = communityPoolAmount
+          ? (parseFloat(communityPoolAmount) / 1_000_000).toLocaleString()
+          : "0";
+
+        setCommunityPool(communityPoolKii);
+      } catch (error) {
+        console.error("Error fetching chain data:", error);
+      }
+    };
+
+    fetchChainData();
+    const interval = setInterval(fetchChainData, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const connectWallet = async () => {
     try {
@@ -140,8 +272,6 @@ export function Dashboard() {
         const accounts = await provider.send("eth_requestAccounts", []);
         const account = accounts[0];
         setAccount(account);
-
-        // Simular datos de la sesión
         setSession({
           balance: "335,099,989.9",
           staking: "450,005.1 KII",
@@ -167,6 +297,81 @@ export function Dashboard() {
       console.error("Error connecting wallet:", error);
     }
   };
+
+  const fetchBlockData = async (height: number) => {
+    try {
+      const response = await fetch(
+        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`
+      );
+      const data: BlockResponse = await response.json();
+
+      return {
+        height: data.block.header.height,
+        hash:
+          Buffer.from(data.block_id.hash, "base64")
+            .toString("hex")
+            .slice(0, 10) + "...",
+        timestamp: new Date(data.block.header.time).toLocaleString(),
+        txCount: data.block.data.txs?.length || 0,
+        proposer: data.block.header.proposer_address,
+      };
+    } catch (error) {
+      console.error(`Error fetching block ${height}:`, error);
+      return null;
+    }
+  };
+
+  const fetchLatestBlocksAndTxs = async () => {
+    try {
+      const heightResponse = await fetch(
+        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
+      );
+      const heightData: BlockResponse = await heightResponse.json();
+      const latestHeight = parseInt(heightData.block.header.height);
+
+      const blockPromises = Array.from({ length: 20 }, (_, i) =>
+        fetchBlockData(latestHeight - i)
+      );
+
+      const blocks = (await Promise.all(blockPromises)).filter(
+        (block): block is Block => block !== null
+      );
+      setLatestBlocks(blocks);
+
+      const txsResponse = await fetch(
+        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=tx.height=${latestHeight}`
+      );
+      const txsData: TxResponse = await txsResponse.json();
+
+      const transactions: Transaction[] = txsData.tx_responses.map(
+        (txResponse) => {
+          const msg = txResponse.tx.body.messages[0];
+          return {
+            hash: txResponse.txhash,
+            from: msg.from_address || "N/A",
+            to: msg.to_address || "N/A",
+            type: msg["@type"].split(".").pop() || "Unknown",
+            status: txResponse.code === 0 ? "Success" : "Failed",
+            amount: msg.amount
+              ? `${parseInt(msg.amount[0].amount) / 1_000_000} KII`
+              : "N/A",
+            fee: "N/A",
+            timestamp: new Date(txResponse.timestamp).toLocaleString(),
+          };
+        }
+      );
+
+      setLatestTransactions(transactions);
+    } catch (error) {
+      console.error("Error fetching latest blocks and transactions:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLatestBlocksAndTxs();
+    const interval = setInterval(fetchLatestBlocksAndTxs, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
@@ -200,7 +405,7 @@ export function Dashboard() {
           />
           <StatCard
             title="Validators"
-            value="3"
+            value={validatorCount.toString()}
             icon={
               <ValidatorsIcon
                 className="w-5 h-5"
@@ -225,7 +430,8 @@ export function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
           <StatCard
             title="Bonded Tokens"
-            value="300,000"
+            value={bondedTokens}
+            unit="KII"
             icon={
               <BondedTokensIcon
                 className="w-5 h-5"
@@ -247,7 +453,7 @@ export function Dashboard() {
           />
           <StatCard
             title="Community Pool"
-            value="-"
+            value={communityPool}
             icon={
               <CommunityPoolIcon
                 className="w-5 h-5"
@@ -466,7 +672,7 @@ export function Dashboard() {
               <div className="mt-4">
                 <table className="w-full table-fixed">
                   <tbody className="space-y-4">
-                    {[...Array(10)].map((_, index) => (
+                    {latestBlocks.map((block, index) => (
                       <tr
                         key={index}
                         style={{ backgroundColor: theme.bgColor }}
@@ -479,7 +685,7 @@ export function Dashboard() {
                           >
                             <ContractIcon className="w-4 h-4" />
                             <span style={{ color: theme.secondaryTextColor }}>
-                              2578179
+                              {block.height}
                             </span>
                           </span>
                           <div className="flex items-center gap-2 col-span-3">
@@ -487,7 +693,7 @@ export function Dashboard() {
                               Fee Recipient
                             </span>
                             <span style={{ color: theme.accentColor }}>
-                              Kiichain Validator 1
+                              {block.proposer}
                             </span>
                           </div>
                           <span
@@ -496,7 +702,7 @@ export function Dashboard() {
                           >
                             <ContractIcon className="w-4 h-4" />
                             <span style={{ color: theme.secondaryTextColor }}>
-                              0x4f02c2fb1798
+                              {block.hash}
                             </span>
                           </span>
                           <div className="flex flex-col col-span-3">
@@ -534,8 +740,59 @@ export function Dashboard() {
                             }}
                             className="px-3 py-1 rounded-full col-span-2 text-center inline-block w-fit"
                           >
-                            2,500 KII
+                            {block.txCount} KII
                           </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <table className="w-full mt-4">
+                  <tbody>
+                    {latestTransactions.map((tx) => (
+                      <tr
+                        key={tx.hash}
+                        style={{ backgroundColor: theme.bgColor }}
+                        className="rounded-lg mb-4"
+                      >
+                        <td className="p-4">
+                          <div className="flex flex-col">
+                            <span style={{ color: theme.accentColor }}>
+                              {tx.hash}
+                            </span>
+                            <div className="flex gap-2 mt-1">
+                              <span style={{ color: theme.secondaryTextColor }}>
+                                From:
+                              </span>
+                              <span style={{ color: theme.accentColor }}>
+                                {tx.from}
+                              </span>
+                              <span style={{ color: theme.secondaryTextColor }}>
+                                To:
+                              </span>
+                              <span style={{ color: theme.accentColor }}>
+                                {tx.to}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td
+                          className="p-4"
+                          style={{ color: theme.secondaryTextColor }}
+                        >
+                          {tx.type}
+                        </td>
+                        <td
+                          className="p-4"
+                          style={{ color: theme.secondaryTextColor }}
+                        >
+                          {tx.amount}
+                        </td>
+                        <td
+                          className="p-4"
+                          style={{ color: theme.secondaryTextColor }}
+                        >
+                          {tx.timestamp}
                         </td>
                       </tr>
                     ))}

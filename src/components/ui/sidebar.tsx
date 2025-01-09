@@ -479,7 +479,7 @@ const SidebarContent = React.forwardRef<
       )}
       {...props}
     >
-      <nav className="grid gap-0.5 px-2 py-4">
+      <nav className="grid px-2 h-[calc(75%-2rem)] overflow-y-auto">
         {menuItems.map((item) => {
           const isActive =
             isClient &&
@@ -493,7 +493,7 @@ const SidebarContent = React.forwardRef<
               key={item.label}
               isActive={isActive}
               className={cn(
-                "w-full justify-start gap-3 text-base md:text-lg p-3 md:p-2",
+                "w-full justify-start gap-2 text-sm md:text-base p-2",
                 "transition-colors duration-200",
                 "hover:bg-[#231C32] hover:text-white rounded-lg"
               )}
@@ -530,7 +530,7 @@ const SidebarContent = React.forwardRef<
             >
               {React.cloneElement(item.icon, {
                 className: cn(
-                  "h-5 w-5 md:h-6 md:w-6",
+                  "h-4 w-4 md:h-5 md:w-5",
                   "transition-transform duration-200"
                 ),
                 style: {
@@ -539,7 +539,7 @@ const SidebarContent = React.forwardRef<
                     : theme.secondaryTextColor,
                 },
               })}
-              <span className="text-lg">{item.label}</span>
+              <span className="text-sm">{item.label}</span>
             </SidebarMenuButton>
           );
         })}
