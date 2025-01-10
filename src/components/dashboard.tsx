@@ -169,14 +169,26 @@ interface BlockResponse {
 }
 
 interface Transaction {
-  hash: string;
-  from: string;
-  to: string;
-  type: string;
-  status: string;
-  amount: string;
-  fee: string;
+  body: {
+    messages: Array<{
+      "@type": string;
+      from_address: string;
+      to_address: string;
+      amount: Array<{
+        denom: string;
+        amount: string;
+      }>;
+    }>;
+  };
   timestamp: string;
+}
+
+interface TransactionResponse {
+  txs: Transaction[];
+  pagination: {
+    next_key: string | null;
+    total: string;
+  };
 }
 
 interface Block {
@@ -216,9 +228,15 @@ export function Dashboard() {
   const [bondedTokens, setBondedTokens] = useState<string>("0");
   const [communityPool, setCommunityPool] = useState<string>("0");
   const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
-  const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
-    []
-  );
+  const [latestTransactions, setLatestTransactions] = useState<
+    Array<{
+      from: string;
+      to: string;
+      amount: string;
+      denom: string;
+      timestamp: string;
+    }>
+  >([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -272,23 +290,16 @@ export function Dashboard() {
         const accounts = await provider.send("eth_requestAccounts", []);
         const account = accounts[0];
         setAccount(account);
+
+        // Get actual balance from provider instead of hardcoded values
+        const balance = await provider.getBalance(account);
+        const formattedBalance = ethers.formatEther(balance);
         setSession({
-          balance: "335,099,989.9",
-          staking: "450,005.1 KII",
+          balance: formattedBalance,
+          staking: "0 KII",
           reward: "0 KII",
-          withdrawals: "50,000 KII",
-          stakes: [
-            {
-              validator: "KIICHAIN-NODE-0",
-              amount: "100.1",
-              rewards: "0.0 KII",
-            },
-            {
-              validator: "KIICHAIN-NODE-1",
-              amount: "449.905",
-              rewards: "0.0 KII",
-            },
-          ],
+          withdrawals: "0 KII",
+          stakes: [],
         });
       } else {
         alert("Please install MetaMask!");
@@ -343,23 +354,16 @@ export function Dashboard() {
       );
       const txsData: TxResponse = await txsResponse.json();
 
-      const transactions: Transaction[] = txsData.tx_responses.map(
-        (txResponse) => {
-          const msg = txResponse.tx.body.messages[0];
-          return {
-            hash: txResponse.txhash,
-            from: msg.from_address || "N/A",
-            to: msg.to_address || "N/A",
-            type: msg["@type"].split(".").pop() || "Unknown",
-            status: txResponse.code === 0 ? "Success" : "Failed",
-            amount: msg.amount
-              ? `${parseInt(msg.amount[0].amount) / 1_000_000} KII`
-              : "N/A",
-            fee: "N/A",
-            timestamp: new Date(txResponse.timestamp).toLocaleString(),
-          };
-        }
-      );
+      const transactions = txsData.tx_responses.map((txResponse) => {
+        const msg = txResponse.tx.body.messages[0];
+        return {
+          from: msg.from_address || "N/A",
+          to: msg.to_address || "N/A",
+          amount: msg.amount ? msg.amount[0].amount : "0",
+          denom: msg.amount ? msg.amount[0].denom : "ukii",
+          timestamp: txResponse.timestamp,
+        };
+      });
 
       setLatestTransactions(transactions);
     } catch (error) {
@@ -367,9 +371,36 @@ export function Dashboard() {
     }
   };
 
+  const fetchLatestTransactions = async () => {
+    try {
+      const response = await fetch(
+        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2&page=1"
+      );
+      const data: TransactionResponse = await response.json();
+
+      const formattedTransactions = data.txs.map((tx) => ({
+        from: tx.body.messages[0].from_address,
+        to: tx.body.messages[0].to_address,
+        amount: tx.body.messages[0].amount[0].amount,
+        denom: tx.body.messages[0].amount[0].denom,
+        timestamp: tx.timestamp,
+      }));
+
+      setLatestTransactions(formattedTransactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    }
+  };
+
   useEffect(() => {
     fetchLatestBlocksAndTxs();
     const interval = setInterval(fetchLatestBlocksAndTxs, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    fetchLatestTransactions();
+    const interval = setInterval(fetchLatestTransactions, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -387,14 +418,20 @@ export function Dashboard() {
         >
           <StatCard title="KII Price" value="N/A" unit="TESTNET" />
           <StatCard title="Gas Price" value="2500" unit="Tekii" />
-          <StatCard title="Transactions" value="333,422" />
-          <StatCard title="Block Height" value="2,577,053" />
+          <StatCard
+            title="Transactions"
+            value={latestTransactions.length.toString()}
+          />
+          <StatCard
+            title="Block Height"
+            value={latestBlocks[0]?.height || "0"}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
           <StatCard
             title="Height"
-            value="2,576,146"
+            value={latestBlocks[0]?.height || "0"}
             icon={
               <HeightIcon
                 className="w-5 h-5"
@@ -546,7 +583,7 @@ export function Dashboard() {
                     >
                       {session?.withdrawals}
                     </div>
-                    <div className="text-sm text-gray-400">$500,000</div>
+                    <div className="text-sm text-gray-400">$0</div>
                   </div>
                 </div>
 
@@ -714,7 +751,7 @@ export function Dashboard() {
                                   From:
                                 </span>
                                 <span style={{ color: theme.accentColor }}>
-                                  0xf61aE263853B62Ce48...
+                                  {latestTransactions[index]?.from || "N/A"}
                                 </span>
                               </div>
                             </span>
@@ -726,7 +763,7 @@ export function Dashboard() {
                                   To:
                                 </span>
                                 <span style={{ color: theme.accentColor }}>
-                                  0x7f32360b4ea9bf2682...
+                                  {latestTransactions[index]?.to || "N/A"}
                                 </span>
                               </div>
                             </span>
@@ -740,59 +777,14 @@ export function Dashboard() {
                             }}
                             className="px-3 py-1 rounded-full col-span-2 text-center inline-block w-fit"
                           >
-                            {block.txCount} KII
+                            {latestTransactions[index]?.amount
+                              ? parseInt(latestTransactions[index].amount) /
+                                1000000
+                              : 0}{" "}
+                            {latestTransactions[index]?.denom?.includes("ukii")
+                              ? "KII"
+                              : "ORO"}
                           </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <table className="w-full mt-4">
-                  <tbody>
-                    {latestTransactions.map((tx) => (
-                      <tr
-                        key={tx.hash}
-                        style={{ backgroundColor: theme.bgColor }}
-                        className="rounded-lg mb-4"
-                      >
-                        <td className="p-4">
-                          <div className="flex flex-col">
-                            <span style={{ color: theme.accentColor }}>
-                              {tx.hash}
-                            </span>
-                            <div className="flex gap-2 mt-1">
-                              <span style={{ color: theme.secondaryTextColor }}>
-                                From:
-                              </span>
-                              <span style={{ color: theme.accentColor }}>
-                                {tx.from}
-                              </span>
-                              <span style={{ color: theme.secondaryTextColor }}>
-                                To:
-                              </span>
-                              <span style={{ color: theme.accentColor }}>
-                                {tx.to}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td
-                          className="p-4"
-                          style={{ color: theme.secondaryTextColor }}
-                        >
-                          {tx.type}
-                        </td>
-                        <td
-                          className="p-4"
-                          style={{ color: theme.secondaryTextColor }}
-                        >
-                          {tx.amount}
-                        </td>
-                        <td
-                          className="p-4"
-                          style={{ color: theme.secondaryTextColor }}
-                        >
-                          {tx.timestamp}
                         </td>
                       </tr>
                     ))}
