@@ -4,37 +4,77 @@ import React, { useState, useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
 interface Validator {
-  id: number;
-  name: string;
-  uptime: string;
-  lastJailedTime: string;
-  signedPrecommits: string;
-  startHeight: number;
-  tombstoned: boolean;
+  operatorAddress: string;
+  moniker: string;
+  status: string;
+  tokens: string;
+  commission: string;
+  website: string;
+  jailed: boolean;
+  uptime: number;
 }
 
 interface UptimeDashboardProps {
   validators: Validator[];
 }
 
+interface SigningInfo {
+  address: string;
+  missed_blocks_counter: string;
+  index_offset: string;
+  start_height: string;
+}
+
 export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
   validators,
 }) => {
   const { theme } = useTheme();
-
   const [activeTab, setActiveTab] = useState<
     "overall" | "blocks" | "customize"
   >("overall");
   const [isClient, setIsClient] = useState(false);
   const [filter, setFilter] = useState("");
+  const [signingInfos, setSigningInfos] = useState<Record<string, SigningInfo>>(
+    {}
+  );
+
+  const signedBlocksWindow = 1000;
 
   useEffect(() => {
     setIsClient(true);
+
+    fetch(
+      "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/slashing/v1beta1/signing_infos"
+    )
+      .then((response) => response.json())
+      .then((data: { info: SigningInfo[] }) => {
+        const infos = data.info.reduce(
+          (acc: Record<string, SigningInfo>, info: SigningInfo) => {
+            acc[info.address] = info;
+            return acc;
+          },
+          {}
+        );
+        setSigningInfos(infos);
+      });
   }, []);
 
-  const filteredValidators = validators.filter((validator) =>
-    validator.name.toLowerCase().includes(filter.toLowerCase())
-  );
+  const calculateUptime = (validator: Validator) => {
+    const signingInfo = signingInfos[validator.operatorAddress];
+    if (!signingInfo) return 0;
+
+    const missedBlocks = Number(signingInfo.missed_blocks_counter);
+    return ((signedBlocksWindow - missedBlocks) / signedBlocksWindow) * 100;
+  };
+
+  const filteredValidators = validators
+    .map((validator) => ({
+      ...validator,
+      uptime: calculateUptime(validator),
+    }))
+    .filter((validator) =>
+      validator.moniker.toLowerCase().includes(filter.toLowerCase())
+    );
 
   return (
     <div style={{ backgroundColor: theme.bgColor }} className="px-6 pt-2">
@@ -89,7 +129,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             <div>
               <input
                 type="text"
-                placeholder="Keywords to Filter Validators"
+                placeholder="Keywords To Filter Validators"
                 className="w-full mb-4 px-4 py-2 rounded-lg text-sm"
                 style={{
                   backgroundColor: theme.bgColor,
@@ -111,50 +151,46 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
               <div>Start Height</div>
               <div>Tombstoned</div>
             </div>
-            {filteredValidators.map((validator, index) => (
-              <div
-                key={validator.id}
-                className="grid grid-cols-6 gap-4 py-4 px-8 items-center rounded-lg border transition-colors"
-                style={{
-                  backgroundColor: theme.bgColor,
-                  borderColor: theme.borderColor,
-                  color: theme.primaryTextColor,
-                }}
-              >
-                <div className="flex items-center gap-4">
-                  <span
-                    className="text-4xl font-semibold"
-                    style={{ color: theme.accentColor }}
-                  >
-                    {index + 1}
-                  </span>
-                  {validator.name}
+            {filteredValidators.map((validator, index) => {
+              const signingInfo = signingInfos[validator.operatorAddress];
+              console.log(
+                `Validator: ${validator.operatorAddress}, Signing Info: ${signingInfo}`
+              );
+              return (
+                <div
+                  key={validator.operatorAddress}
+                  className="grid grid-cols-6 gap-4 py-4 px-8 items-center rounded-lg border transition-colors"
+                  style={{
+                    backgroundColor: theme.bgColor,
+                    borderColor: theme.borderColor,
+                    color: theme.primaryTextColor,
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <span
+                      className="text-4xl font-semibold"
+                      style={{ color: theme.accentColor }}
+                    >
+                      {index + 1}
+                    </span>
+                    {validator.moniker}
+                  </div>
+                  <div style={{ color: theme.tertiaryTextColor }}>
+                    {validator.uptime.toFixed(2)}%
+                  </div>
+                  <div style={{ color: theme.secondaryTextColor }}></div>
+                  <div style={{ color: theme.secondaryTextColor }}>
+                    {signingInfo ? `${signingInfo.index_offset}%` : "0%"}
+                  </div>
+                  <div style={{ color: theme.secondaryTextColor }}>
+                    {signingInfo ? signingInfo.start_height : "0"}
+                  </div>
+                  <div style={{ color: theme.secondaryTextColor }}>
+                    {validator.jailed ? "True" : "False"}
+                  </div>
                 </div>
-                <div style={{ color: theme.tertiaryTextColor }}>
-                  {validator.uptime}
-                </div>
-                <div style={{ color: theme.secondaryTextColor }}>
-                  {validator.lastJailedTime}
-                </div>
-                <div style={{ color: theme.secondaryTextColor }}>
-                  {validator.signedPrecommits}
-                </div>
-                <div style={{ color: theme.secondaryTextColor }}>
-                  {validator.startHeight}
-                </div>
-                <div style={{ color: theme.secondaryTextColor }}>
-                  {validator.tombstoned ? "True" : "False"}
-                </div>
-              </div>
-            ))}
-
-            <div
-              className="pt-8 pl-16"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              Minimum Uptime per Window:{" "}
-              <span style={{ color: theme.accentColor }}>50%</span>
-            </div>
+              );
+            })}
           </div>
         </>
       )}
