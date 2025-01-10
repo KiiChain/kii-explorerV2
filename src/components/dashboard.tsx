@@ -291,7 +291,6 @@ export function Dashboard() {
         const account = accounts[0];
         setAccount(account);
 
-        // Get actual balance from provider instead of hardcoded values
         const balance = await provider.getBalance(account);
         const formattedBalance = ethers.formatEther(balance);
         setSession({
