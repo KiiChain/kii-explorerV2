@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/context/ThemeContext";
+import { useEffect, useState } from "react";
 
 interface BankSupply {
   id: string;
@@ -10,35 +11,84 @@ interface BankSupply {
   percentage: string;
 }
 
-const initialSupplies: BankSupply[] = [
-  {
-    id: "1",
-    address: "kii1m2l3kq4l2k3j4l2k3j4l2k3j4l2k3j4l2k5",
-    amount: "997000000000000",
-    percentage: "5.54%",
-  },
-  {
-    id: "2",
-    address: "kii4k5j6h7g8f9d0s1a2s3d4f5g6h7j8k9l0",
-    amount: "300000000000",
-    percentage: "0.02%",
-  },
-  {
-    id: "3",
-    address: "kii9d8s7f6g5h4j3k2l1p0o9i8u7y6t5r4e3",
-    amount: "100000000000",
-    percentage: "0.01%",
-  },
-  {
-    id: "4",
-    address: "kii2s3d4f5g6h7j8k9l0p1o2i3u4y5t6r7e8",
-    amount: "169990000000000000",
-    percentage: "94.44%",
-  },
-];
+interface SupplyResponse {
+  supply: {
+    denom: string;
+    amount: string;
+  }[];
+}
+
+interface GenesisResponse {
+  genesis: {
+    app_state: {
+      bank: {
+        balances: {
+          address: string;
+          coins: {
+            denom: string;
+            amount: string;
+          }[];
+        }[];
+      };
+    };
+  };
+}
 
 export function SupplyDashboard() {
   const { theme } = useTheme();
+  const [supplies, setSupplies] = useState<BankSupply[]>([]);
+  const [topSupplies, setTopSupplies] = useState<BankSupply[]>([]);
+
+  useEffect(() => {
+    const fetchSupplyData = async () => {
+      try {
+        const supplyResponse = await fetch(
+          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
+        );
+        const supplyData: SupplyResponse = await supplyResponse.json();
+
+        const genesisResponse = await fetch(
+          "https://uno.sentry.testnet.v3.kiivalidator.com:26671/genesis"
+        );
+        const genesisData: GenesisResponse = await genesisResponse.json();
+
+        const totalSupply = supplyData.supply.find(
+          (s) => s.denom === "ukii"
+        )?.amount;
+
+        if (!totalSupply) return;
+
+        const balances = genesisData.genesis.app_state.bank.balances
+          .map((balance) => {
+            const ukiiCoin = balance.coins.find(
+              (coin) => coin.denom === "ukii"
+            );
+            if (!ukiiCoin) return null;
+
+            const percentage = (
+              (Number(ukiiCoin.amount) / Number(totalSupply)) *
+              100
+            ).toFixed(2);
+
+            return {
+              id: balance.address,
+              address: balance.address,
+              amount: ukiiCoin.amount,
+              percentage: `${percentage}%`,
+            };
+          })
+          .filter((b): b is BankSupply => b !== null)
+          .sort((a, b) => Number(b.amount) - Number(a.amount));
+
+        setTopSupplies(balances.slice(0, 4));
+        setSupplies(balances.slice(0, 20));
+      } catch (error) {
+        console.error("Error fetching supply data:", error);
+      }
+    };
+
+    fetchSupplyData();
+  }, []);
 
   return (
     <div className="px-6" style={{ backgroundColor: theme.bgColor }}>
@@ -51,7 +101,7 @@ export function SupplyDashboard() {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-8 mt-8 w-3/5">
-          {initialSupplies.map((supply) => (
+          {topSupplies.map((supply) => (
             <div key={supply.id}>
               <Card
                 className="px-2 pt-4 pb-2 border-0 rounded-lg shadow-lg w-40 h-52"
@@ -94,7 +144,7 @@ export function SupplyDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {initialSupplies.map((supply) => (
+                {supplies.map((supply) => (
                   <tr
                     key={supply.id}
                     style={{
