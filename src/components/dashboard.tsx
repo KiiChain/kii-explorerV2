@@ -15,6 +15,7 @@ import {
 } from "./ui/icons";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
+import { getWeb3Provider } from "@/lib/web3";
 
 interface StatCardProps {
   title: string;
@@ -22,7 +23,6 @@ interface StatCardProps {
   unit?: string;
   icon?: React.ReactNode;
   variant?: "default" | "horizontal";
-
   className?: string;
   style?: React.CSSProperties;
 }
@@ -50,7 +50,6 @@ function StatCard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {icon}
-
               <span
                 className="text-sm xl:text-base font-normal"
                 style={{ color: theme.secondaryTextColor }}
@@ -242,37 +241,58 @@ export function Dashboard() {
   useEffect(() => {
     const fetchChainData = async () => {
       try {
-        const genesisResponse = await fetch(
-          "https://rpc.dos.sentry.testnet.v3.kiivalidator.com/genesis"
-        );
-        const genesisData: GenesisResponse = await genesisResponse.json();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        const stakingResponse = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool"
-        );
-        const stakingData: StakingPoolResponse = await stakingResponse.json();
+        const [genesisResponse, stakingResponse, communityPoolResponse] =
+          await Promise.all([
+            fetch(
+              "https://rpc.dos.sentry.testnet.v3.kiivalidator.com/genesis",
+              {
+                signal: controller.signal,
+              }
+            ).catch(() => null),
+            fetch(
+              "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool",
+              {
+                signal: controller.signal,
+              }
+            ).catch(() => null),
+            fetch(
+              "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool",
+              {
+                signal: controller.signal,
+              }
+            ).catch(() => null),
+          ]);
 
-        setValidatorCount(genesisData.genesis.validators.length);
+        clearTimeout(timeoutId);
 
-        const bondedKii = (
-          parseInt(stakingData.pool.bonded_tokens) / 1_000_000
-        ).toLocaleString();
-        setBondedTokens(bondedKii);
+        if (genesisResponse) {
+          const genesisData: GenesisResponse = await genesisResponse.json();
+          setValidatorCount(genesisData.genesis.validators.length);
+        }
 
-        const communityPoolResponse = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool"
-        );
-        const communityPoolData = await communityPoolResponse.json();
+        if (stakingResponse) {
+          const stakingData: StakingPoolResponse = await stakingResponse.json();
+          const bondedKii = (
+            parseInt(stakingData.pool.bonded_tokens) / 1_000_000
+          ).toLocaleString();
+          setBondedTokens(bondedKii);
+        }
 
-        const communityPoolAmount = communityPoolData.pool.find(
-          (item: { denom: string }) => item.denom === "ukii"
-        )?.amount;
+        if (communityPoolResponse) {
+          const communityPoolData = await communityPoolResponse.json();
+          const communityPoolAmount = communityPoolData.pool.find(
+            (item: { denom: string }) => item.denom === "ukii"
+          )?.amount;
 
-        const communityPoolKii = communityPoolAmount
-          ? (parseFloat(communityPoolAmount) / 1_000_000).toLocaleString()
-          : "0";
+          const communityPoolKii = communityPoolAmount
+            ? (parseFloat(communityPoolAmount) / 1_000_000).toLocaleString()
+            : "0";
 
-        setCommunityPool(communityPoolKii);
+          setCommunityPool(communityPoolKii);
+        }
       } catch (error) {
         console.error("Error fetching chain data:", error);
       }
@@ -286,33 +306,93 @@ export function Dashboard() {
   const connectWallet = async () => {
     try {
       if (typeof window.ethereum !== "undefined") {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const provider = getWeb3Provider();
+
+        const network = await provider.getNetwork();
+        if (network.chainId !== BigInt("1336")) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: "0x538" }],
+            });
+          } catch (switchError) {
+            if ((switchError as { code: number }).code === 4902) {
+              try {
+                await window.ethereum.request({
+                  method: "wallet_addEthereumChain",
+                  params: [
+                    {
+                      chainId: "0x538",
+                      chainName: "Kii Chain",
+                      nativeCurrency: {
+                        name: "KII",
+                        symbol: "KII",
+                        decimals: 18,
+                      },
+                      rpcUrls: ["https://rpc.kiichain.net"],
+                      blockExplorerUrls: ["https://explorer.kiichain.net"],
+                    },
+                  ],
+                });
+              } catch (addError) {
+                console.error("Error adding Kii Chain:", addError);
+                throw addError;
+              }
+            } else {
+              console.error("Error switching to Kii Chain:", switchError);
+              throw switchError;
+            }
+          }
+        }
+
         const accounts = await provider.send("eth_requestAccounts", []);
         const account = accounts[0];
         setAccount(account);
 
-        const balance = await provider.getBalance(account);
-        const formattedBalance = ethers.formatEther(balance);
-        setSession({
-          balance: formattedBalance,
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        });
+        try {
+          const balance = await provider.getBalance(account);
+          const formattedBalance = ethers.formatEther(balance);
+          setSession({
+            balance: formattedBalance,
+            staking: "0 KII",
+            reward: "0 KII",
+            withdrawals: "0 KII",
+            stakes: [],
+          });
+        } catch (error) {
+          console.error("Error getting wallet data:", error);
+          // Set default values if there's an error
+          setSession({
+            balance: "0",
+            staking: "0 KII",
+            reward: "0 KII",
+            withdrawals: "0 KII",
+            stakes: [],
+          });
+        }
       } else {
         alert("Please install MetaMask!");
       }
     } catch (error) {
       console.error("Error connecting wallet:", error);
+      alert(
+        "Error connecting to wallet. Please make sure you're on Kii Chain network."
+      );
     }
   };
 
   const fetchBlockData = async (height: number) => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(
-        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`
+        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
+        { signal: controller.signal }
       );
+
+      clearTimeout(timeoutId);
+
       const data: BlockResponse = await response.json();
 
       return {
@@ -333,9 +413,16 @@ export function Dashboard() {
 
   const fetchLatestBlocksAndTxs = async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const heightResponse = await fetch(
-        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
+        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
+        { signal: controller.signal }
       );
+
+      clearTimeout(timeoutId);
+
       const heightData: BlockResponse = await heightResponse.json();
       const latestHeight = parseInt(heightData.block.header.height);
 
@@ -349,7 +436,8 @@ export function Dashboard() {
       setLatestBlocks(blocks);
 
       const txsResponse = await fetch(
-        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=tx.height=${latestHeight}`
+        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=tx.height=${latestHeight}`,
+        { signal: controller.signal }
       );
       const txsData: TxResponse = await txsResponse.json();
 
@@ -372,9 +460,16 @@ export function Dashboard() {
 
   const fetchLatestTransactions = async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(
-        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2&page=1"
+        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2&page=1",
+        { signal: controller.signal }
       );
+
+      clearTimeout(timeoutId);
+
       const data: TransactionResponse = await response.json();
 
       const formattedTransactions = data.txs.map((tx) => ({
