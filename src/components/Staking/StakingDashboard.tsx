@@ -2,6 +2,7 @@
 
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface Validator {
   operator_address: string;
@@ -19,6 +20,7 @@ interface Validator {
 
 export function StakingDashboard() {
   const { theme } = useTheme();
+  const router = useRouter();
   const [activeButton, setActiveButton] = useState<
     "popular" | "active" | "inactive" | null
   >(null);
@@ -282,13 +284,16 @@ export function StakingDashboard() {
                 </td>
                 <td className="p-4">
                   <button
+                    className="px-4 py-2 rounded-lg"
                     style={{
                       backgroundColor: theme.boxColor,
                       color: theme.accentColor,
                       boxShadow:
                         "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                     }}
-                    className="px-4 py-2 rounded-lg"
+                    onClick={() =>
+                      router.push(`/staking/${validator.operator_address}`)
+                    }
                   >
                     Create Stake
                   </button>
