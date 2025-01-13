@@ -26,6 +26,14 @@ export default function AccountPage() {
     }
   }, []);
 
+  // Calculate total value
+  const totalValue = session
+    ? parseFloat(session.balance) +
+      parseFloat(session.staking.replace(" KII", "")) +
+      parseFloat(session.reward.replace(" KII", "")) +
+      parseFloat(session.withdrawals.replace(" KII", ""))
+    : 0;
+
   return (
     <div className={`px-6 bg-[${theme.bgColor}]`}>
       <BlocksHeader activeTab="blocks" onTabChange={() => {}} />
@@ -34,40 +42,44 @@ export default function AccountPage() {
         assets={[
           {
             name: "Balance",
-            amount: "335,099,989.9",
-            value: "$365,099,989.9",
+            amount: session?.balance || "0",
+            value: `$${session?.balance || "0"}`,
             percentage: "99.86%",
           },
           {
             name: "Stake",
-            amount: "100.1",
-            value: "$100.05",
+            amount: session?.staking || "0 KII",
+            value: `$${session?.staking?.replace(" KII", "") || "0"}`,
             percentage: "0%",
           },
           {
             name: "Reward",
-            amount: "449.905",
-            value: "$449.905",
+            amount: session?.reward || "0 KII",
+            value: `$${session?.reward?.replace(" KII", "") || "0"}`,
             percentage: "0.13%",
           },
           {
             name: "Withdrawals",
-            amount: "50,000",
-            value: "$50,000",
+            amount: session?.withdrawals || "0 KII",
+            value: `$${session?.withdrawals?.replace(" KII", "") || "0"}`,
             percentage: "0.01%",
           },
         ]}
-        totalValue="$355,599,994.96"
+        totalValue={`$${totalValue.toFixed(2)}`}
       />
       <WithdrawalsTable
-        withdrawals={[
-          {
-            creationHeight: "0xa3f2...",
-            initialBalance: "50,000 KII",
-            balance: "-1,000 KII",
-            completionTime: "2 Days 11 Hours 15 Minutes 32 Seconds",
-          },
-        ]}
+        withdrawals={
+          session?.withdrawals
+            ? [
+                {
+                  creationHeight: session.withdrawals,
+                  initialBalance: session.withdrawals,
+                  balance: session.withdrawals,
+                  completionTime: "Pending",
+                },
+              ]
+            : []
+        }
       />
       <StakesTable stakes={session?.stakes || []} />
       <TransactionsTable />

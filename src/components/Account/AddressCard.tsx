@@ -8,7 +8,7 @@ export function AddressCard({ account }: AddressCardProps) {
   const { theme } = useTheme();
 
   return (
-    <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
+    <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
       <div className={`text-[${theme.primaryTextColor}] text-xl mb-4`}>
         Address
       </div>

@@ -14,25 +14,37 @@ export function AssetsTable({ assets }: AssetsTableProps) {
   const { theme } = useTheme();
 
   return (
-    <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
+    <div
+      style={{ backgroundColor: theme.boxColor }}
+      className="mt-8 p-6 rounded-lg"
+    >
       <div className="mb-6">
-        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
+        <div style={{ color: theme.primaryTextColor }} className="mb-4 text-xl">
           Assets
         </div>
         <table className="w-full">
           <tbody>
             {assets.map((asset, index) => (
-              <tr key={index} className="border-b border-[#2D4BA0]">
-                <td className={`py-4 text-[${theme.secondaryTextColor}]`}>
+              <tr
+                key={index}
+                style={{ borderBottomColor: "#2D4BA0" }}
+                className="border-b"
+              >
+                <td
+                  style={{ color: theme.secondaryTextColor }}
+                  className="py-4"
+                >
                   {asset.name}
                 </td>
                 <td
-                  className={`py-4 text-right text-[${theme.primaryTextColor}]`}
+                  style={{ color: theme.primaryTextColor }}
+                  className="py-4 text-right"
                 >
                   {asset.amount}
                 </td>
                 <td
-                  className={`py-4 text-right text-[${theme.secondaryTextColor}]`}
+                  style={{ color: theme.secondaryTextColor }}
+                  className="py-4 text-right"
                 >
                   {asset.value}
                 </td>

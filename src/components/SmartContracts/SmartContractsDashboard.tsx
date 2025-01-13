@@ -1,31 +1,43 @@
 "use client";
 
 import { useTheme } from "@/context/ThemeContext";
+import { useState, useEffect } from "react";
 
 interface SmartContract {
-  codeId: string;
-  codeHash: string;
-  creator: string;
-  createdAt: string;
+  transaction: {
+    hash: string;
+  };
+  sender: string;
+  timestamp: number;
+  BlockNumber: number;
 }
 
-const initialContracts: SmartContract[] = [
-  {
-    codeId: "2258694",
-    codeHash: "2D4C79CDE9765E52C69AF43E",
-    creator: "0x666a286362Ffb4eF21CA25CD1273Cc5D07b7037",
-    createdAt: "2024-10-30 14:21",
-  },
-  {
-    codeId: "2258694",
-    codeHash: "2D4C79CDE9765E52C69AF43E",
-    creator: "0x666a286362Ffb4eF21CA25CD1273Cc5D07b7037",
-    createdAt: "2024-10-30 14:21",
-  },
-];
+interface SmartContractsResponse {
+  success: boolean;
+  smartContracts: SmartContract[];
+}
 
 export function SmartContractsDashboard() {
   const { theme } = useTheme();
+  const [contracts, setContracts] = useState<SmartContract[]>([]);
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const response = await fetch(
+          "https://kii.backend.kiivalidator.com/explorer/smartContracts"
+        );
+        const data: SmartContractsResponse = await response.json();
+        if (data.success) {
+          setContracts(data.smartContracts);
+        }
+      } catch (error) {
+        console.error("Error fetching smart contracts:", error);
+      }
+    };
+
+    fetchContracts();
+  }, []);
 
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
@@ -34,76 +46,77 @@ export function SmartContractsDashboard() {
           className="rounded-lg p-6 shadow-lg"
           style={{ backgroundColor: theme.boxColor }}
         >
-          <div className="overflow-x-auto w-full">
+          <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr
-                  className="text-left border-b"
-                  style={{
-                    color: theme.primaryTextColor,
-                    borderColor: theme.accentColor,
-                  }}
-                >
-                  <th className="py-4 px-2 sm:px-6 font-bold">
-                    <b>Code ID</b>
+                <tr>
+                  <th
+                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    Code ID
                   </th>
-                  <th className="py-4 px-2 sm:px-6 font-bold">
-                    <b>Code Hash</b>
+                  <th
+                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    Code Hash
                   </th>
-                  <th className="py-4 px-2 sm:px-6 font-bold">
-                    <b>Creator</b>
+                  <th
+                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    Creator
                   </th>
-                  <th className="py-4 px-2 sm:px-6 font-bold">
-                    <b>Created At</b>
+                  <th
+                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    Created At
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {Array.from({ length: 20 }, (_, index) => (
+                {[...Array(20)].map((_, index) => (
                   <tr
                     key={index}
-                    className="border-b"
-                    style={{
-                      backgroundColor: theme.bgColor,
-                      borderColor: theme.accentColor,
-                    }}
+                    style={{ backgroundColor: theme.bgColor }}
+                    className="mt-2"
                   >
                     <td
-                      className="py-2 px-1 sm:px-3 text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-xs"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {initialContracts[index % initialContracts.length].codeId}
-                    </td>
-                    <td className="py-2 px-1 sm:px-3">
-                      <span
-                        style={{ color: theme.tertiaryTextColor }}
-                        className="text-xs"
-                      >
-                        {
-                          initialContracts[index % initialContracts.length]
-                            .codeHash
-                        }
-                      </span>
+                      {contracts[index % contracts.length]?.BlockNumber ||
+                        "Loading..."}
                     </td>
 
                     <td
-                      className="py-2 px-1 sm:px-3 font-light text-xs"
-                      style={{ color: theme.primaryTextColor }}
+                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      style={{ color: theme.tertiaryTextColor }}
                     >
-                      {
-                        initialContracts[index % initialContracts.length]
-                          .creator
-                      }
+                      {contracts[
+                        index % contracts.length
+                      ]?.transaction.hash.substring(0, 12) || "Loading..."}
                     </td>
 
                     <td
-                      className="py-2 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-xs"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {
-                        initialContracts[index % initialContracts.length]
-                          .createdAt
-                      }
+                      {contracts[index % contracts.length]?.sender ||
+                        "Loading..."}
+                    </td>
+
+                    <td
+                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      style={{ color: theme.primaryTextColor }}
+                    >
+                      {contracts[index % contracts.length]
+                        ? new Date(
+                            contracts[index % contracts.length].timestamp
+                          ).toLocaleString()
+                        : "Loading..."}
                     </td>
                   </tr>
                 ))}

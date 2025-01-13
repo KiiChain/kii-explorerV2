@@ -15,7 +15,7 @@ export function WithdrawalsTable({ withdrawals }: WithdrawalsTableProps) {
   const { theme } = useTheme();
 
   return (
-    <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
+    <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
       <div className="mb-6">
         <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
           Withdrawals
