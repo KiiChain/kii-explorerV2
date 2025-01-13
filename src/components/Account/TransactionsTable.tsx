@@ -1,7 +1,31 @@
 import { useTheme } from "@/context/ThemeContext";
 
-export function TransactionsTable() {
+interface Transaction {
+  height: string;
+  hash: string;
+  messages: string;
+  time: string;
+}
+
+export function TransactionsTable({
+  transactions = [],
+}: {
+  transactions?: Transaction[];
+}) {
   const { theme } = useTheme();
+
+  if (transactions.length === 0) {
+    return (
+      <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
+        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
+          Transactions
+        </div>
+        <div className={`text-[${theme.secondaryTextColor}] text-center py-4`}>
+          No transactions found
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
@@ -19,20 +43,25 @@ export function TransactionsTable() {
             </tr>
           </thead>
           <tbody>
-            <tr className={`border-b border-[${theme.borderColor}]`}>
-              <td className={`py-4 text-[${theme.primaryTextColor}]`}>
-                64,188,000
-              </td>
-              <td className={`py-4 text-[${theme.primaryTextColor}]`}>
-                0xa3f2...
-              </td>
-              <td className={`py-4 text-[${theme.primaryTextColor}]`}>
-                Delegate
-              </td>
-              <td className={`py-4 text-[${theme.primaryTextColor}]`}>
-                11/28/2023, 3:32 PM (an hour ago)
-              </td>
-            </tr>
+            {transactions.map((tx, index) => (
+              <tr
+                key={index}
+                className={`border-b border-[${theme.borderColor}]`}
+              >
+                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                  {tx.height}
+                </td>
+                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                  {tx.hash}
+                </td>
+                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                  {tx.messages}
+                </td>
+                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                  {tx.time}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

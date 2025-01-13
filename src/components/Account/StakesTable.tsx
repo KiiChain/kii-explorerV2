@@ -11,6 +11,19 @@ interface StakeProps {
 export function StakesTable({ stakes }: StakeProps) {
   const { theme } = useTheme();
 
+  if (!stakes || stakes.length === 0) {
+    return (
+      <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
+        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
+          Stakes
+        </div>
+        <div className={`text-[${theme.secondaryTextColor}] text-center py-4`}>
+          No stakes found
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
       <div className="mb-6">
