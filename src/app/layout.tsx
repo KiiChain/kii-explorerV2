@@ -12,6 +12,7 @@ import {
 import { Logo } from "@/components/ui/Logo";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
+import { WalletProvider } from "@/context/WalletContext";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -28,7 +29,9 @@ export default function RootLayout({
     <html lang="en" className={montserrat.variable}>
       <body>
         <ThemeProvider>
-          <ContentWrapper>{children}</ContentWrapper>
+          <WalletProvider>
+            <ContentWrapper>{children}</ContentWrapper>
+          </WalletProvider>
         </ThemeProvider>
       </body>
     </html>
