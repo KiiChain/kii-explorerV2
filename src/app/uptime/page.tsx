@@ -23,7 +23,10 @@ async function getValidators() {
   );
   const data = await response.json();
 
-  return data.validators.map((validator: ValidatorResponse) => ({
+  const totalValidators = data.pagination.total;
+  console.log(`Total validators: ${totalValidators}`);
+
+  const allValidators = data.validators.map((validator: ValidatorResponse) => ({
     operatorAddress: validator.operator_address,
     moniker: validator.description.moniker,
     status: validator.status,
@@ -32,6 +35,8 @@ async function getValidators() {
     website: validator.description.website,
     jailed: validator.jailed,
   }));
+
+  return allValidators;
 }
 
 export default async function UptimePage() {
