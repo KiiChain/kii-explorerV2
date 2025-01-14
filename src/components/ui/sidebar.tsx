@@ -15,7 +15,6 @@ import {
   StateSyncIcon,
   FaucetIcon,
   SmartContractsIcon,
-  MenuIcon,
   StakingIcon,
 } from "./icons";
 
@@ -70,7 +69,6 @@ const Icons = {
   StateSyncIcon,
   FaucetIcon,
   SmartContractsIcon,
-  MenuIcon,
   StakingIcon,
 };
 
@@ -298,9 +296,7 @@ const Sidebar = React.forwardRef<
                 <SidebarTrigger
                   className="absolute -right-10 top-[3.75rem] z-20"
                   variant="ghost"
-                >
-                  <MenuIcon className="text-[#F3F5FB]" />
-                </SidebarTrigger>
+                ></SidebarTrigger>
               )}
             </div>
             {children}
@@ -317,7 +313,6 @@ const SidebarTrigger = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar, isMobile } = useSidebar();
-  const { theme } = useTheme();
 
   return (
     <div className="flex justify-center items-center">
@@ -336,9 +331,6 @@ const SidebarTrigger = React.forwardRef<
         }}
         {...props}
       >
-        <div className="flex justify-center items-center">
-          <MenuIcon style={{ color: theme.primaryTextColor }} />
-        </div>
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
     </div>
