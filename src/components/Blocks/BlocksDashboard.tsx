@@ -16,6 +16,34 @@ interface Block {
   };
 }
 
+interface Transaction {
+  height: string;
+  hash: string;
+  fees: string;
+  sender: string;
+  created_at: string;
+}
+
+interface TxResponse {
+  height: string;
+  txhash: string;
+  timestamp: string;
+  auth_info: {
+    fee: {
+      amount: Array<{
+        amount: string;
+      }>;
+    };
+  };
+  tx: {
+    body: {
+      messages: Array<{
+        from_address: string;
+      }>;
+    };
+  };
+}
+
 const getRelativeTime = (timestamp: string) => {
   const diff = Date.now() - new Date(timestamp).getTime();
   const seconds = Math.floor(diff / 1000);
@@ -39,6 +67,7 @@ export function BlocksDashboard() {
   const [isClient, setIsClient] = useState(false);
   const { theme } = useTheme();
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     setIsClient(true);
@@ -69,6 +98,35 @@ export function BlocksDashboard() {
     fetchBlocks();
   }, []);
 
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await fetch(
+          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2"
+        );
+        const data = await response.json();
+
+        const formattedTransactions = data.tx_responses.map(
+          (tx: TxResponse) => ({
+            height: tx.height,
+            hash: tx.txhash.slice(0, 10) + "...",
+            fees: tx.auth_info?.fee?.amount?.[0]?.amount || "0",
+            sender: tx.tx.body.messages[0].from_address,
+            created_at: new Date(tx.timestamp).toLocaleString(),
+          })
+        );
+
+        setTransactions(formattedTransactions);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      }
+    };
+
+    if (activeTab === "transactions") {
+      fetchTransactions();
+    }
+  }, [activeTab]);
+
   return (
     <div style={{ backgroundColor: theme.bgColor }} className="p-6">
       {isClient && (
@@ -78,13 +136,16 @@ export function BlocksDashboard() {
               style={{
                 backgroundColor:
                   activeTab === "blocks" ? theme.boxColor : theme.bgColor,
-                color: theme.accentColor,
+                color:
+                  activeTab === "blocks"
+                    ? theme.accentColor
+                    : theme.secondaryTextColor,
                 boxShadow:
                   activeTab === "blocks"
                     ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
                     : "none",
               }}
-              className={`px-4 py-2 flex items-center justify-center hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
+              className={`px-4 py-2 flex items-center justify-center rounded-lg`}
               onClick={() => setActiveTab("blocks")}
             >
               Blocks
@@ -95,14 +156,14 @@ export function BlocksDashboard() {
                   activeTab === "transactions" ? theme.boxColor : theme.bgColor,
                 color:
                   activeTab === "transactions"
-                    ? theme.primaryTextColor
+                    ? theme.accentColor
                     : theme.secondaryTextColor,
                 boxShadow:
                   activeTab === "transactions"
                     ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
                     : "none",
               }}
-              className={`px-4 py-2 hover:text-[${theme.tertiaryTextColor}] rounded-lg`}
+              className={`px-4 py-2 rounded-lg`}
               onClick={() => setActiveTab("transactions")}
             >
               Recent Transactions
@@ -148,8 +209,96 @@ export function BlocksDashboard() {
           )}
 
           {activeTab === "transactions" && (
-            <div style={{ color: theme.secondaryTextColor }} className="mt-6">
-              Recent Transactions Content
+            <div
+              className="mt-7 rounded-lg space-y-1"
+              style={{ backgroundColor: theme.boxColor }}
+            >
+              <div className="grid grid-cols-5 gap-4 mb-4 p-6">
+                <div
+                  style={{ color: theme.secondaryTextColor }}
+                  className="font-medium p-3"
+                >
+                  Height
+                </div>
+                <div
+                  style={{ color: theme.secondaryTextColor }}
+                  className="font-medium p-3"
+                >
+                  Hash
+                </div>
+                <div
+                  style={{ color: theme.secondaryTextColor }}
+                  className="font-medium p-3"
+                >
+                  Fees
+                </div>
+                <div
+                  style={{ color: theme.secondaryTextColor }}
+                  className="font-medium p-3"
+                >
+                  Sender
+                </div>
+                <div
+                  style={{ color: theme.secondaryTextColor }}
+                  className="font-medium p-3"
+                >
+                  Created At
+                </div>
+              </div>
+
+              {transactions.map((tx) => (
+                <div
+                  key={tx.hash}
+                  className="grid grid-cols-5 gap-4 py-2 p-4 mx-6 rounded-lg"
+                  style={{ backgroundColor: theme.bgColor }}
+                >
+                  <div
+                    style={{ color: theme.primaryTextColor }}
+                    className="text-xs p-3"
+                  >
+                    {tx.height}
+                  </div>
+                  <div
+                    style={{ color: theme.accentColor }}
+                    className="text-xs p-3"
+                  >
+                    {tx.hash}
+                  </div>
+                  <div
+                    style={{ color: theme.primaryTextColor }}
+                    className="text-xs p-3"
+                  >
+                    {parseFloat(tx.fees) === 0 ? "0" : "0"}
+                  </div>
+                  <div
+                    style={{ color: theme.primaryTextColor }}
+                    className="truncate text-xs p-3"
+                  >
+                    {tx.sender}
+                  </div>
+                  <div
+                    style={{ color: theme.primaryTextColor }}
+                    className="text-xs p-3"
+                  >
+                    {tx.created_at}
+                  </div>
+                </div>
+              ))}
+
+              <div
+                className="mt-4 text-xs p-3"
+                style={{ color: theme.quaternaryTextColor }}
+              >
+                <span className="flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M8 1.33334C4.32 1.33334 1.33333 4.32001 1.33333 8.00001C1.33333 11.68 4.32 14.6667 8 14.6667C11.68 14.6667 14.6667 11.68 14.6667 8.00001C14.6667 4.32001 11.68 1.33334 8 1.33334ZM8.66667 11.3333H7.33333V7.33334H8.66667V11.3333ZM8.66667 6.00001H7.33333V4.66668H8.66667V6.00001Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Only show txs in recent blocks
+                </span>
+              </div>
             </div>
           )}
         </>
