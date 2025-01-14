@@ -16,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
 import { getWeb3Provider } from "@/lib/web3";
+import { useWallet } from "@/context/WalletContext";
 
 interface StatCardProps {
   title: string;
@@ -219,10 +220,13 @@ interface TxResponse {
   }>;
 }
 
+export function connectWallet() {
+  console.log("Connecting wallet...");
+}
+
 export function Dashboard() {
   const { theme } = useTheme();
-  const [account, setAccount] = useState<string>("");
-  const [session, setSession] = useState<WalletSession | null>(null);
+  const { account, session, setAccount, setSession } = useWallet();
   const [validatorCount, setValidatorCount] = useState<number>(0);
   const [bondedTokens, setBondedTokens] = useState<string>("0");
   const [communityPool, setCommunityPool] = useState<string>("0");
@@ -304,80 +308,85 @@ export function Dashboard() {
   }, []);
 
   const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum !== "undefined") {
-        const provider = getWeb3Provider();
+    if (typeof window.ethereum === "undefined") {
+      alert("Please install MetaMask!");
+      return;
+    }
 
-        const network = await provider.getNetwork();
-        if (network.chainId !== BigInt("1336")) {
-          try {
-            await window.ethereum.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: "0x538" }],
-            });
-          } catch (switchError) {
-            if ((switchError as { code: number }).code === 4902) {
-              try {
-                await window.ethereum.request({
-                  method: "wallet_addEthereumChain",
-                  params: [
-                    {
-                      chainId: "0x538",
-                      chainName: "Kii Chain",
-                      nativeCurrency: {
-                        name: "KII",
-                        symbol: "KII",
-                        decimals: 18,
-                      },
-                      rpcUrls: ["https://rpc.kiichain.net"],
-                      blockExplorerUrls: ["https://explorer.kiichain.net"],
+    try {
+      await window.ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+
+      const accounts = (await window.ethereum.request({
+        method: "eth_requestAccounts",
+      })) as string[];
+
+      if (!Array.isArray(accounts) || accounts.length === 0) {
+        return;
+      }
+
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x538" }],
+        });
+      } catch (switchError: unknown) {
+        if (switchError instanceof Error && "code" in switchError) {
+          const errorCode = (switchError as { code: number }).code;
+          if (errorCode === 4902) {
+            try {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [
+                  {
+                    chainId: "0x538",
+                    chainName: "Kii Chain",
+                    nativeCurrency: {
+                      name: "KII",
+                      symbol: "KII",
+                      decimals: 18,
                     },
-                  ],
-                });
-              } catch (addError) {
-                console.error("Error adding Kii Chain:", addError);
-                throw addError;
-              }
-            } else {
-              console.error("Error switching to Kii Chain:", switchError);
-              throw switchError;
+                    rpcUrls: ["https://rpc.kiichain.net"],
+                    blockExplorerUrls: ["https://explorer.kiichain.net"],
+                  },
+                ],
+              });
+            } catch {
+              return;
             }
+          } else {
+            return;
           }
         }
-
-        const accounts = await provider.send("eth_requestAccounts", []);
-        const account = accounts[0];
-        setAccount(account);
-
-        try {
-          const balance = await provider.getBalance(account);
-          const formattedBalance = ethers.formatEther(balance);
-          setSession({
-            balance: formattedBalance,
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          });
-        } catch (error) {
-          console.error("Error getting wallet data:", error);
-          // Set default values if there's an error
-          setSession({
-            balance: "0",
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          });
-        }
-      } else {
-        alert("Please install MetaMask!");
       }
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
-      alert(
-        "Error connecting to wallet. Please make sure you're on Kii Chain network."
-      );
+
+      const provider = getWeb3Provider();
+      const account = accounts[0];
+      setAccount(account);
+
+      try {
+        const balance = await provider.getBalance(account);
+        const formattedBalance = ethers.formatEther(balance);
+        setSession({
+          balance: formattedBalance,
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        });
+      } catch {
+        setSession({
+          balance: "0",
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        });
+      }
+    } catch {
+      return;
     }
   };
 
