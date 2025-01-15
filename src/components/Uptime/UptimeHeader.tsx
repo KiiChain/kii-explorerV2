@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   SearchIcon,
   LightModeIcon,
@@ -16,8 +16,10 @@ import { useWallet } from "@/context/WalletContext";
 export function UptimeHeader() {
   const { theme, toggleTheme } = useTheme();
   const { account, setAccount, setSession } = useWallet();
+  const [showWalletSelector, setShowWalletSelector] = useState(false);
 
-  const handleConnectWallet = async () => {
+  const handleMetaMaskConnect = async () => {
+    setShowWalletSelector(false);
     if (typeof window.ethereum === "undefined") {
       alert("Please install MetaMask!");
       return;
@@ -28,75 +30,85 @@ export function UptimeHeader() {
         method: "eth_requestAccounts",
       })) as string[];
 
-      if (!Array.isArray(accounts) || accounts.length === 0) {
-        return;
-      }
+      if (Array.isArray(accounts) && accounts.length > 0) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x538" }],
+          });
 
-      try {
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0x538" }],
-        });
-      } catch (switchError: unknown) {
-        if (switchError instanceof Error && "code" in switchError) {
-          const errorCode = (switchError as { code: number }).code;
-          if (errorCode === 4902) {
-            try {
-              await window.ethereum.request({
-                method: "wallet_addEthereumChain",
-                params: [
-                  {
-                    chainId: "0x538",
-                    chainName: "Kii Chain",
-                    nativeCurrency: {
-                      name: "KII",
-                      symbol: "KII",
-                      decimals: 18,
-                    },
-                    rpcUrls: ["https://rpc.kiichain.net"],
-                    blockExplorerUrls: ["https://explorer.kiichain.net"],
-                  },
-                ],
-              });
-            } catch {
-              return;
-            }
-          } else {
-            return;
-          }
+          const provider = getWeb3Provider();
+          const account = accounts[0];
+          setAccount(account);
+
+          const balance = await provider.getBalance(account);
+          const formattedBalance = ethers.formatEther(balance);
+          setSession({
+            balance: formattedBalance,
+            staking: "0 KII",
+            reward: "0 KII",
+            withdrawals: "0 KII",
+            stakes: [],
+          });
+        } catch (error) {
+          console.error("Error connecting to MetaMask:", error);
+          alert("Error connecting to MetaMask");
         }
       }
+    } catch (error) {
+      console.error("Error requesting MetaMask accounts:", error);
+    }
+  };
 
-      const provider = getWeb3Provider();
-      const account = accounts[0];
-      setAccount(account);
+  const handleKeplrConnect = async () => {
+    setShowWalletSelector(false);
 
-      try {
-        const balance = await provider.getBalance(account);
-        const formattedBalance = ethers.formatEther(balance);
-        setSession({
-          balance: formattedBalance,
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        });
-      } catch {
-        setSession({
-          balance: "0",
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        });
-      }
-    } catch {
+    if (!window.keplr) {
+      alert("Please install Keplr!");
       return;
+    }
+
+    try {
+      await window.keplr.enable("kiitestnet-1");
+      const offlineSigner = window.keplr.getOfflineSigner("kiitestnet-1");
+      const accounts = await offlineSigner.getAccounts();
+
+      if (accounts.length > 0) {
+        const keplrAccount = accounts[0].address;
+        setAccount(keplrAccount);
+
+        try {
+          const accountResponse = await fetch(
+            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/auth/v1beta1/accounts/${keplrAccount}`
+          );
+          const accountData = await accountResponse.json();
+
+          setSession({
+            balance: accountData?.account?.balance || "0",
+            staking: "0 KII",
+            reward: "0 KII",
+            withdrawals: "0 KII",
+            stakes: [],
+          });
+        } catch (error) {
+          console.error("Error getting Keplr balance:", error);
+          setSession({
+            balance: "0",
+            staking: "0 KII",
+            reward: "0 KII",
+            withdrawals: "0 KII",
+            stakes: [],
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error connecting to Keplr:", error);
+      alert("Failed to connect to Keplr");
     }
   };
 
   return (
-    <div className="flex justify-between items-center w-full">
+    <div className="flex justify-between items-center w-full relative">
       <div className="flex-1">
         <div className="relative w-3/4">
           <input
@@ -146,13 +158,39 @@ export function UptimeHeader() {
             backgroundColor: theme.boxColor,
             color: theme.primaryTextColor,
           }}
-          onClick={handleConnectWallet}
+          onClick={() => setShowWalletSelector(true)}
         >
           <WalletIcon style={{ color: theme.secondaryTextColor }} />
           {account
             ? `${account.slice(0, 6)}...${account.slice(-4)}`
             : "Connect Wallet"}
         </button>
+
+        {showWalletSelector && (
+          <div
+            className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg"
+            style={{
+              backgroundColor: theme.boxColor,
+              top: "100%",
+              zIndex: 50,
+            }}
+          >
+            <button
+              className="w-full px-4 py-2 text-left hover:bg-opacity-10 hover:bg-white"
+              style={{ color: theme.primaryTextColor }}
+              onClick={handleMetaMaskConnect}
+            >
+              MetaMask
+            </button>
+            <button
+              className="w-full px-4 py-2 text-left hover:bg-opacity-10 hover:bg-white"
+              style={{ color: theme.primaryTextColor }}
+              onClick={handleKeplrConnect}
+            >
+              Keplr
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
