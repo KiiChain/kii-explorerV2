@@ -14,6 +14,20 @@ interface Validator {
   commission: string;
 }
 
+const handleCopyClick = (text: string, label: string) => {
+  if (window.confirm(`¿Deseas copiar ${label}?`)) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        alert("Texto copiado al portapapeles");
+      })
+      .catch((err) => {
+        console.error("Error al copiar:", err);
+        alert("No se pudo copiar el texto");
+      });
+  }
+};
+
 export default function ValidatorPage({
   params,
 }: {
@@ -62,8 +76,8 @@ export default function ValidatorPage({
           style={{ backgroundColor: theme.boxColor }}
         >
           <div className="flex flex-col items-start gap-4 p-6 h-full">
-            <div className="flex gap-4">
-              <div className="w-1/3">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-1/3">
                 <div className="relative w-28 h-28">
                   <div
                     style={{ backgroundColor: theme.primaryTextColor }}
@@ -85,22 +99,24 @@ export default function ValidatorPage({
                   </div>
                 </div>
               </div>
-              <div className="w-2/3">
+              <div className="w-full md:w-2/3">
                 <h2
-                  className="text-lg font-bold mb-1"
+                  className="text-lg font-bold mb-1 md:truncate"
                   style={{ color: theme.primaryTextColor }}
                 >
-                  {validator.moniker}
+                  {validator.moniker.length > 15
+                    ? `${validator.moniker.substring(0, 15)}...`
+                    : validator.moniker}
                 </h2>
                 <p
-                  className="text-lg font-bold mb-1"
+                  className="text-lg font-bold mb-1 break-all"
                   style={{ color: theme.secondaryTextColor }}
                 >
                   {validator.operatorAddress}
                 </p>
                 <div className="pt-4">
                   <button
-                    className="text-lg p-2 rounded-lg"
+                    className="text-lg p-2 rounded-lg w-full md:w-auto"
                     style={{
                       backgroundColor: theme.bgColor,
                       color: theme.accentColor,
@@ -120,51 +136,53 @@ export default function ValidatorPage({
                 style={{ color: theme.accentColor }}
               ></a>
             )}
-            <div className="flex flex-col gap-4 mt-4">
+            <div className="flex flex-col gap-4 mt-4 w-full">
               <a
                 href="#"
-                className="text-lg flex items-center gap-2"
+                className="text-lg flex flex-col md:flex-row items-start md:items-center gap-2"
                 style={{ color: theme.primaryTextColor }}
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 18 18"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g clipPath="url(#clip0_810_4212)">
-                    <path
-                      d="M9 16.5C13.1421 16.5 16.5 13.1421 16.5 9C16.5 4.85786 13.1421 1.5 9 1.5C4.85786 1.5 1.5 4.85786 1.5 9C1.5 13.1421 4.85786 16.5 9 16.5Z"
-                      stroke="#D2AAFA"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M9 16.5C10.6569 16.5 12 13.1421 12 9C12 4.85786 10.6569 1.5 9 1.5C7.34315 1.5 6 4.85786 6 9C6 13.1421 7.34315 16.5 9 16.5Z"
-                      stroke="#D2AAFA"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M1.5 9H16.5"
-                      stroke="#D2AAFA"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_810_4212">
-                      <rect width="18" height="18" fill="white" />
-                    </clipPath>
-                  </defs>
-                </svg>
-                Website:
+                <div className="flex items-center gap-2">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g clipPath="url(#clip0_810_4212)">
+                      <path
+                        d="M9 16.5C13.1421 16.5 16.5 13.1421 16.5 9C16.5 4.85786 13.1421 1.5 9 1.5C4.85786 1.5 1.5 4.85786 1.5 9C1.5 13.1421 4.85786 16.5 9 16.5Z"
+                        stroke="#D2AAFA"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9 16.5C10.6569 16.5 12 13.1421 12 9C12 4.85786 10.6569 1.5 9 1.5C7.34315 1.5 6 4.85786 6 9C6 13.1421 7.34315 16.5 9 16.5Z"
+                        stroke="#D2AAFA"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M1.5 9H16.5"
+                        stroke="#D2AAFA"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_810_4212">
+                        <rect width="18" height="18" fill="white" />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                  Website:
+                </div>
                 <p
-                  className="text-base underline"
+                  className="text-base underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
                   https://app.kiichain.io
@@ -173,28 +191,30 @@ export default function ValidatorPage({
 
               <a
                 href="#"
-                className="text-lg flex items-center gap-2"
+                className="text-lg flex flex-col md:flex-row items-start md:items-center gap-2"
                 style={{ color: theme.primaryTextColor }}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M2 3.5V11.5C2 11.7652 2.10536 12.0196 2.29289 12.2071C2.48043 12.3946 2.73478 12.5 3 12.5H13C13.2652 12.5 13.5196 12.3946 13.7071 12.2071C13.8946 12.0196 14 11.7652 14 11.5V3.5H2ZM2 2.5H14C14.2652 2.5 14.5196 2.60536 14.7071 2.79289C14.8946 2.98043 15 3.23478 15 3.5V11.5C15 12.0304 14.7893 12.5391 14.4142 12.9142C14.0391 13.2893 13.5304 13.5 13 13.5H3C2.46957 13.5 1.96086 13.2893 1.58579 12.9142C1.21071 12.5391 1 12.0304 1 11.5V3.5C1 3.23478 1.10536 2.98043 1.29289 2.79289C1.48043 2.60536 1.73478 2.5 2 2.5Z"
-                    fill="#D2AAFA"
-                  />
-                  <path
-                    d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479 8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439 7.9995 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
-                    fill="#D2AAFA"
-                  />
-                </svg>
-                Contact:
+                <div className="flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2 3.5V11.5C2 11.7652 2.10536 12.0196 2.29289 12.2071C2.48043 12.3946 2.73478 12.5 3 12.5H13C13.2652 12.5 13.5196 12.3946 13.7071 12.2071C13.8946 12.0196 14 11.7652 14 11.5V3.5H2ZM2 2.5H14C14.2652 2.5 14.5196 2.60536 14.7071 2.79289C14.8946 2.98043 15 3.23478 15 3.5V11.5C15 12.0304 14.7893 12.5391 14.4142 12.9142C14.0391 13.2893 13.5304 13.5 13 13.5H3C2.46957 13.5 1.96086 13.2893 1.58579 12.9142C1.21071 12.5391 1 12.0304 1 11.5V3.5C1 3.23478 1.10536 2.98043 1.29289 2.79289C1.48043 2.60536 1.73478 2.5 2 2.5Z"
+                      fill="#D2AAFA"
+                    />
+                    <path
+                      d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479 8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439 7.9995 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
+                      fill="#D2AAFA"
+                    />
+                  </svg>
+                  Contact:
+                </div>
                 <p
-                  className="text-base underline"
+                  className="text-base underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
                   support@kiichain.io
@@ -359,7 +379,7 @@ export default function ValidatorPage({
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 11.3333V11.7167C13.3354 12.3127 13.1221 12.8893 12.7354 13.342C11.6888 14.564 10.0974 15.1673 8.0001 15.1673C5.90277 15.1673 4.3121 14.564 3.2681 13.3407C2.88184 12.8882 2.66957 12.3129 2.66943 11.718V11.3327C2.66961 10.9351 2.82763 10.5538 3.10877 10.2727C3.38991 9.99154 3.77117 9.83351 4.16877 9.83334H11.8368ZM11.8368 10.8333H4.1681C4.03549 10.8333 3.90832 10.886 3.81455 10.9798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V11.3327C12.3346 11.2004 12.282 11.0736 12.1886 10.98C12.0951 10.8864 11.969 10.8337 11.8368 10.8333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
+                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 11.3333V11.7167C13.3354 12.3127 13.1221 12.8893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.8333H4.1681C4.03549 10.8333 3.90832 10.886 3.81455 10.9798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
                         fill="#D2AAFA"
                       />
                     </svg>
@@ -470,22 +490,17 @@ export default function ValidatorPage({
                     <svg
                       width="14"
                       height="14"
-                      viewBox="0 0 16 17"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill={theme.accentColor}
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        handleCopyClick(
+                          "Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe",
+                          "Account Address"
+                        )
+                      }
                     >
-                      <path
-                        d="M2 8.5C2 9.28793 2.15519 10.0681 2.45672 10.7961C2.75825 11.5241 3.20021 12.1855 3.75736 12.7426C4.31451 13.2998 4.97595 13.7417 5.7039 14.0433C6.43185 14.3448 7.21207 14.5 8 14.5C8.78793 14.5 9.56815 14.3448 10.2961 14.0433C11.0241 13.7417 11.6855 13.2998 12.2426 12.7426C12.7998 12.1855 13.2417 11.5241 13.5433 10.7961C13.8448 10.0681 14 9.28793 14 8.5C14 6.9087 13.3679 5.38258 12.2426 4.25736C11.1174 3.13214 9.5913 2.5 8 2.5C6.4087 2.5 4.88258 3.13214 3.75736 4.25736C2.63214 5.38258 2 6.9087 2 8.5Z"
-                        stroke="#D2AAFA"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M8 5.16663V8.49996L10 10.5"
-                        stroke="#D2AAFA"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
                     </svg>
                   </div>
                   <div className="flex flex-col flex-1">
@@ -665,8 +680,9 @@ export default function ValidatorPage({
                     fill={theme.accentColor}
                     style={{ cursor: "pointer" }}
                     onClick={() =>
-                      navigator.clipboard.writeText(
-                        "Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe"
+                      handleCopyClick(
+                        "Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe",
+                        "Account Address"
                       )
                     }
                   >
@@ -696,8 +712,9 @@ export default function ValidatorPage({
                     fill={theme.accentColor}
                     style={{ cursor: "pointer" }}
                     onClick={() =>
-                      navigator.clipboard.writeText(
-                        "Kiivaloperbum1ow2c8fxcq36x2zitdrd93Vxmj3dr5sjdd"
+                      handleCopyClick(
+                        "Kiivaloperbum1ow2c8fxcq36x2zitdrd93Vxmj3dr5sjdd",
+                        "Operator Address"
                       )
                     }
                   >
@@ -727,8 +744,9 @@ export default function ValidatorPage({
                     fill={theme.accentColor}
                     style={{ cursor: "pointer" }}
                     onClick={() =>
-                      navigator.clipboard.writeText(
-                        "5A4F8EA32133508E058FE88F5B0G478F859A22590"
+                      handleCopyClick(
+                        "5A4F8EA32133508E058FE88F5B0G478F859A22590",
+                        "Hex Address"
                       )
                     }
                   >
@@ -758,8 +776,9 @@ export default function ValidatorPage({
                     fill={theme.accentColor}
                     style={{ cursor: "pointer" }}
                     onClick={() =>
-                      navigator.clipboard.writeText(
-                        "Kii1akzom318emjzpwq4jqysvp5phs9ckx6y4e3e5fxg"
+                      handleCopyClick(
+                        "Kii1akzom318emjzpwq4jqysvp5phs9ckx6y4e3e5fxg",
+                        "Signer Address"
                       )
                     }
                   >
@@ -789,8 +808,9 @@ export default function ValidatorPage({
                     fill={theme.accentColor}
                     style={{ cursor: "pointer" }}
                     onClick={() =>
-                      navigator.clipboard.writeText(
-                        '{"@type":"cosmos.crypto.Ed25519.PubKey","key":"MSYpPChw/WL9hgoLiupu53xR5LauWv5vdsg=CG="}'
+                      handleCopyClick(
+                        '{"@type":"cosmos.crypto.Ed25519.PubKey","key":"MSYpPChw/WL9hgoLiupu53xR5LauWv5vdsg=CG="}',
+                        "Consensus Public Key"
                       )
                     }
                   >
