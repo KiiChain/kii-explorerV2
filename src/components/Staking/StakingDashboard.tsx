@@ -348,10 +348,18 @@ export function StakingDashboard() {
                       color: theme.accentColor,
                       boxShadow:
                         "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                      opacity:
+                        validator.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
+                      cursor:
+                        validator.status !== "BOND_STATUS_BONDED"
+                          ? "not-allowed"
+                          : "pointer",
                     }}
-                    onClick={() =>
-                      router.push(`/staking/${validator.operator_address}`)
-                    }
+                    onClick={() => {
+                      if (validator.status === "BOND_STATUS_BONDED") {
+                        router.push(`/staking/${validator.operator_address}`);
+                      }
+                    }}
                   >
                     Create Stake
                   </button>

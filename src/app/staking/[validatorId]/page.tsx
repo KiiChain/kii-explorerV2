@@ -2,6 +2,8 @@
 
 import React from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "next/navigation";
+import { use } from "react";
 
 import { useEffect, useState } from "react";
 
@@ -12,6 +14,201 @@ interface Validator {
   tokens: string;
   selfBonded?: string;
   commission: string;
+}
+
+interface Theme {
+  boxColor: string;
+  bgColor: string;
+  primaryTextColor: string;
+  secondaryTextColor: string;
+  accentColor: string;
+}
+
+interface DelegateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  validator: Validator;
+  theme: Theme;
+}
+
+function DelegateModal({
+  isOpen,
+  onClose,
+  validator,
+  theme,
+}: DelegateModalProps) {
+  const [amount, setAmount] = useState("");
+  const [fees, setFees] = useState("2000");
+  const [gas, setGas] = useState("200000");
+  const [memo, setMemo] = useState("ping.pub");
+  const [broadcastMode, setBroadcastMode] = useState("Sync");
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div
+        className="relative w-[500px] rounded-xl p-6"
+        style={{ backgroundColor: theme.boxColor }}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2
+            className="text-2xl font-semibold"
+            style={{ color: theme.primaryTextColor }}
+          >
+            Delegate
+          </h2>
+          <button onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M18 6L6 18M6 6L18 18"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Sender
+            </label>
+            <input
+              type="text"
+              value="kii1f3fn4at7f6teulyuulfuxt35q8qt3hcy3rjdwq"
+              readOnly
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Validator
+            </label>
+            <select
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+              defaultValue={`${validator.moniker} (10%)`}
+            >
+              <option>{`${validator.moniker} (10%)`}</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Amount
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Available: 1882873676"
+                className="flex-1 p-3 rounded-lg"
+                style={{ backgroundColor: theme.bgColor }}
+              />
+              <select
+                className="w-24 p-3 rounded-lg"
+                style={{ backgroundColor: theme.bgColor }}
+              >
+                <option>ukii</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Fees
+            </label>
+            <input
+              type="text"
+              value={fees}
+              onChange={(e) => setFees(e.target.value)}
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Gas
+            </label>
+            <input
+              type="text"
+              value={gas}
+              onChange={(e) => setGas(e.target.value)}
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Memo
+            </label>
+            <input
+              type="text"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Broadcast Mode
+            </label>
+            <select
+              value={broadcastMode}
+              onChange={(e) => setBroadcastMode(e.target.value)}
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            >
+              <option>Sync</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 mt-4">
+            <input type="checkbox" id="advance" />
+            <label htmlFor="advance" style={{ color: theme.primaryTextColor }}>
+              Advance
+            </label>
+          </div>
+
+          <button
+            className="w-full p-3 rounded-lg mt-6 text-white"
+            style={{ backgroundColor: theme.accentColor }}
+          >
+            SEND
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const handleCopyClick = (text: string, label: string) => {
@@ -33,39 +230,51 @@ export default function ValidatorPage({
 }: {
   params: Promise<{ validatorId: string }>;
 }) {
-  const { validatorId } = React.use(params);
+  const { validatorId } = use(params);
+  const router = useRouter();
   const { theme } = useTheme();
-
   const [validator, setValidator] = useState<Validator | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchValidator = async () => {
+    async function fetchValidator() {
       try {
         const response = await fetch(
-          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators/${validatorId}`
+          `https://d.testnet.kiivalidator.com/cosmos/staking/v1beta1/validators/${validatorId}`
         );
         const data = await response.json();
-        const validatorData = data.validator;
+
+        if (data.validator.status !== "BOND_STATUS_BONDED") {
+          router.push("/staking");
+          return;
+        }
 
         setValidator({
-          moniker: validatorData.description.moniker,
-          operatorAddress: validatorData.operator_address,
-          website: validatorData.description.website,
-          tokens: parseInt(validatorData.tokens).toLocaleString(),
-          commission: `${
-            parseFloat(validatorData.commission.commission_rates.rate) * 100
-          }%`,
+          moniker: data.validator.description.moniker,
+          operatorAddress: data.validator.operator_address,
+          website: data.validator.description.website,
+          tokens: data.validator.tokens,
+          selfBonded: data.validator.self_delegation,
+          commission: data.validator.commission.commission_rates.rate,
         });
       } catch (error) {
         console.error("Error fetching validator:", error);
+        router.push("/staking");
+      } finally {
+        setLoading(false);
       }
-    };
+    }
 
     fetchValidator();
-  }, [validatorId]);
+  }, [validatorId, router]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!validator) {
-    return <div>Loading...</div>;
+    return null;
   }
 
   return (
@@ -121,6 +330,7 @@ export default function ValidatorPage({
                       backgroundColor: theme.bgColor,
                       color: theme.accentColor,
                     }}
+                    onClick={() => setIsDelegateModalOpen(true)}
                   >
                     Create Stake
                   </button>
@@ -527,309 +737,6 @@ export default function ValidatorPage({
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-6 mt-6 px-6">
-        <div
-          className="p-6 rounded-xl"
-          style={{ backgroundColor: theme.boxColor }}
-        >
-          <div className="flex flex-col">
-            <h3
-              className="text-lg font-medium"
-              style={{ color: theme.primaryTextColor }}
-            >
-              Commission Rate
-            </h3>
-            <p
-              className="text-xs mt-1"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              Updated At 2024-12-17 12:55:40
-            </p>
-            <div className="relative w-full h-48 flex items-center justify-center mt-4">
-              <div className="relative w-40 h-40">
-                <div className="absolute w-full h-full rounded-full border-[16px] border-[#2A2A3A] rotate-[135deg]"></div>
-                <div
-                  className="absolute w-full h-full rounded-full border-[16px] border-[#00FFB0] rotate-[135deg]"
-                  style={{
-                    clipPath: "polygon(50% 50%, 50% 0%, 100% 0%, 100% 50%)",
-                  }}
-                ></div>
-                <div
-                  className="absolute w-full h-full rounded-full border-[16px] border-[#D2AAFA] rotate-[135deg]"
-                  style={{
-                    clipPath: "polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%)",
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="flex justify-center gap-4 mt-2">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-[#00FFB0]"></div>
-                <span
-                  className="text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Rate: 10%
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-[#D2AAFA]"></div>
-                <span
-                  className="text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  24h: 1%
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-[#00FFB0]"></div>
-                <span
-                  className="text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Max: 2.0%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="p-6 rounded-xl"
-          style={{ backgroundColor: theme.boxColor }}
-        >
-          <div className="flex flex-col h-full">
-            <h3
-              className="text-lg font-medium"
-              style={{ color: theme.primaryTextColor }}
-            >
-              Commissions & Rewards
-            </h3>
-            <div className="flex flex-col gap-6 mt-6">
-              <div>
-                <p
-                  className="text-sm mb-2"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Commissions
-                </p>
-                <p
-                  className="text-lg font-medium p-2 rounded"
-                  style={{
-                    color: theme.accentColor,
-                    backgroundColor: theme.bgColor,
-                  }}
-                >
-                  14.89 KII
-                </p>
-              </div>
-              <div>
-                <p
-                  className="text-sm mb-2"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Outstanding Rewards
-                </p>
-                <p
-                  className="text-lg font-medium p-2 rounded"
-                  style={{
-                    color: theme.accentColor,
-                    backgroundColor: theme.bgColor,
-                  }}
-                >
-                  148.91 KII
-                </p>
-              </div>
-              <button
-                className="w-full py-3 text-sm font-medium rounded-lg mt-auto"
-                style={{
-                  backgroundColor: theme.bgColor,
-                  color: theme.accentColor,
-                }}
-              >
-                CLAIM REWARDS
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="p-6 rounded-xl"
-          style={{ backgroundColor: theme.boxColor }}
-        >
-          <div className="flex flex-col">
-            <h3
-              className="text-lg font-medium mb-6"
-              style={{ color: theme.primaryTextColor }}
-            >
-              Addresses
-            </h3>
-            <div className="flex flex-col gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Account Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleCopyClick(
-                        "Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe",
-                        "Account Address"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Operator Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleCopyClick(
-                        "Kiivaloperbum1ow2c8fxcq36x2zitdrd93Vxmj3dr5sjdd",
-                        "Operator Address"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  Kiivaloperbum1ow2c8fxcq36x2zitdrd93Vxmj3dr5sjdd
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Hex Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleCopyClick(
-                        "5A4F8EA32133508E058FE88F5B0G478F859A22590",
-                        "Hex Address"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  5A4F8EA32133508E058FE88F5B0G478F859A22590
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Signer Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleCopyClick(
-                        "Kii1akzom318emjzpwq4jqysvp5phs9ckx6y4e3e5fxg",
-                        "Signer Address"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  Kii1akzom318emjzpwq4jqysvp5phs9ckx6y4e3e5fxg
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Consensus Public Key
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      handleCopyClick(
-                        '{"@type":"cosmos.crypto.Ed25519.PubKey","key":"MSYpPChw/WL9hgoLiupu53xR5LauWv5vdsg=CG="}',
-                        "Consensus Public Key"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  {
-                    '{"@type":"cosmos.crypto.Ed25519.PubKey","key":"MSYpPChw/WL9hgoLiupu53xR5LauWv5vdsg=CG="}'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       <div className="mt-6 px-6">
         <div
           className="rounded-xl p-6"
@@ -943,6 +850,12 @@ export default function ValidatorPage({
           </div>
         </div>
       </div>
+      <DelegateModal
+        isOpen={isDelegateModalOpen}
+        onClose={() => setIsDelegateModalOpen(false)}
+        validator={validator}
+        theme={theme}
+      />
     </div>
   );
 }

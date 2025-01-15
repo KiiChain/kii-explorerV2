@@ -60,28 +60,28 @@ export function ParametersDashboard() {
           nodeInfoRes,
         ] = await Promise.all([
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
           ),
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/params"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/params"
           ),
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/slashing/v1beta1/params"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/slashing/v1beta1/params"
           ),
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/params"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/params"
           ),
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/params/voting"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/params/voting"
           ),
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/params/deposit"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/params/deposit"
           ),
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/params/tallying"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/params/tallying"
           ),
           fetch(
-            "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/node_info"
+            "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/node_info"
           ),
         ]);
 

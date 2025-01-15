@@ -12,6 +12,7 @@ interface Validator {
   website: string;
   jailed: boolean;
   uptime: number;
+  selfBonded?: string;
 }
 
 interface UptimeDashboardProps {
@@ -49,7 +50,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
     const fetchSigningInfos = async (page: number) => {
       try {
         const response = await fetch(
-          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/slashing/v1beta1/signing_infos?pagination.limit=${pageSize}&pagination.offset=${
+          `https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/slashing/v1beta1/signing_infos?pagination.limit=${pageSize}&pagination.offset=${
             (page - 1) * pageSize
           }`
         );
