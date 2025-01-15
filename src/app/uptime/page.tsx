@@ -19,7 +19,7 @@ export interface ValidatorResponse {
 
 async function getValidators() {
   const response = await fetch(
-    "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators?pagination.limit=200&status=BOND_STATUS_BONDED"
+    "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators?pagination.limit=200&status=BOND_STATUS_BONDED"
   );
   const data = await response.json();
 

@@ -43,12 +43,12 @@ export function SupplyDashboard() {
     const fetchSupplyData = async () => {
       try {
         const supplyResponse = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
+          "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
         );
         const supplyData: SupplyResponse = await supplyResponse.json();
 
         const genesisResponse = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com:26671/genesis"
+          "https://dos.sentry.testnet.v3.kiivalidator.com:26671/genesis"
         );
         const genesisData: GenesisResponse = await genesisResponse.json();
 

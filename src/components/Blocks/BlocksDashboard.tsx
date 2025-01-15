@@ -75,14 +75,14 @@ export function BlocksDashboard() {
     const fetchBlocks = async () => {
       try {
         const latestResponse = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
+          "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
         );
         const latestData = await latestResponse.json();
         const latestHeight = parseInt(latestData.block.header.height);
 
         const blockPromises = Array.from({ length: 50 }, (_, i) =>
           fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${
+            `https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${
               latestHeight - i
             }`
           ).then((res) => res.json())
@@ -102,7 +102,7 @@ export function BlocksDashboard() {
     const fetchTransactions = async () => {
       try {
         const response = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2"
+          "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2"
         );
         const data = await response.json();
 
