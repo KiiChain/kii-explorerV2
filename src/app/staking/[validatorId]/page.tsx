@@ -1,5 +1,90 @@
 "use client";
 
+interface SignDoc {
+  chain_id: string;
+  account_number: string;
+  sequence: string;
+  fee: {
+    amount: Array<{ denom: string; amount: string }>;
+    gas: string;
+  };
+  msgs: Array<{
+    type: string;
+    value: {
+      delegator_address: string;
+      validator_address: string;
+      amount: {
+        denom: string;
+        amount: string;
+      };
+    };
+  }>;
+  memo: string;
+}
+
+interface ChainInfo {
+  chainId: string;
+  chainName: string;
+  rpc: string;
+  rest: string;
+  bip44: { coinType: number };
+  bech32Config: {
+    bech32PrefixAccAddr: string;
+    bech32PrefixAccPub: string;
+    bech32PrefixValAddr: string;
+    bech32PrefixValPub: string;
+    bech32PrefixConsAddr: string;
+    bech32PrefixConsPub: string;
+  };
+  currencies: Array<{
+    coinDenom: string;
+    coinMinimalDenom: string;
+    coinDecimals: number;
+    coinGeckoId?: string;
+  }>;
+  feeCurrencies: Array<{
+    coinDenom: string;
+    coinMinimalDenom: string;
+    coinDecimals: number;
+    coinGeckoId?: string;
+    gasPriceStep?: {
+      low: number;
+      average: number;
+      high: number;
+    };
+  }>;
+  stakeCurrency: {
+    coinDenom: string;
+    coinMinimalDenom: string;
+    coinDecimals: number;
+    coinGeckoId?: string;
+  };
+  features?: string[];
+  gasPriceStep?: {
+    low: number;
+    average: number;
+    high: number;
+  };
+}
+
+declare global {
+  interface Window {
+    keplr?: {
+      signAmino: (
+        chainId: string,
+        signer: string,
+        signDoc: SignDoc
+      ) => Promise<{ signed: SignDoc; signature: string }>;
+      enable: (chainId: string) => Promise<void>;
+      getOfflineSigner: (chainId: string) => {
+        getAccounts: () => Promise<Array<{ address: string }>>;
+      };
+      getKey: (chainId: string) => Promise<{ address: string }>;
+      experimentalSuggestChain: (chainInfo: ChainInfo) => Promise<void>;
+    };
+  }
+}
+
 import React from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
@@ -41,9 +126,37 @@ function DelegateModal({
   const [fees, setFees] = useState("2000");
   const [gas, setGas] = useState("200000");
   const [memo, setMemo] = useState("ping.pub");
-  const [broadcastMode, setBroadcastMode] = useState("Sync");
+  const [walletAddress, setWalletAddress] = useState("");
+
+  useEffect(() => {
+    async function getWalletAddress() {
+      if (window.keplr) {
+        try {
+          await window.keplr.enable("kiitestnet-1");
+          const offlineSigner = window.keplr.getOfflineSigner("kiitestnet-1");
+          const accounts = await offlineSigner.getAccounts();
+          setWalletAddress(accounts[0].address);
+        } catch (error) {
+          console.error("Error getting wallet address:", error);
+        }
+      }
+    }
+
+    if (isOpen) {
+      getWalletAddress();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleSubmit = async () => {
+    try {
+      await handleCreateStake(amount, validator);
+      onClose();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -79,7 +192,7 @@ function DelegateModal({
             </label>
             <input
               type="text"
-              value="kii1f3fn4at7f6teulyuulfuxt35q8qt3hcy3rjdwq"
+              value={walletAddress}
               readOnly
               className="w-full p-3 rounded-lg"
               style={{ backgroundColor: theme.bgColor }}
@@ -175,23 +288,6 @@ function DelegateModal({
             />
           </div>
 
-          <div>
-            <label
-              className="block mb-2"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              Broadcast Mode
-            </label>
-            <select
-              value={broadcastMode}
-              onChange={(e) => setBroadcastMode(e.target.value)}
-              className="w-full p-3 rounded-lg"
-              style={{ backgroundColor: theme.bgColor }}
-            >
-              <option>Sync</option>
-            </select>
-          </div>
-
           <div className="flex items-center gap-2 mt-4">
             <input type="checkbox" id="advance" />
             <label htmlFor="advance" style={{ color: theme.primaryTextColor }}>
@@ -202,6 +298,7 @@ function DelegateModal({
           <button
             className="w-full p-3 rounded-lg mt-6 text-white"
             style={{ backgroundColor: theme.accentColor }}
+            onClick={handleSubmit}
           >
             SEND
           </button>
@@ -224,6 +321,101 @@ const handleCopyClick = (text: string, label: string) => {
       });
   }
 };
+
+async function handleCreateStake(amount: string, validator: Validator) {
+  try {
+    if (!window.keplr) {
+      throw new Error("Please install Keplr wallet");
+    }
+
+    await window.keplr.enable("kiitestnet-1");
+    const offlineSigner = window.keplr.getOfflineSigner("kiitestnet-1");
+    const accounts = await offlineSigner.getAccounts();
+    const userAddress = accounts[0].address;
+
+    const accountResponse = await fetch(
+      `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/auth/v1beta1/accounts/${userAddress}`
+    );
+    const accountData = await accountResponse.json();
+
+    if (!accountData?.account) {
+      throw new Error("Failed to get account data");
+    }
+
+    const accountInfo = accountData.account;
+    const accountNumber = accountInfo.account_number?.toString() || "0";
+    const sequence = accountInfo.sequence?.toString() || "0";
+
+    const signDoc = {
+      chain_id: "kiitestnet-1",
+      account_number: accountNumber,
+      sequence: sequence,
+      fee: {
+        amount: [{ denom: "ukii", amount: "2000" }],
+        gas: "200000",
+      },
+      msgs: [
+        {
+          type: "cosmos-sdk/MsgDelegate",
+          value: {
+            delegator_address: userAddress,
+            validator_address: validator.operatorAddress,
+            amount: {
+              denom: "ukii",
+              amount: amount,
+            },
+          },
+        },
+      ],
+      memo: "ping.pub",
+    };
+
+    const signature = await window.keplr.signAmino(
+      "kiitestnet-1",
+      userAddress,
+      signDoc
+    );
+
+    const txBytes = Buffer.from(JSON.stringify(signature)).toString("base64");
+
+    const broadcastPayload = {
+      tx_bytes: txBytes,
+      mode: "BROADCAST_MODE_SYNC",
+    };
+
+    const broadcastResponse = await fetch(
+      "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(broadcastPayload),
+      }
+    );
+
+    const result = await broadcastResponse.json();
+
+    if (!result.tx_response?.txhash) {
+      throw new Error("Failed to broadcast transaction");
+    }
+
+    const txResponse = await fetch(
+      `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs/${result.tx_response.txhash}`
+    );
+    const txResult = await txResponse.json();
+
+    if (txResult.tx_response.code !== 0) {
+      throw new Error(txResult.tx_response.raw_log || "Transaction failed");
+    }
+
+    alert("Transaction completed successfully!");
+    return txResult;
+  } catch (error) {
+    console.error("Stake creation failed:", error);
+    throw error;
+  }
+}
 
 export default function ValidatorPage({
   params,
@@ -448,7 +640,7 @@ export default function ValidatorPage({
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M11.8368 9.33334C12.2344 9.33369 12.6156 9.49188 12.8966 9.77315C13.1776 10.0544 13.3354 10.4357 13.3354 10.8333V11.2167C13.3354 11.8127 13.1221 12.3893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 10.5736 3.6681 10.7007 3.6681 10.8333V11.218C3.6681 11.5747 3.7961 11.92 4.0281 12.1913C4.86343 13.1707 6.17477 13.6673 7.99943 13.6673C9.82543 13.6673 11.1368 13.1707 11.9748 12.192C12.2072 11.9202 12.3349 11.5743 12.3348 11.2167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.33667C8.43784 1.33667 8.87129 1.42289 9.27571 1.5904C9.68013 1.75792 10.0476 2.00345 10.3571 2.31298C10.6667 2.62251 10.9122 2.98997 11.0797 3.39439C11.2472 3.79881 11.3334 4.23226 11.3334 4.67C11.3334 5.10774 11.2472 5.5412 11.0797 5.94561C10.9122 6.35003 10.6667 6.7175 10.3571 7.02703C10.0476 7.33655 9.68013 7.58209 9.27571 7.7496C8.87129 7.91712 8.43784 8.00334 8.0001 8.00334C7.11605 8.00334 6.2682 7.65215 5.64308 7.02703C5.01796 6.4019 4.66677 5.55406 4.66677 4.67C4.66677 3.78595 5.01796 2.9381 5.64308 2.31298C6.2682 1.68786 7.11605 1.33667 8.0001 1.33667ZM8.0001 2.33667C7.69368 2.33667 7.39027 2.39702 7.10717 2.51428C6.82408 2.63155 6.56685 2.80342 6.35018 3.02009C6.13351 3.23676 5.96164 3.49398 5.84438 3.77708C5.72712 4.06017 5.66677 4.36359 5.66677 4.67C5.66677 4.97642 5.72712 5.27984 5.84438 5.56293C5.96164 5.84602 6.13351 6.10325 6.35018 6.31992C6.56685 6.53659 6.82408 6.70846 7.10717 6.82572C7.39027 6.94298 7.69368 7.00334 8.0001 7.00334C8.61894 7.00334 9.21243 6.7575 9.65002 6.31992C10.0876 5.88233 10.3334 5.28884 10.3334 4.67C10.3334 4.05116 10.0876 3.45767 9.65002 3.02009C9.21243 2.5825 8.61894 2.33667 8.0001 2.33667Z"
+                    d="M11.8368 9.33334C12.2344 9.33369 12.6156 9.49188 12.8966 9.77315C13.1776 10.0544 13.3354 10.4357 13.3354 10.8333V11.2167C13.3354 11.8127 13.1221 12.3893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.33667C8.43784 1.33667 8.87129 1.42289 9.27571 1.5904C9.68013 1.75792 10.0476 2.00345 10.3571 2.31298C10.6667 2.62251 10.9122 2.98997 11.0797 3.39439C11.2472 3.79881 11.3334 4.23226 11.3334 4.67C11.3334 5.10774 11.2472 5.5412 11.0797 5.94561C10.9122 6.35003 10.6667 6.7175 10.3571 7.02703C10.0476 7.33655 9.68013 7.58209 9.27571 7.7496C8.87129 7.91712 8.43784 8.00334 8.0001 8.00334C7.11605 8.00334 6.2682 7.65215 5.64308 7.02703C5.01796 6.4019 4.66677 5.55406 4.66677 4.67C4.66677 3.78595 5.01796 2.9381 5.64308 2.31298C6.2682 1.68786 7.11605 1.33667 8.0001 1.33667ZM8.0001 2.33667C7.69368 2.83667 7.39027 2.89702 7.10717 2.51428C6.82408 2.63155 6.56685 2.80342 6.35018 3.02009C6.13351 3.23676 5.96164 3.49398 5.84438 3.77708C5.72712 4.06017 5.66677 4.36359 5.66677 4.67C5.66677 4.97642 5.72712 5.27984 5.84438 5.56293C5.96164 5.84602 6.13351 6.10325 6.35018 6.31992C6.56685 6.53659 6.82408 6.70846 7.10717 6.82572C7.39027 6.94298 7.69368 7.00334 8.0001 7.00334C8.61894 7.00334 9.21243 6.7575 9.65002 6.31992C10.0876 5.88233 10.3334 5.28884 10.3334 4.67C10.3334 4.05116 10.0876 3.45767 9.65002 3.02009C9.21243 2.5825 8.61894 2.33667 8.0001 2.33667Z"
                     fill="#D2AAFA"
                   />
                 </svg>
@@ -589,7 +781,7 @@ export default function ValidatorPage({
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 11.3333V11.7167C13.3354 12.3127 13.1221 12.8893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.8333H4.1681C4.03549 10.8333 3.90832 10.886 3.81455 10.9798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
+                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 11.3333V11.7167C13.3354 12.3127 13.1221 12.8893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
                         fill="#D2AAFA"
                       />
                     </svg>
@@ -614,46 +806,6 @@ export default function ValidatorPage({
                   </div>
                 </div>
               </div>
-              <div
-                className="p-3 rounded-lg mt-1"
-                style={{ backgroundColor: theme.bgColor }}
-              >
-                <div className="flex items-center">
-                  <div className="flex mr-3">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 16 17"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M0.914746 13.1666C0.520954 13.1666 0.244392 12.9812 0.0850573 12.6103C-0.0742768 12.2393 -0.00975576 11.9096 0.278621 11.6212L4.0045 7.89389C4.1711 7.72723 4.37193 7.63632 4.607 7.62117C4.84206 7.60601 5.05016 7.68177 5.23131 7.84844L7.82125 10.0757L12.9102 4.98481H12.365C12.1075 4.98481 11.8918 4.89753 11.718 4.72299C11.5441 4.54844 11.4569 4.33268 11.4562 4.07572C11.4556 3.81875 11.5429 3.60299 11.718 3.42844C11.8931 3.2539 12.1087 3.16663 12.365 3.16663H15.0912C15.3487 3.16663 15.5647 3.2539 15.7392 3.42844C15.9137 3.60299 16.0006 3.81875 16 4.07572V6.80298C16 7.06056 15.9128 7.27662 15.7383 7.45117C15.5638 7.62571 15.3481 7.71268 15.0912 7.71208C14.8344 7.71147 14.6187 7.6242 14.4442 7.45026C14.2697 7.27632 14.1825 7.06056 14.1825 6.80298V6.25753L8.50281 11.9393C8.3362 12.106 8.13537 12.1969 7.90031 12.2121C7.66524 12.2272 7.45714 12.1515 7.276 11.9848L4.68606 9.75753L1.55087 12.8939C1.47514 12.9696 1.38063 13.0342 1.26734 13.0875C1.15405 13.1409 1.03652 13.1672 0.914746 13.1666Z"
-                        fill="#E0B1FF"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex flex-col flex-1">
-                    <div
-                      className="text-xs mb-0.5"
-                      style={{ color: theme.secondaryTextColor }}
-                    ></div>
-                    <div
-                      className="text-base font-bold"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {validator.tokens} KII
-                    </div>
-                    <div
-                      className="text-sm"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      99.86%
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div
                 className="p-3 rounded-lg mt-1"
                 style={{ backgroundColor: theme.bgColor }}
