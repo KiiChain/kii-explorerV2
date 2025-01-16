@@ -75,6 +75,11 @@ declare global {
         signer: string,
         signDoc: SignDoc
       ) => Promise<{ signed: SignDoc; signature: string }>;
+      signArbitrary: (
+        chainId: string,
+        signer: string,
+        data: string
+      ) => Promise<{ signature: string }>;
       enable: (chainId: string) => Promise<void>;
       getOfflineSigner: (chainId: string) => {
         getAccounts: () => Promise<Array<{ address: string }>>;
@@ -328,8 +333,17 @@ async function handleCreateStake(amount: string, validator: Validator) {
       throw new Error("Please install Keplr wallet");
     }
 
-    await window.keplr.enable("kiichain3");
-    const offlineSigner = window.keplr.getOfflineSigner("kiichain3");
+    // Intentar primero con kiichain3
+    let chainId = "kiichain3";
+    try {
+      await window.keplr.enable(chainId);
+    } catch {
+      // Si falla, usar kiitestnet-1
+      chainId = "kiitestnet-1";
+      await window.keplr.enable(chainId);
+    }
+
+    const offlineSigner = window.keplr.getOfflineSigner(chainId);
     const accounts = await offlineSigner.getAccounts();
     const userAddress = accounts[0].address;
 

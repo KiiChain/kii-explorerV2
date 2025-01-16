@@ -13,6 +13,31 @@ import { getWeb3Provider } from "@/lib/web3";
 import { ethers } from "ethers";
 import { useWallet } from "@/context/WalletContext";
 
+interface BalanceResponse {
+  balances: Array<{
+    denom: string;
+    amount: string;
+  }>;
+}
+
+interface StakingResponse {
+  delegation_responses: Array<{
+    delegation: {
+      validator_address: string;
+    };
+    balance: {
+      amount: string;
+    };
+  }>;
+}
+
+interface RewardsResponse {
+  total: Array<{
+    denom: string;
+    amount: string;
+  }>;
+}
+
 export function UptimeHeader() {
   const { theme, toggleTheme } = useTheme();
   const { account, setAccount, setSession } = useWallet();
@@ -31,79 +56,176 @@ export function UptimeHeader() {
       })) as string[];
 
       if (Array.isArray(accounts) && accounts.length > 0) {
-        try {
-          await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x538" }],
-          });
+        const account = accounts[0];
 
-          const provider = getWeb3Provider();
-          const account = accounts[0];
-          setAccount(account);
+        const message = ethers.encodeBytes32String("Connect to Kii Explorer");
 
-          const balance = await provider.getBalance(account);
-          const formattedBalance = ethers.formatEther(balance);
-          setSession({
-            balance: formattedBalance,
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          });
-        } catch (error) {
-          console.error("Error connecting to MetaMask:", error);
-          alert("Error connecting to MetaMask");
+        const signature = await window.ethereum.request({
+          method: "personal_sign",
+          params: [message, account],
+        });
+
+        if (!signature) {
+          throw new Error("Signature required to connect");
         }
+
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x538" }],
+        });
+
+        setAccount(account);
+
+        const provider = getWeb3Provider();
+        const balance = await provider.getBalance(account);
+        const formattedBalance = ethers.formatEther(balance);
+        setSession({
+          balance: formattedBalance,
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        });
       }
     } catch (error) {
-      console.error("Error requesting MetaMask accounts:", error);
+      console.error("Error connecting to MetaMask:", error);
+      setAccount("");
+      setSession(null);
     }
   };
 
   const handleKeplrConnect = async () => {
     setShowWalletSelector(false);
-
     if (!window.keplr) {
       alert("Please install Keplr!");
       return;
     }
 
     try {
-      await window.keplr.enable("kiichain3");
-      const offlineSigner = window.keplr.getOfflineSigner("kiichain3");
-      const accounts = await offlineSigner.getAccounts();
+      const chainId = "kiichain3";
+      try {
+        await window.keplr.enable(chainId);
+        const offlineSigner = window.keplr.getOfflineSigner(chainId);
+        const accounts = await offlineSigner.getAccounts();
 
-      if (accounts.length > 0) {
-        const keplrAccount = accounts[0].address;
-        setAccount(keplrAccount);
+        const message = "Connect to Kii Explorer";
+        const signature = await window.keplr.signArbitrary(
+          chainId,
+          accounts[0].address,
+          message
+        );
 
-        try {
-          const accountResponse = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/auth/v1beta1/accounts/${keplrAccount}`
-          );
-          const accountData = await accountResponse.json();
-
-          setSession({
-            balance: accountData?.account?.balance || "0",
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          });
-        } catch (error) {
-          console.error("Error getting Keplr balance:", error);
-          setSession({
-            balance: "0",
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          });
+        if (!signature) {
+          throw new Error("Signature required to connect");
         }
+
+        handleAccountConnection(accounts);
+      } catch {
+        const testnetChainId = "kiitestnet-1";
+        await window.keplr.enable(testnetChainId);
+        const offlineSigner = window.keplr.getOfflineSigner(testnetChainId);
+        const accounts = await offlineSigner.getAccounts();
+
+        const message = "Connect to Kii Explorer";
+        const signature = await window.keplr.signArbitrary(
+          testnetChainId,
+          accounts[0].address,
+          message
+        );
+
+        if (!signature) {
+          throw new Error("Signature required to connect");
+        }
+
+        handleAccountConnection(accounts);
       }
     } catch (error) {
       console.error("Error connecting to Keplr:", error);
-      alert("Failed to connect to Keplr");
+      setAccount("");
+      setSession(null);
+    }
+  };
+
+  const handleDisconnect = () => {
+    setAccount("");
+    setSession(null);
+    setShowWalletSelector(false);
+  };
+
+  const handleAccountConnection = async (
+    accounts: Array<{ address: string }>
+  ) => {
+    if (accounts.length > 0) {
+      const keplrAccount = accounts[0].address;
+      setAccount(keplrAccount);
+
+      try {
+        const balanceResponse = await fetch(
+          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${keplrAccount}`
+        );
+        const balanceData = (await balanceResponse.json()) as BalanceResponse;
+
+        const stakingResponse = await fetch(
+          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${keplrAccount}`
+        );
+        const stakingData = (await stakingResponse.json()) as StakingResponse;
+
+        const rewardsResponse = await fetch(
+          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${keplrAccount}/rewards`
+        );
+        const rewardsData = (await rewardsResponse.json()) as RewardsResponse;
+
+        const balance =
+          balanceData.balances.find(
+            (b: { denom: string; amount: string }) => b.denom === "ukii"
+          )?.amount || "0";
+        const formattedBalance = (parseInt(balance) / 1_000_000).toString();
+
+        const totalStaked =
+          stakingData.delegation_responses?.reduce(
+            (sum: number, del: { balance: { amount: string } }) =>
+              sum + parseInt(del.balance.amount),
+            0
+          ) || 0;
+        const formattedStaking = (totalStaked / 1_000_000).toString();
+
+        const totalRewards =
+          rewardsData.total?.find(
+            (r: { denom: string; amount: string }) => r.denom === "ukii"
+          )?.amount || "0";
+        const formattedRewards = (
+          parseInt(totalRewards) / 1_000_000
+        ).toString();
+
+        setSession({
+          balance: formattedBalance,
+          staking: `${formattedStaking} KII`,
+          reward: `${formattedRewards} KII`,
+          withdrawals: "0 KII",
+          stakes:
+            stakingData.delegation_responses?.map(
+              (del: {
+                delegation: { validator_address: string };
+                balance: { amount: string };
+              }) => ({
+                validator: del.delegation.validator_address,
+                amount:
+                  (parseInt(del.balance.amount) / 1_000_000).toString() +
+                  " KII",
+                rewards: "0 KII",
+              })
+            ) || [],
+        });
+      } catch (error) {
+        console.error("Error getting Keplr data:", error);
+        setSession({
+          balance: "0",
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        });
+      }
     }
   };
 
@@ -175,20 +297,32 @@ export function UptimeHeader() {
               zIndex: 50,
             }}
           >
-            <button
-              className="w-full px-4 py-2 text-left hover:bg-opacity-10 hover:bg-white"
-              style={{ color: theme.primaryTextColor }}
-              onClick={handleMetaMaskConnect}
-            >
-              MetaMask
-            </button>
-            <button
-              className="w-full px-4 py-2 text-left hover:bg-opacity-10 hover:bg-white"
-              style={{ color: theme.primaryTextColor }}
-              onClick={handleKeplrConnect}
-            >
-              Keplr
-            </button>
+            {!account ? (
+              <>
+                <button
+                  className="w-full px-4 py-2 text-left hover:bg-opacity-10 hover:bg-white"
+                  style={{ color: theme.primaryTextColor }}
+                  onClick={handleMetaMaskConnect}
+                >
+                  MetaMask
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left hover:bg-opacity-10 hover:bg-white"
+                  style={{ color: theme.primaryTextColor }}
+                  onClick={handleKeplrConnect}
+                >
+                  Keplr
+                </button>
+              </>
+            ) : (
+              <button
+                className="w-full px-4 py-2 text-left hover:bg-opacity-10 hover:bg-white"
+                style={{ color: theme.primaryTextColor }}
+                onClick={handleDisconnect}
+              >
+                Disconnect
+              </button>
+            )}
           </div>
         )}
       </div>

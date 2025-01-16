@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { BlocksHeader } from "@/components/headerDashboard";
 import { WalletSession } from "@/components/dashboard";
 import { AddressCard } from "@/components/Account/AddressCard";
 import { BalanceAndAssets } from "@/components/Account/BalanceAndAssets";
@@ -26,7 +25,6 @@ export default function AccountPage() {
     }
   }, []);
 
-  // Calculate total value
   const totalValue = session
     ? parseFloat(session.balance) +
       parseFloat(session.staking.replace(" KII", "")) +
@@ -35,8 +33,7 @@ export default function AccountPage() {
     : 0;
 
   return (
-    <div className={`px-6 bg-[${theme.bgColor}]`}>
-      <BlocksHeader activeTab="blocks" onTabChange={() => {}} />
+    <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
       <AddressCard account={account} />
       <BalanceAndAssets
         assets={[

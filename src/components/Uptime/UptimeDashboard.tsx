@@ -27,7 +27,7 @@ interface SigningInfo {
 }
 
 export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
-  validators,
+  validators = [],
 }) => {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<
@@ -38,6 +38,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
   const [signingInfos, setSigningInfos] = useState<Record<string, SigningInfo>>(
     {}
   );
+  const [localValidators, setLocalValidators] = useState<Validator[]>([]);
 
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 200;
@@ -46,6 +47,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
 
   useEffect(() => {
     setIsClient(true);
+    setLocalValidators(validators);
 
     const fetchSigningInfos = async (page: number) => {
       try {
@@ -80,7 +82,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
     };
 
     fetchSigningInfos(1);
-  }, []);
+  }, [validators]);
 
   const calculateUptime = (validator: Validator) => {
     const signingInfo = signingInfos[validator.operatorAddress];
@@ -90,7 +92,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
     return ((signedBlocksWindow - missedBlocks) / signedBlocksWindow) * 100;
   };
 
-  const filteredValidators = validators
+  const filteredValidators = localValidators
     .map((validator) => ({
       ...validator,
       uptime: calculateUptime(validator),
