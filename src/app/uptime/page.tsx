@@ -17,30 +17,30 @@ export interface ValidatorResponse {
   jailed: boolean;
 }
 
-async function getValidators() {
-  const response = await fetch(
-    "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators?pagination.limit=200&status=BOND_STATUS_BONDED"
-  );
-  const data = await response.json();
-
-  const totalValidators = data.pagination.total;
-  console.log(`Total validators: ${totalValidators}`);
-
-  const allValidators = data.validators.map((validator: ValidatorResponse) => ({
-    operatorAddress: validator.operator_address,
-    moniker: validator.description.moniker,
-    status: validator.status,
-    tokens: validator.tokens,
-    commission: validator.commission.commission_rates.rate,
-    website: validator.description.website,
-    jailed: validator.jailed,
-  }));
-
-  return allValidators;
+async function fetchValidators() {
+  try {
+    const response = await fetch(
+      "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
+    );
+    const data = await response.json();
+    return data.validators.map((v: ValidatorResponse) => ({
+      operatorAddress: v.operator_address,
+      moniker: v.description.moniker,
+      status: v.status,
+      tokens: v.tokens,
+      commission: v.commission.commission_rates.rate,
+      website: v.description.website,
+      jailed: v.jailed,
+      uptime: 0,
+    }));
+  } catch (error) {
+    console.error("Error fetching validators:", error);
+    return [];
+  }
 }
 
 export default async function UptimePage() {
-  const validators = await getValidators();
+  const validators = await fetchValidators();
 
   return (
     <div className="px-6">
