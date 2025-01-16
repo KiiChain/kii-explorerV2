@@ -69,8 +69,8 @@ export function UptimeHeader() {
     }
 
     try {
-      await window.keplr.enable("kiitestnet-1");
-      const offlineSigner = window.keplr.getOfflineSigner("kiitestnet-1");
+      await window.keplr.enable("kiichain3");
+      const offlineSigner = window.keplr.getOfflineSigner("kiichain3");
       const accounts = await offlineSigner.getAccounts();
 
       if (accounts.length > 0) {
