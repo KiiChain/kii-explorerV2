@@ -301,10 +301,15 @@ export function StakingDashboard() {
                 <td className="p-4">
                   <div className="flex items-center gap-7">
                     <div
-                      style={{ backgroundColor: theme.accentColor }}
+                      style={{
+                        backgroundColor: theme.accentColor,
+                        minWidth: "2.5rem",
+                        minHeight: "2.5rem",
+                        flexShrink: 0,
+                      }}
                       className="w-10 h-10 rounded-full"
                     ></div>
-                    <div>
+                    <div className="flex-1">
                       <div
                         className="font-medium"
                         style={{ color: theme.primaryTextColor }}
