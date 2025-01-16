@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "next/navigation";
 
 interface Block {
   block: {
@@ -19,6 +20,7 @@ interface Block {
 interface Transaction {
   height: string;
   hash: string;
+  displayHash: string;
   fees: string;
   sender: string;
   created_at: string;
@@ -61,6 +63,7 @@ const getRelativeTime = (timestamp: string) => {
 };
 
 export function BlocksDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"blocks" | "transactions">(
     "blocks"
   );
@@ -109,7 +112,8 @@ export function BlocksDashboard() {
         const formattedTransactions = data.tx_responses.map(
           (tx: TxResponse) => ({
             height: tx.height,
-            hash: tx.txhash.slice(0, 10) + "...",
+            hash: tx.txhash,
+            displayHash: tx.txhash.slice(0, 10) + "...",
             fees: tx.auth_info?.fee?.amount?.[0]?.amount || "0",
             sender: tx.tx.body.messages[0].from_address,
             created_at: new Date(tx.timestamp).toLocaleString(),
@@ -260,9 +264,10 @@ export function BlocksDashboard() {
                   </div>
                   <div
                     style={{ color: theme.accentColor }}
-                    className="text-xs p-3"
+                    className="text-xs p-3 cursor-pointer hover:underline"
+                    onClick={() => router.push(`/transaction/${tx.hash}`)}
                   >
-                    {tx.hash}
+                    {tx.displayHash}
                   </div>
                   <div
                     style={{ color: theme.primaryTextColor }}
