@@ -12,6 +12,7 @@ import { darkTheme } from "@/theme";
 import { getWeb3Provider } from "@/lib/web3";
 import { ethers } from "ethers";
 import { useWallet } from "@/context/WalletContext";
+import { useRouter } from "next/navigation";
 
 interface BalanceResponse {
   balances: Array<{
@@ -44,6 +45,8 @@ export function UptimeHeader() {
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -249,14 +252,50 @@ export function UptimeHeader() {
     }
   };
 
+  const confirm = () => {
+    setErrorMessage("");
+    const key = (
+      document.querySelector('input[type="text"]') as HTMLInputElement
+    ).value;
+
+    if (!key) {
+      setErrorMessage("Please enter a value!");
+      return;
+    }
+
+    // Using the same regex patterns from the image
+    const height = /^\d+$/;
+    const txhash = /^[A-Z\d]{64}$/;
+    const addr = /^[a-z\d]+1[a-z\d]{38,58}$/;
+    const evmAddr = /^0x[a-fA-F0-9]{40}$/;
+    const evmTxHash = /^0x[a-fA-F0-9]{64}$/;
+
+    if (height.test(key)) {
+      router.push(`/block/${key}`);
+    } else if (txhash.test(key) || evmTxHash.test(key)) {
+      router.push(`/transaction/${key}`);
+    } else if (addr.test(key) || evmAddr.test(key)) {
+      router.push(`/account/${key}`);
+    } else {
+      setErrorMessage("The input not recognized");
+    }
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter") {
+      confirm();
+    }
+  };
+
   return (
     <div className="flex justify-between items-center w-full relative">
       <div className="flex-1">
         <div className="relative w-3/4">
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Search by Address / Txn Hash / Block"
             className="w-full pl-10 pr-4 py-2 rounded-lg shadow-lg"
+            onKeyPress={handleKeyPress}
             style={{
               backgroundColor: theme.boxColor,
               color: theme.primaryTextColor,
@@ -265,6 +304,11 @@ export function UptimeHeader() {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
             <SearchIcon style={{ color: theme.secondaryTextColor }} />
           </div>
+          {errorMessage && (
+            <div className="absolute mt-1 text-red-500 text-sm">
+              {errorMessage}
+            </div>
+          )}
         </div>
       </div>
 

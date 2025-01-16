@@ -12,6 +12,7 @@ export const darkTheme = {
   faucetColor2: "#D2AAFA",
   faucetTextColor: "#F3F5FB4D",
   faucetTextColor2: "#231C32",
+  bgCodeColor: "#231C32",
 };
 
 export const lightTheme = {
@@ -28,4 +29,5 @@ export const lightTheme = {
   faucetColor2: "#643B80",
   faucetTextColor: "#05000F",
   faucetTextColor2: "#F3F5FB",
+  bgCodeColor: "#05000F",
 };

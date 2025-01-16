@@ -268,7 +268,7 @@ export default function TransactionPage({
 
         <div
           className="rounded-xl p-6"
-          style={{ backgroundColor: theme.boxColor }}
+          style={{ backgroundColor: theme.bgCodeColor }}
         >
           <h2
             className="text-2xl font-semibold mb-6"
@@ -279,7 +279,7 @@ export default function TransactionPage({
           <pre
             className="p-4 rounded-lg whitespace-pre-wrap text-xs"
             style={{
-              backgroundColor: theme.boxColor,
+              backgroundColor: theme.bgCodeColor,
               color: "#00ff9d",
               fontSize: "0.875rem",
             }}
@@ -290,7 +290,7 @@ export default function TransactionPage({
         <div className="grid grid-cols-2 gap-6">
           <div
             className="rounded-xl p-6"
-            style={{ backgroundColor: theme.boxColor }}
+            style={{ backgroundColor: theme.bgCodeColor }}
           >
             <h2
               className="text-2xl font-semibold mb-6"
@@ -301,7 +301,7 @@ export default function TransactionPage({
             <pre
               className="p-4 rounded-lg whitespace-pre-wrap text-xs"
               style={{
-                backgroundColor: theme.boxColor,
+                backgroundColor: theme.bgCodeColor,
                 color: "#00ff9d",
                 fontSize: "0.875rem",
               }}
@@ -313,11 +313,11 @@ export default function TransactionPage({
 
           <div
             className="rounded-xl p-6"
-            style={{ backgroundColor: theme.boxColor }}
+            style={{ backgroundColor: theme.bgCodeColor }}
           >
             <div
               className="p-4 rounded-lg"
-              style={{ backgroundColor: theme.bgColor }}
+              style={{ backgroundColor: theme.bgCodeColor }}
             >
               <h2
                 className="text-2xl font-semibold mb-6"
