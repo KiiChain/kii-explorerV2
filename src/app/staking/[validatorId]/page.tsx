@@ -214,9 +214,13 @@ function DelegateModal({
             <select
               className="w-full p-3 rounded-lg"
               style={{ backgroundColor: theme.bgColor }}
-              defaultValue={`${validator.moniker} (10%)`}
+              defaultValue={`${validator.moniker} (${(
+                parseFloat(validator.commission) * 100
+              ).toFixed(2)}%)`}
             >
-              <option>{`${validator.moniker} (10%)`}</option>
+              <option>{`${validator.moniker} (${(
+                parseFloat(validator.commission) * 100
+              ).toFixed(2)}%)`}</option>
             </select>
           </div>
 
@@ -852,7 +856,7 @@ export default function ValidatorPage({
                       className="text-base font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {validator.commission}
+                      {(parseFloat(validator.commission) * 100).toFixed(2)}%
                     </div>
                   </div>
                 </div>
