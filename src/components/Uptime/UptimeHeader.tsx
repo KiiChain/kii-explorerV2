@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   SearchIcon,
   LightModeIcon,
@@ -42,6 +42,26 @@ export function UptimeHeader() {
   const { theme, toggleTheme } = useTheme();
   const { account, setAccount, setSession } = useWallet();
   const [showWalletSelector, setShowWalletSelector] = useState(false);
+  const selectorRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        selectorRef.current &&
+        !selectorRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowWalletSelector(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleMetaMaskConnect = async () => {
     setShowWalletSelector(false);
@@ -275,6 +295,7 @@ export function UptimeHeader() {
           </span>
         </button>
         <button
+          ref={buttonRef}
           className="p-2 rounded-lg shadow-lg flex items-center gap-2"
           style={{
             backgroundColor: theme.boxColor,
@@ -290,6 +311,7 @@ export function UptimeHeader() {
 
         {showWalletSelector && (
           <div
+            ref={selectorRef}
             className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg"
             style={{
               backgroundColor: theme.boxColor,
