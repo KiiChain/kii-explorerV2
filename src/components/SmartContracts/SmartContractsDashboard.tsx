@@ -41,7 +41,7 @@ export function SmartContractsDashboard() {
 
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
-      <div className="mt-24">
+      <div className="mt-16">
         <div
           className="rounded-lg p-6 shadow-lg"
           style={{ backgroundColor: theme.boxColor }}
