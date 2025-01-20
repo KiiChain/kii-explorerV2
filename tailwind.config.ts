@@ -1,11 +1,8 @@
+import defaultTheme from "tailwindcss/defaultTheme";
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -30,7 +27,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-montserrat)", "Montserrat", "sans-serif"],
+        sans: ["var(--font-montserrat)", ...defaultTheme.fontFamily.sans],
       },
     },
   },
