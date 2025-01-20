@@ -59,7 +59,7 @@ function StatCard({
               </span>
             </div>
             <div
-              className="text-xl md:text-2xl xl:text-3xl font-bold"
+              className="text-lg md:text-base font-bold"
               style={{ color: theme.secondaryTextColor }}
             >
               {value}
@@ -97,7 +97,7 @@ function StatCard({
       </CardHeader>
       <CardContent>
         <div
-          className="text-xl md:text-2xl xl:text-3xl font-bold"
+          className="text-lg md:text-base font-bold"
           style={{ color: theme.secondaryTextColor }}
         >
           {value}
@@ -612,7 +612,7 @@ export function Dashboard() {
           }}
           className="border-0 mt-6"
         >
-          <CardContent className="p-6">
+          <CardContent className="p-6 rounded-lg">
             {!account ? (
               <button
                 onClick={connectWallet}
@@ -624,10 +624,7 @@ export function Dashboard() {
               </button>
             ) : (
               <div className="space-y-6">
-                <div
-                  className="text-xl mb-4"
-                  style={{ color: theme.primaryTextColor }}
-                >
+                <div className="mb-4" style={{ color: theme.primaryTextColor }}>
                   {account}
                 </div>
 
@@ -637,10 +634,7 @@ export function Dashboard() {
                     style={{ backgroundColor: theme.bgColor }}
                   >
                     <div className="text-gray-400">Balance</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
+                    <div style={{ color: theme.primaryTextColor }}>
                       {session?.balance}
                     </div>
                     <div className="text-sm text-gray-400">
@@ -792,7 +786,10 @@ export function Dashboard() {
             }}
             className="border-0"
           >
-            <div className="p-6" style={{ backgroundColor: theme.boxColor }}>
+            <div
+              className="p-6 rounded-lg"
+              style={{ backgroundColor: theme.boxColor }}
+            >
               <div className="flex justify-between items-center">
                 <div className="flex gap-6 flex-1">
                   <div style={{ color: theme.primaryTextColor }}>
@@ -930,7 +927,7 @@ export function Dashboard() {
           >
             <div className="p-6">
               <h2
-                className="text-xl mb-6"
+                className="text-lg mb-6"
                 style={{ color: theme.primaryTextColor }}
               >
                 Application Versions

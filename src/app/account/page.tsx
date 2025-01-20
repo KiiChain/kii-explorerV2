@@ -10,10 +10,26 @@ import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
 
+interface Withdrawal {
+  creationHeight: string;
+  initialBalance: string;
+  balance: string;
+  completionTime: string;
+}
+
+interface UnbondingResponse {
+  creation_height: string;
+  initial_balance: string;
+  balance: string;
+  completion_time: string;
+}
+
 export default function AccountPage() {
   const [account, setAccount] = useState("");
   const [session, setSession] = useState<WalletSession | null>(null);
   const { theme } = useTheme();
+  const [delegations, setDelegations] = useState([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
 
   useEffect(() => {
     const savedSession = localStorage.getItem("walletSession");
@@ -24,6 +40,78 @@ export default function AccountPage() {
       setSession(savedWalletSession);
     }
   }, []);
+
+  useEffect(() => {
+    const fetchDelegations = async () => {
+      if (account) {
+        try {
+          const response = await fetch(
+            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${account}`,
+            {
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          setDelegations(data.delegation_responses || []);
+        } catch (error) {
+          console.error("Error fetching delegations:", error);
+          setDelegations([]);
+        }
+      }
+    };
+
+    fetchDelegations();
+  }, [account]);
+
+  useEffect(() => {
+    const fetchWithdrawAddress = async () => {
+      if (account) {
+        try {
+          const response = await fetch(
+            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegators/${account}/unbonding_delegations`,
+            {
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data && Array.isArray(data.unbonding_responses)) {
+            const formattedWithdrawals = data.unbonding_responses.map(
+              (unbonding: UnbondingResponse) => ({
+                creationHeight: unbonding.creation_height,
+                initialBalance: unbonding.initial_balance,
+                balance: unbonding.balance,
+                completionTime: new Date(
+                  unbonding.completion_time
+                ).toLocaleString(),
+              })
+            );
+            setWithdrawals(formattedWithdrawals);
+          } else {
+            setWithdrawals([]);
+          }
+        } catch (error) {
+          console.error("Error fetching unbonding delegations:", error);
+          setWithdrawals([]);
+        }
+      }
+    };
+
+    fetchWithdrawAddress();
+  }, [account]);
 
   const totalValue = session
     ? parseFloat(session.balance) +
@@ -64,21 +152,8 @@ export default function AccountPage() {
         ]}
         totalValue={`$${totalValue.toFixed(2)}`}
       />
-      <WithdrawalsTable
-        withdrawals={
-          session?.withdrawals
-            ? [
-                {
-                  creationHeight: session.withdrawals,
-                  initialBalance: session.withdrawals,
-                  balance: session.withdrawals,
-                  completionTime: "Pending",
-                },
-              ]
-            : []
-        }
-      />
-      <StakesTable stakes={session?.stakes || []} />
+      <WithdrawalsTable withdrawals={withdrawals} />
+      <StakesTable delegations={delegations} />
       <TransactionsTable />
       <AccountInfo account={account} />
     </div>

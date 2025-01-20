@@ -22,6 +22,24 @@ interface Validator {
   jailed: boolean;
 }
 
+interface ValidatorResponse {
+  status: string;
+  operator_address: string;
+  description: {
+    moniker: string;
+    website: string;
+    identity: string;
+    details: string;
+  };
+  commission: {
+    commission_rates: {
+      rate: string;
+    };
+  };
+  tokens: string;
+  jailed: boolean;
+}
+
 export function StakingDashboard() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -36,19 +54,53 @@ export function StakingDashboard() {
   useEffect(() => {
     async function fetchValidators() {
       try {
-        const activeResponse = await fetch(
-          "https://d.testnet.kiivalidator.com/cosmos/staking/v1beta1/validators?pagination.limit=200&status=BOND_STATUS_BONDED"
+        const response = await fetch(
+          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
         );
-        const activeData = await activeResponse.json();
-        setActiveValidators(activeData.validators);
+        const data = await response.json();
 
-        const inactiveResponse = await fetch(
-          "https://d.testnet.kiivalidator.com/cosmos/staking/v1beta1/validators?pagination.limit=200&status=BOND_STATUS_UNBONDED"
+        console.log("API Response:", data);
+
+        if (!data?.validators || !Array.isArray(data.validators)) {
+          console.error("Invalid validators data:", data);
+          setActiveValidators([]);
+          setInactiveValidators([]);
+          return;
+        }
+
+        const validValidators = data.validators.filter(
+          (validator: ValidatorResponse) => {
+            const isValid =
+              validator &&
+              typeof validator.status === "string" &&
+              typeof validator.operator_address === "string";
+
+            if (!isValid) {
+              console.warn("Invalid validator data:", validator);
+            }
+            return isValid;
+          }
         );
-        const inactiveData = await inactiveResponse.json();
-        setInactiveValidators(inactiveData.validators);
+
+        const active = validValidators.filter(
+          (validator: Validator) =>
+            validator.status === "BOND_STATUS_BONDED" && !validator.jailed
+        );
+
+        const inactive = validValidators.filter(
+          (validator: Validator) =>
+            validator.status !== "BOND_STATUS_BONDED" || validator.jailed
+        );
+
+        console.log("Active validators:", active.length);
+        console.log("Inactive validators:", inactive.length);
+
+        setActiveValidators(active);
+        setInactiveValidators(inactive);
       } catch (error) {
         console.error("Error fetching validators:", error);
+        setActiveValidators([]);
+        setInactiveValidators([]);
       }
     }
 

@@ -35,16 +35,16 @@ export function WithdrawalsTable({ withdrawals }: WithdrawalsTableProps) {
                 key={index}
                 className={`border-b border-[${theme.borderColor}]`}
               >
-                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
                   {withdrawal.creationHeight}
                 </td>
-                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
                   {withdrawal.initialBalance}
                 </td>
-                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
                   {withdrawal.balance}
                 </td>
-                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
                   {withdrawal.completionTime}
                 </td>
               </tr>
