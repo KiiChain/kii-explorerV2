@@ -859,11 +859,11 @@ export function Dashboard() {
                                   From:
                                 </span>
                                 <span style={{ color: theme.accentColor }}>
-                                  {window.innerWidth < 1440 &&
+                                  {window.innerWidth < 1600 &&
                                   latestTransactions[index]?.from
                                     ? `${latestTransactions[index].from.slice(
                                         0,
-                                        25
+                                        -15
                                       )}...`
                                     : latestTransactions[index]?.from || "N/A"}
                                 </span>
@@ -877,11 +877,11 @@ export function Dashboard() {
                                   To:
                                 </span>
                                 <span style={{ color: theme.accentColor }}>
-                                  {window.innerWidth < 1440 &&
+                                  {window.innerWidth < 1600 &&
                                   latestTransactions[index]?.to
                                     ? `${latestTransactions[index].to.slice(
                                         0,
-                                        25
+                                        -15
                                       )}...`
                                     : latestTransactions[index]?.to || "N/A"}
                                 </span>
