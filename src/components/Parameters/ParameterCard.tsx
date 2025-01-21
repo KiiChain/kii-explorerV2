@@ -17,7 +17,10 @@ export function ParameterCard({ title, value }: ParameterCardProps) {
       <h3 style={{ color: theme.secondaryTextColor }} className="text-sm">
         {title}
       </h3>
-      <p style={{ color: theme.primaryTextColor }} className="text-lg">
+      <p
+        style={{ color: theme.primaryTextColor }}
+        className="text-base text-bold pt-1"
+      >
         {value}
       </p>
     </div>
