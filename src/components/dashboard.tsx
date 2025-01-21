@@ -59,7 +59,7 @@ function StatCard({
               </span>
             </div>
             <div
-              className="text-lg md:text-base font-bold"
+              className="text-lg font-bold"
               style={{ color: theme.secondaryTextColor }}
             >
               {value}
@@ -97,7 +97,7 @@ function StatCard({
       </CardHeader>
       <CardContent>
         <div
-          className="text-lg md:text-base font-bold"
+          className="text-lg font-bold"
           style={{ color: theme.secondaryTextColor }}
         >
           {value}
@@ -695,7 +695,7 @@ export function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {session?.stakes.map((stake, index) => (
+                      {(session?.stakes || []).map((stake, index) => (
                         <tr
                           key={index}
                           className="border-t"
@@ -755,7 +755,7 @@ export function Dashboard() {
                         "walletSession",
                         JSON.stringify({ account, session })
                       );
-                      router.push("/account/");
+                      router.push(`/account/${account}`);
                     }}
                   >
                     My Account

@@ -9,109 +9,167 @@ import { StakesTable } from "@/components/Account/StakesTable";
 import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
+import { ethers } from "ethers";
+import { getWeb3Provider } from "@/lib/web3";
+import { useRouter, useParams } from "next/navigation";
 
-interface Withdrawal {
-  creationHeight: string;
-  initialBalance: string;
-  balance: string;
-  completionTime: string;
+interface Transaction {
+  height: string;
+  hash: string;
+  messages: string;
+  time: string;
 }
 
-interface UnbondingResponse {
-  creation_height: string;
-  initial_balance: string;
-  balance: string;
-  completion_time: string;
+interface TxResponse {
+  height: string;
+  txhash: string;
+  timestamp: string;
+  tx: {
+    body: {
+      messages: Array<{
+        "@type": string;
+      }>;
+    };
+  };
 }
 
 export default function AccountPage() {
-  const [account, setAccount] = useState("");
+  const { address } = useParams();
+  const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState([]);
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [withdrawals, setWithdrawals] = useState([]);
 
   useEffect(() => {
-    const savedSession = localStorage.getItem("walletSession");
-    if (savedSession) {
-      const { account: savedAccount, session: savedWalletSession } =
-        JSON.parse(savedSession);
-      setAccount(savedAccount);
-      setSession(savedWalletSession);
+    if (!address || Array.isArray(address)) {
+      router.push("/");
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    const fetchDelegations = async () => {
-      if (account) {
-        try {
-          const response = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${account}`,
-            {
-              headers: {
-                Accept: "application/json",
-              },
-            }
+    const fetchAccountData = async () => {
+      try {
+        let walletData: WalletSession = {
+          balance: "0",
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        };
+
+        if (address.startsWith("0x")) {
+          const provider = getWeb3Provider();
+          const balance = await provider.getBalance(address);
+          const formattedBalance = ethers.formatEther(balance);
+
+          walletData = {
+            ...walletData,
+            balance: formattedBalance,
+          };
+        } else {
+          const [balanceResponse, stakingResponse, rewardsResponse] =
+            await Promise.all([
+              fetch(
+                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${address}`
+              ),
+              fetch(
+                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${address}`
+              ),
+              fetch(
+                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${address}/rewards`
+              ),
+            ]);
+
+          const balanceData = await balanceResponse.json();
+          const stakingData = await stakingResponse.json();
+          const rewardsData = await rewardsResponse.json();
+
+          const balance =
+            balanceData.balances.find(
+              (b: { denom: string }) => b.denom === "ukii"
+            )?.amount || "0";
+          const formattedBalance = (parseInt(balance) / 1_000_000).toString();
+
+          const totalStaked =
+            stakingData.delegation_responses?.reduce(
+              (sum: number, del: { balance: { amount: string } }) =>
+                sum + parseInt(del.balance.amount),
+              0
+            ) || 0;
+          const formattedStaking = (totalStaked / 1_000_000).toString();
+
+          const totalRewards =
+            rewardsData.total?.find(
+              (r: { denom: string }) => r.denom === "ukii"
+            )?.amount || "0";
+          const formattedRewards = (
+            parseInt(totalRewards) / 1_000_000
+          ).toString();
+
+          walletData = {
+            ...walletData,
+            balance: formattedBalance,
+            staking: `${formattedStaking} KII`,
+            reward: `${formattedRewards} KII`,
+            stakes:
+              stakingData.delegation_responses?.map(
+                (del: {
+                  delegation: { validator_address: string };
+                  balance: { amount: string };
+                }) => ({
+                  validator: del.delegation.validator_address,
+                  amount:
+                    (parseInt(del.balance.amount) / 1_000_000).toString() +
+                    " KII",
+                  rewards: "0 KII",
+                })
+              ) || [],
+          };
+
+          setDelegations(stakingData.delegation_responses || []);
+          const withdrawalResponse = await fetch(
+            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegators/${address}/unbonding_delegations`
           );
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          setDelegations(data.delegation_responses || []);
-        } catch (error) {
-          console.error("Error fetching delegations:", error);
-          setDelegations([]);
+          const withdrawalData = await withdrawalResponse.json();
+          setWithdrawals(withdrawalData.unbonding_responses || []);
         }
+
+        setSession(walletData);
+
+        const txResponse = await fetch(
+          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.sender='${address}'`
+        );
+
+        if (!txResponse.ok) {
+          console.error("Failed to fetch transactions:", txResponse.statusText);
+          setTransactions([]);
+          return;
+        }
+
+        const txData = await txResponse.json();
+
+        if (!txData || !Array.isArray(txData.tx_responses)) {
+          console.warn("No transactions found or invalid response format");
+          setTransactions([]);
+          return;
+        }
+
+        const formattedTxs = txData.tx_responses.map((tx: TxResponse) => ({
+          height: tx.height,
+          hash: tx.txhash,
+          messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
+          time: new Date(tx.timestamp).toLocaleString(),
+        }));
+
+        setTransactions(formattedTxs);
+      } catch (error) {
+        console.error("Error fetching account data:", error);
       }
     };
 
-    fetchDelegations();
-  }, [account]);
-
-  useEffect(() => {
-    const fetchWithdrawAddress = async () => {
-      if (account) {
-        try {
-          const response = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegators/${account}/unbonding_delegations`,
-            {
-              headers: {
-                Accept: "application/json",
-              },
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          if (data && Array.isArray(data.unbonding_responses)) {
-            const formattedWithdrawals = data.unbonding_responses.map(
-              (unbonding: UnbondingResponse) => ({
-                creationHeight: unbonding.creation_height,
-                initialBalance: unbonding.initial_balance,
-                balance: unbonding.balance,
-                completionTime: new Date(
-                  unbonding.completion_time
-                ).toLocaleString(),
-              })
-            );
-            setWithdrawals(formattedWithdrawals);
-          } else {
-            setWithdrawals([]);
-          }
-        } catch (error) {
-          console.error("Error fetching unbonding delegations:", error);
-          setWithdrawals([]);
-        }
-      }
-    };
-
-    fetchWithdrawAddress();
-  }, [account]);
+    fetchAccountData();
+  }, [address, router]);
 
   const totalValue = session
     ? parseFloat(session.balance) +
@@ -122,7 +180,7 @@ export default function AccountPage() {
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
-      <AddressCard account={account} />
+      <AddressCard account={typeof address === "string" ? address : ""} />
       <BalanceAndAssets
         assets={[
           {
@@ -154,8 +212,8 @@ export default function AccountPage() {
       />
       <WithdrawalsTable withdrawals={withdrawals} />
       <StakesTable delegations={delegations} />
-      <TransactionsTable />
-      <AccountInfo account={account} />
+      <TransactionsTable transactions={transactions} />
+      <AccountInfo account={typeof address === "string" ? address : ""} />
     </div>
   );
 }

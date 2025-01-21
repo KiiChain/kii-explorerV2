@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/icons";
 import { useTheme } from "@/context/ThemeContext";
 import { darkTheme } from "@/theme";
-import { getWeb3Provider } from "@/lib/web3";
+import { getWeb3Provider, getMultiNetworkBalance } from "@/lib/web3";
 import { ethers } from "ethers";
 import { useWallet } from "@/context/WalletContext";
 import { useRouter } from "next/navigation";
@@ -37,6 +37,10 @@ interface RewardsResponse {
     denom: string;
     amount: string;
   }>;
+}
+
+interface SwitchNetworkError extends Error {
+  code: number;
 }
 
 export function UptimeHeader() {
@@ -184,17 +188,17 @@ export function UptimeHeader() {
 
       try {
         const balanceResponse = await fetch(
-          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${keplrAccount}`
+          `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${keplrAccount}`
         );
         const balanceData = (await balanceResponse.json()) as BalanceResponse;
 
         const stakingResponse = await fetch(
-          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${keplrAccount}`
+          `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${keplrAccount}`
         );
         const stakingData = (await stakingResponse.json()) as StakingResponse;
 
         const rewardsResponse = await fetch(
-          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${keplrAccount}/rewards`
+          `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${keplrAccount}/rewards`
         );
         const rewardsData = (await rewardsResponse.json()) as RewardsResponse;
 
@@ -252,7 +256,7 @@ export function UptimeHeader() {
     }
   };
 
-  const confirm = () => {
+  const confirm = async () => {
     setErrorMessage("");
     const key = (
       document.querySelector('input[type="text"]') as HTMLInputElement
@@ -263,7 +267,6 @@ export function UptimeHeader() {
       return;
     }
 
-    // Using the same regex patterns from the image
     const height = /^\d+$/;
     const txhash = /^[A-Z\d]{64}$/;
     const addr = /^[a-z\d]+1[a-z\d]{38,58}$/;
@@ -275,7 +278,125 @@ export function UptimeHeader() {
     } else if (txhash.test(key) || evmTxHash.test(key)) {
       router.push(`/transaction/${key}`);
     } else if (addr.test(key) || evmAddr.test(key)) {
-      router.push(`/account/${key}`);
+      try {
+        if (evmAddr.test(key)) {
+          try {
+            if (window.ethereum) {
+              try {
+                await window.ethereum.request({
+                  method: "wallet_switchEthereumChain",
+                  params: [{ chainId: "0x538" }],
+                });
+              } catch (switchError) {
+                const error = switchError as SwitchNetworkError;
+
+                if (error.code === 4902) {
+                  await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [
+                      {
+                        chainId: "0x538",
+                        chainName: "Kii Chain Testnet",
+                        nativeCurrency: {
+                          name: "KII",
+                          symbol: "KII",
+                          decimals: 18,
+                        },
+                        rpcUrls: ["https://rpc.testnet.kiichain.org"],
+                      },
+                    ],
+                  });
+                }
+              }
+            }
+
+            const balance = await getMultiNetworkBalance(key);
+            const walletData = {
+              account: key,
+              session: {
+                balance: balance,
+                staking: "0 KII",
+                reward: "0 KII",
+                withdrawals: "0 KII",
+                stakes: [],
+              },
+            };
+            localStorage.setItem("walletSession", JSON.stringify(walletData));
+          } catch (error) {
+            console.error("Error fetching wallet data:", error);
+            const walletData = {
+              account: key,
+              session: {
+                balance: "0",
+                staking: "0 KII",
+                reward: "0 KII",
+                withdrawals: "0 KII",
+                stakes: [],
+              },
+            };
+            localStorage.setItem("walletSession", JSON.stringify(walletData));
+          }
+          router.push(`/account/${key}`);
+        } else {
+          const [balanceResponse, stakingResponse, rewardsResponse] =
+            await Promise.all([
+              fetch(
+                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${key}`
+              ),
+              fetch(
+                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${key}`
+              ),
+              fetch(
+                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${key}/rewards`
+              ),
+            ]);
+
+          const balanceData = (await balanceResponse.json()) as BalanceResponse;
+          const stakingData = (await stakingResponse.json()) as StakingResponse;
+          const rewardsData = (await rewardsResponse.json()) as RewardsResponse;
+
+          const balance =
+            balanceData.balances.find((b) => b.denom === "ukii")?.amount || "0";
+          const formattedBalance = (parseInt(balance) / 1_000_000).toString();
+
+          const totalStaked =
+            stakingData.delegation_responses?.reduce(
+              (sum, del) => sum + parseInt(del.balance.amount),
+              0
+            ) || 0;
+          const formattedStaking = (totalStaked / 1_000_000).toString();
+
+          const totalRewards =
+            rewardsData.total?.find((r) => r.denom === "ukii")?.amount || "0";
+          const formattedRewards = (
+            parseInt(totalRewards) / 1_000_000
+          ).toString();
+
+          const walletData = {
+            account: key,
+            session: {
+              balance: formattedBalance,
+              staking: `${formattedStaking} KII`,
+              reward: `${formattedRewards} KII`,
+              withdrawals: "0 KII",
+              stakes:
+                stakingData.delegation_responses?.map((del) => ({
+                  validator: del.delegation.validator_address,
+                  amount:
+                    (parseInt(del.balance.amount) / 1_000_000).toString() +
+                    " KII",
+                  rewards: "0 KII",
+                })) || [],
+            },
+          };
+
+          localStorage.setItem("walletSession", JSON.stringify(walletData));
+          router.push(`/account/${key}`);
+        }
+      } catch (error) {
+        console.error("Error fetching wallet data:", error);
+        router.push(`/account/${key}`);
+      }
     } else {
       setErrorMessage("The input not recognized");
     }
