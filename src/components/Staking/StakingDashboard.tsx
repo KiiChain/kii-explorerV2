@@ -343,7 +343,10 @@ export function StakingDashboard() {
       >
         <table className="w-full">
           <thead>
-            <tr className="text-left" style={{ color: theme.primaryTextColor }}>
+            <tr
+              className="text-left text-base"
+              style={{ color: theme.primaryTextColor }}
+            >
               <th className="p-4">Rank</th>
               <th className="p-4">Validator</th>
               <th className="p-4">Voting Power</th>
@@ -377,21 +380,21 @@ export function StakingDashboard() {
                     ></div>
                     <div className="flex-1">
                       <div
-                        className="font-medium"
+                        className="font-medium text-base"
                         style={{ color: theme.primaryTextColor }}
                       >
                         {validator.description.moniker}
                       </div>
                       <div
                         style={{ color: theme.primaryTextColor }}
-                        className="text-sm"
+                        className="text-base pt-1"
                       >
                         {validator.description.website || "No website provided"}
                       </div>
                       {validator.description.details && (
                         <div
                           style={{ color: theme.secondaryTextColor }}
-                          className="text-xs mt-1"
+                          className="text-base mt-1"
                         >
                           {validator.description.details}
                         </div>
@@ -400,7 +403,10 @@ export function StakingDashboard() {
                   </div>
                 </td>
                 <td className="p-4">
-                  <div style={{ color: theme.primaryTextColor }}>
+                  <div
+                    className="text-base"
+                    style={{ color: theme.primaryTextColor }}
+                  >
                     {(parseInt(validator.tokens) / 1000000).toLocaleString()}{" "}
                     KII
                   </div>
@@ -413,7 +419,7 @@ export function StakingDashboard() {
                 </td>
                 <td className="p-4">
                   <button
-                    className="px-4 py-2 rounded-lg"
+                    className="px-4 py-2 rounded-lg text-base"
                     style={{
                       backgroundColor: theme.boxColor,
                       color: theme.accentColor,

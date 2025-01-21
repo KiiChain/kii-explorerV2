@@ -169,22 +169,29 @@ interface BlockResponse {
 }
 
 interface Transaction {
-  body: {
-    messages: Array<{
-      "@type": string;
-      from_address: string;
-      to_address: string;
-      amount: Array<{
-        denom: string;
-        amount: string;
-      }>;
-    }>;
-  };
+  from: string;
+  to: string;
+  amount: string;
+  denom: string;
   timestamp: string;
+  hash: string;
 }
 
 interface TransactionResponse {
-  txs: Transaction[];
+  txs: Array<{
+    body: {
+      messages: Array<{
+        from_address: string;
+        to_address: string;
+        amount: Array<{
+          denom: string;
+          amount: string;
+        }>;
+      }>;
+    };
+    hash: string;
+    timestamp: string;
+  }>;
   pagination: {
     next_key: string | null;
     total: string;
@@ -231,15 +238,9 @@ export function Dashboard() {
   const [bondedTokens, setBondedTokens] = useState<string>("0");
   const [communityPool, setCommunityPool] = useState<string>("0");
   const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
-  const [latestTransactions, setLatestTransactions] = useState<
-    Array<{
-      from: string;
-      to: string;
-      amount: string;
-      denom: string;
-      timestamp: string;
-    }>
-  >([]);
+  const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
+    []
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -298,7 +299,13 @@ export function Dashboard() {
           setCommunityPool(communityPoolKii);
         }
       } catch (error) {
-        console.error("Error fetching chain data:", error);
+        if (error instanceof Error) {
+          if (error.name === "AbortError") {
+            console.error("Fetch aborted due to timeout:", error);
+          } else {
+            console.error("Error fetching chain data:", error);
+          }
+        }
       }
     };
 
@@ -453,6 +460,7 @@ export function Dashboard() {
       const transactions = txsData.tx_responses.map((txResponse) => {
         const msg = txResponse.tx.body.messages[0];
         return {
+          hash: txResponse.txhash,
           from: msg.from_address || "N/A",
           to: msg.to_address || "N/A",
           amount: msg.amount ? msg.amount[0].amount : "0",
@@ -487,6 +495,7 @@ export function Dashboard() {
         amount: tx.body.messages[0].amount[0].amount,
         denom: tx.body.messages[0].amount[0].denom,
         timestamp: tx.timestamp,
+        hash: tx.hash,
       }));
 
       setLatestTransactions(formattedTransactions);
@@ -506,6 +515,20 @@ export function Dashboard() {
     const interval = setInterval(fetchLatestTransactions, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleBlockClick = (height: string) => {
+    router.push(`/blocksID/${height}`);
+  };
+
+  const handleAddressClick = (address: string) => {
+    const key = address;
+    const addr = /^[a-z\d]+1[a-z\d]{38,58}$/;
+    const evmAddr = /^0x[a-fA-F0-9]{40}$/;
+
+    if (addr.test(key) || evmAddr.test(key)) {
+      router.push(`/account/${key}`);
+    }
+  };
 
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
@@ -817,8 +840,9 @@ export function Dashboard() {
                       >
                         <td className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-4 items-center">
                           <span
-                            className="col-span-1 lg:col-span-2 flex items-center gap-2"
+                            className="col-span-1 lg:col-span-2 flex items-center gap-2 cursor-pointer hover:opacity-80"
                             style={{ color: theme.accentColor }}
+                            onClick={() => handleBlockClick(block.height)}
                           >
                             <ContractIcon className="w-4 h-4" />
                             <span style={{ color: theme.secondaryTextColor }}>
@@ -831,7 +855,8 @@ export function Dashboard() {
                             </span>
                             <span
                               style={{ color: theme.accentColor }}
-                              className="truncate md:whitespace-nowrap"
+                              className="truncate md:whitespace-nowrap cursor-pointer hover:opacity-80"
+                              onClick={() => handleAddressClick(block.proposer)}
                             >
                               {window.innerWidth < 1024
                                 ? `${block.proposer.slice(0, 8)}...`
@@ -839,12 +864,12 @@ export function Dashboard() {
                             </span>
                           </div>
                           <span
-                            className="col-span-1 lg:col-span-2 flex items-center gap-2"
+                            className="col-span-1 lg:col-span-2 flex items-center gap-2 cursor-pointer hover:opacity-80"
                             style={{ color: theme.accentColor }}
                           >
                             <ContractIcon className="w-4 h-4" />
                             <span style={{ color: theme.secondaryTextColor }}>
-                              {block.hash}
+                              {block.hash || "N/A"}
                             </span>
                           </span>
                           <div className="flex flex-col col-span-1 lg:col-span-3">
@@ -855,7 +880,16 @@ export function Dashboard() {
                                 >
                                   From:
                                 </span>
-                                <span style={{ color: theme.accentColor }}>
+                                <span
+                                  style={{ color: theme.accentColor }}
+                                  className="cursor-pointer hover:opacity-80"
+                                  onClick={() =>
+                                    latestTransactions[index]?.from &&
+                                    handleAddressClick(
+                                      latestTransactions[index].from
+                                    )
+                                  }
+                                >
                                   {window.innerWidth < 1600 &&
                                   latestTransactions[index]?.from
                                     ? `${latestTransactions[index].from.slice(
@@ -873,7 +907,16 @@ export function Dashboard() {
                                 >
                                   To:
                                 </span>
-                                <span style={{ color: theme.accentColor }}>
+                                <span
+                                  style={{ color: theme.accentColor }}
+                                  className="cursor-pointer hover:opacity-80"
+                                  onClick={() =>
+                                    latestTransactions[index]?.to &&
+                                    handleAddressClick(
+                                      latestTransactions[index].to
+                                    )
+                                  }
+                                >
                                   {window.innerWidth < 1600 &&
                                   latestTransactions[index]?.to
                                     ? `${latestTransactions[index].to.slice(
@@ -893,7 +936,7 @@ export function Dashboard() {
                                 boxShadow:
                                   "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                               }}
-                              className="px-3 py-1 rounded-full text-center inline-block w-fit"
+                              className="px-3 py-1 rounded-full text-center inline-block w-fit cursor-pointer hover:opacity-80"
                             >
                               {latestTransactions[index]?.amount
                                 ? parseInt(latestTransactions[index].amount) /

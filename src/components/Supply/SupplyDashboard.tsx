@@ -43,12 +43,12 @@ export function SupplyDashboard() {
     const fetchSupplyData = async () => {
       try {
         const supplyResponse = await fetch(
-          "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
+          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
         );
         const supplyData: SupplyResponse = await supplyResponse.json();
 
         const genesisResponse = await fetch(
-          "https://dos.sentry.testnet.v3.kiivalidator.com:26671/genesis"
+          "https://rpc.uno.sentry.testnet.v3.kiivalidator.com/genesis"
         );
         const genesisData: GenesisResponse = await genesisResponse.json();
 
@@ -94,7 +94,7 @@ export function SupplyDashboard() {
     <div className="px-6" style={{ backgroundColor: theme.bgColor }}>
       <div className="mt-20">
         <h2
-          className="text-xl font-semibold mb-4"
+          className="text-base font-semibold mb-4"
           style={{ color: theme.primaryTextColor }}
         >
           Bank Supply
@@ -118,7 +118,7 @@ export function SupplyDashboard() {
                 </div>
               </Card>
               <div
-                className="text-sm truncate mt-2 flex justify-center"
+                className="text-sm truncate mt-2 flex justify-center "
                 style={{ maxWidth: "90%", color: theme.primaryTextColor }}
               >
                 {supply.address.slice(0, supply.address.length / 2)}...
@@ -135,7 +135,7 @@ export function SupplyDashboard() {
             <table className="w-full">
               <thead>
                 <tr
-                  className="text-left"
+                  className="text-left text-base"
                   style={{ color: theme.secondaryTextColor }}
                 >
                   <th className="py-3 px-4">Wallet Address</th>
@@ -147,6 +147,7 @@ export function SupplyDashboard() {
                 {supplies.map((supply) => (
                   <tr
                     key={supply.id}
+                    className="text-xs"
                     style={{
                       backgroundColor: theme.bgColor,
                       borderTop: `1px solid ${theme.accentColor}`,

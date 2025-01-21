@@ -192,22 +192,31 @@ export function BlocksDashboard() {
                   className="hover:bg-opacity-80 transition-colors duration-200 p-4 rounded-lg cursor-pointer"
                 >
                   <div className="flex flex-col gap-2 p-6">
-                    <div className="font-semibold flex justify-between">
-                      <span style={{ color: theme.primaryTextColor }}>
-                        Block {block.block.header.height}
+                    <div className="font-semibold flex justify-between ">
+                      <span
+                        className="text-base"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        {block.block.header.height}
                       </span>
                       <span
                         style={{ color: theme.quaternaryTextColor }}
-                        className="font-normal"
+                        className="font-normal pl-4 text-sm"
                       >
                         {getRelativeTime(block.block.header.time)}
                       </span>
                     </div>
                     <div className="text-sm flex justify-between">
-                      <span style={{ color: theme.secondaryTextColor }}>
+                      <span
+                        className="text-sm"
+                        style={{ color: theme.secondaryTextColor }}
+                      >
                         {block.block.header.chain_id}
                       </span>
-                      <span style={{ color: theme.secondaryTextColor }}>
+                      <span
+                        className="text-sm"
+                        style={{ color: theme.secondaryTextColor }}
+                      >
                         {block.block.data.txs.length} Tx
                       </span>
                     </div>

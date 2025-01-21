@@ -190,7 +190,7 @@ export function ParametersDashboard() {
     <div style={{ backgroundColor: theme.bgColor }} className="px-6">
       <h2
         style={{ color: theme.primaryTextColor }}
-        className="text-xl font-semibold mb-4 pt-20"
+        className="text-base font-semibold mb-4 pt-20"
       >
         Chain ID: kiichain-1
       </h2>
@@ -205,7 +205,7 @@ export function ParametersDashboard() {
         style={{ color: theme.primaryTextColor }}
         className="text-xl font-semibold mb-4 pt-8"
       >
-        Staking Parameters
+        <p className="text-base">Staking Parameters</p>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
         <ParameterCard
@@ -234,7 +234,7 @@ export function ParametersDashboard() {
         style={{ color: theme.primaryTextColor }}
         className="text-xl font-semibold mb-4 pt-8"
       >
-        Governance Parameters
+        <p className="text-base">Governance Parameters</p>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         <ParameterCard
@@ -264,7 +264,7 @@ export function ParametersDashboard() {
         style={{ color: theme.primaryTextColor }}
         className="text-xl font-semibold mb-4 pt-8"
       >
-        Distribution Parameters
+        <p className="text-base">Distribution Parameters</p>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <ParameterCard
@@ -293,7 +293,7 @@ export function ParametersDashboard() {
         style={{ color: theme.primaryTextColor }}
         className="text-xl font-semibold mb-4 pt-8"
       >
-        Slashing Parameters
+        <p className="text-base">Slashing Parameters</p>
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <ParameterCard
@@ -322,7 +322,7 @@ export function ParametersDashboard() {
         style={{ color: theme.primaryTextColor }}
         className="text-xl font-semibold mb-4 pt-8"
       >
-        Application Versions
+        <p className="text-base">Application Versions</p>
       </h2>
       <table
         style={{ backgroundColor: theme.bgColor }}
@@ -337,14 +337,14 @@ export function ParametersDashboard() {
               }}
               className="text-lg p-4 shadow-lg"
             >
-              Name
+              <p className="text-base">Name</p>
             </td>
             <td
               style={{
                 color: theme.secondaryTextColor,
                 backgroundColor: theme.boxColor,
               }}
-              className="text-lg p-4 shadow-lg"
+              className="p-4 shadow-lg text-base"
             >
               {parameters.appVersion.name}
             </td>
@@ -357,14 +357,14 @@ export function ParametersDashboard() {
               }}
               className="text-lg p-4 shadow-lg"
             >
-              App_name
+              <p className="text-base">App_name</p>
             </td>
             <td
               style={{
                 color: theme.secondaryTextColor,
                 backgroundColor: theme.boxColor,
               }}
-              className="text-lg p-4 shadow-lg"
+              className="text-base p-4 shadow-lg"
             >
               {parameters.appVersion.appName}
             </td>
@@ -375,16 +375,16 @@ export function ParametersDashboard() {
                 color: theme.secondaryTextColor,
                 backgroundColor: theme.boxColor,
               }}
-              className="text-lg p-4 shadow-lg"
+              className="text-base p-4 shadow-lg"
             >
-              Version
+              <p className="text-base">Version</p>
             </td>
             <td
               style={{
                 color: theme.secondaryTextColor,
                 backgroundColor: theme.boxColor,
               }}
-              className="text-lg p-4 shadow-lg"
+              className="text-base p-4 shadow-lg"
             >
               {parameters.appVersion.version}
             </td>
@@ -395,16 +395,16 @@ export function ParametersDashboard() {
                 color: theme.secondaryTextColor,
                 backgroundColor: theme.boxColor,
               }}
-              className="text-lg p-4 shadow-lg"
+              className="text-base p-4 shadow-lg"
             >
-              Git_commit
+              <p className="text-base">Git_commit</p>
             </td>
             <td
               style={{
                 color: theme.secondaryTextColor,
                 backgroundColor: theme.boxColor,
               }}
-              className="text-lg p-4 shadow-lg"
+              className="text-base p-4 shadow-lg"
             >
               {parameters.appVersion.gitCommit}
             </td>

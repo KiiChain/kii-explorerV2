@@ -14,17 +14,23 @@ export function StateSyncDashboard() {
         >
           <h2
             style={{ color: theme.primaryTextColor }}
-            className="text-xl font-semibold mb-2"
+            className="text-xl font-bold mb-2"
           >
-            What&apos;s State Sync?
+            <p className="text-base">What&apos;s State Sync?</p>
           </h2>
-          <p style={{ color: theme.primaryTextColor }}>
+          <p
+            className="text-base pt-1"
+            style={{ color: theme.primaryTextColor }}
+          >
             The Tendermint Core 0.34 release includes support for State Sync,
             which allows a new node to join a network by fetching a snapshot of
             the application state at a recent height instead of fetching and
             replaying all historical blocks. This can reduce the time needed to
             sync with the network from days to minutes. Click{" "}
-            <a href="#" style={{ color: theme.accentColor }}>
+            <a
+              href="https://blog.cosmos.network/cosmos-sdk-state-sync-guide-99e4cf43be2f"
+              style={{ color: theme.accentColor }}
+            >
               here
             </a>{" "}
             for more information.
@@ -39,11 +45,11 @@ export function StateSyncDashboard() {
             style={{ color: theme.primaryTextColor }}
             className="text-xl font-semibold mb-2"
           >
-            Starting New Node From State Sync
+            <p className="text-base">Starting New Node From State Sync</p>
           </h2>
           <ol
             style={{ color: theme.primaryTextColor }}
-            className="list-decimal list-inside"
+            className="list-decimal list-inside text-base pt-1"
           >
             <li>
               Install Binary (Kiichain Version: 71882bc)
@@ -136,7 +142,10 @@ export function StateSyncDashboard() {
             </pre>
           </div>
 
-          <p className="mt-4" style={{ color: theme.primaryTextColor }}>
+          <p
+            className="mt-4 text-base"
+            style={{ color: theme.primaryTextColor }}
+          >
             3. Start the daemon:{" "}
             <code
               style={{

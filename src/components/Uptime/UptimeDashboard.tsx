@@ -182,7 +182,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
               </div>
 
               <div
-                className="grid grid-cols-6 gap-4 py-2 font-semibold px-8"
+                className="grid grid-cols-6 gap-4 py-2 font-semibold px-8 text-base"
                 style={{ color: theme.primaryTextColor }}
               >
                 <div>Validator</div>
@@ -206,24 +206,36 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
                   >
                     <div className="flex items-center gap-4">
                       <span
-                        className="text-4xl font-semibold"
+                        className="text-4xl font-semibold "
                         style={{ color: theme.accentColor }}
                       >
                         {index + 1}
                       </span>
-                      {validator.moniker}
+                      <p className="text-base">{validator.moniker}</p>
                     </div>
-                    <div style={{ color: theme.tertiaryTextColor }}>
+                    <div
+                      className="text-base"
+                      style={{ color: theme.tertiaryTextColor }}
+                    >
                       {validator.uptime.toFixed(2)}%
                     </div>
-                    <div style={{ color: theme.secondaryTextColor }}></div>
-                    <div style={{ color: theme.secondaryTextColor }}>
+                    <div
+                      className="text-base"
+                      style={{ color: theme.secondaryTextColor }}
+                    ></div>
+                    <div
+                      className="text-base"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       {signingInfo ? `${signingInfo.index_offset}%` : "0%"}
                     </div>
                     <div style={{ color: theme.secondaryTextColor }}>
                       {signingInfo ? signingInfo.start_height : "0"}
                     </div>
-                    <div style={{ color: theme.secondaryTextColor }}>
+                    <div
+                      className="text-base"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       {validator.jailed ? "True" : "False"}
                     </div>
                   </div>

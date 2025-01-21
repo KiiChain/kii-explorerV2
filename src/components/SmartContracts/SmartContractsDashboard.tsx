@@ -51,25 +51,25 @@ export function SmartContractsDashboard() {
               <thead>
                 <tr>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Code ID
                   </th>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Code Hash
                   </th>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Creator
                   </th>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Created At
@@ -84,7 +84,7 @@ export function SmartContractsDashboard() {
                     className="mt-2"
                   >
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {contracts[index % contracts.length]?.BlockNumber ||
@@ -92,7 +92,7 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.tertiaryTextColor }}
                     >
                       {contracts[
@@ -101,7 +101,7 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {contracts[index % contracts.length]?.sender ||
@@ -109,7 +109,7 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {contracts[index % contracts.length]
