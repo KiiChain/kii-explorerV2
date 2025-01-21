@@ -78,14 +78,14 @@ export function BlocksDashboard() {
     const fetchBlocks = async () => {
       try {
         const latestResponse = await fetch(
-          "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
+          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
         );
         const latestData = await latestResponse.json();
         const latestHeight = parseInt(latestData.block.header.height);
 
         const blockPromises = Array.from({ length: 50 }, (_, i) =>
           fetch(
-            `https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${
+            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${
               latestHeight - i
             }`
           ).then((res) => res.json())
@@ -105,7 +105,7 @@ export function BlocksDashboard() {
     const fetchTransactions = async () => {
       try {
         const response = await fetch(
-          "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2"
+          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2"
         );
         const data = await response.json();
 
@@ -130,6 +130,10 @@ export function BlocksDashboard() {
       fetchTransactions();
     }
   }, [activeTab]);
+
+  const handleBlockClick = (height: string) => {
+    router.push(`/blocksID/${height}`);
+  };
 
   return (
     <div style={{ backgroundColor: theme.bgColor }} className="p-6">
@@ -179,6 +183,7 @@ export function BlocksDashboard() {
               {blocks.map((block) => (
                 <div
                   key={block.block.header.height}
+                  onClick={() => handleBlockClick(block.block.header.height)}
                   style={{
                     backgroundColor: theme.boxColor,
                     boxShadow:
