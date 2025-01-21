@@ -274,7 +274,7 @@ export function UptimeHeader() {
     const evmTxHash = /^0x[a-fA-F0-9]{64}$/;
 
     if (height.test(key)) {
-      router.push(`/block/${key}`);
+      router.push(`/blocksID/${key}`);
     } else if (txhash.test(key) || evmTxHash.test(key)) {
       router.push(`/transaction/${key}`);
     } else if (addr.test(key) || evmAddr.test(key)) {
