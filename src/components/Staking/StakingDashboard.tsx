@@ -170,12 +170,17 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
                 0%
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>Inflation</div>
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
+                Inflation
+              </div>
             </div>
           </div>
 
@@ -194,12 +199,15 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
                 21 Days
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
                 Unbonding Time
               </div>
             </div>
@@ -223,12 +231,15 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
                 5%
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
                 Double Sign Slashing
               </div>
             </div>
@@ -249,12 +260,15 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
                 1%
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
                 Downtime Slashing
               </div>
             </div>
