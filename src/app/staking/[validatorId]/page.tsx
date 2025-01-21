@@ -171,7 +171,7 @@ function DelegateModal({
       >
         <div className="flex justify-between items-center mb-6">
           <h2
-            className="text-2xl font-semibold"
+            className="font-semibold"
             style={{ color: theme.primaryTextColor }}
           >
             Delegate
@@ -527,7 +527,7 @@ export default function ValidatorPage({
               </div>
               <div className="w-full md:w-2/3">
                 <h2
-                  className="text-lg font-bold mb-1 md:truncate"
+                  className="text-base font-bold mb-1 md:truncate"
                   style={{ color: theme.primaryTextColor }}
                 >
                   {validator.moniker.length > 15
@@ -535,14 +535,14 @@ export default function ValidatorPage({
                     : validator.moniker}
                 </h2>
                 <p
-                  className="text-lg font-bold mb-1 break-all"
+                  className="text-xs font-bold mb-1 break-all"
                   style={{ color: theme.secondaryTextColor }}
                 >
                   {validator.operatorAddress}
                 </p>
                 <div className="pt-4">
                   <button
-                    className="text-lg p-2 rounded-lg w-full md:w-auto"
+                    className="text-xs p-2 rounded-lg w-full md:w-auto"
                     style={{
                       backgroundColor: theme.bgColor,
                       color: theme.accentColor,
@@ -566,7 +566,7 @@ export default function ValidatorPage({
             <div className="flex flex-col gap-4 mt-4 w-full">
               <a
                 href="#"
-                className="text-lg flex flex-col md:flex-row items-start md:items-center gap-2"
+                className="text-sm flex flex-col md:flex-row items-start md:items-center gap-2"
                 style={{ color: theme.primaryTextColor }}
               >
                 <div className="flex items-center gap-2">
@@ -609,7 +609,7 @@ export default function ValidatorPage({
                   Website:
                 </div>
                 <p
-                  className="text-base underline break-all"
+                  className="text-sm underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
                   https://app.kiichain.io
@@ -618,7 +618,7 @@ export default function ValidatorPage({
 
               <a
                 href="#"
-                className="text-lg flex flex-col md:flex-row items-start md:items-center gap-2"
+                className="text-sm flex flex-col md:flex-row items-start md:items-center gap-2"
                 style={{ color: theme.primaryTextColor }}
               >
                 <div className="flex items-center gap-2">
@@ -641,7 +641,7 @@ export default function ValidatorPage({
                   Contact:
                 </div>
                 <p
-                  className="text-base underline break-all"
+                  className="text-sm underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
                   support@kiichain.io
@@ -649,7 +649,7 @@ export default function ValidatorPage({
               </a>
               <div className="flex items-center gap-2 pt-2 pl-1">
                 <p
-                  className="text-lg"
+                  className="text-sm"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Validator Status
@@ -670,13 +670,13 @@ export default function ValidatorPage({
                   />
                 </svg>
                 <p
-                  className="text-lg"
+                  className="text-sm"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Status:
                 </p>
                 <p
-                  className="text-lg underline"
+                  className="text-sm underline"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Bonded
@@ -700,7 +700,7 @@ export default function ValidatorPage({
                   />
                 </svg>
                 <p
-                  className="text-lg"
+                  className="text-sm"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Jailed: -
@@ -738,7 +738,7 @@ export default function ValidatorPage({
                       Total Bonded Tokens
                     </div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.tokens} KII
@@ -777,7 +777,7 @@ export default function ValidatorPage({
                       Self Bonded
                     </div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.selfBonded || "100,000 KII"} (
@@ -817,13 +817,13 @@ export default function ValidatorPage({
                       style={{ color: theme.secondaryTextColor }}
                     ></div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.tokens} KII
                     </div>
                     <div
-                      className="text-sm"
+                      className="text-xs"
                       style={{ color: theme.secondaryTextColor }}
                     >
                       99.86%
@@ -860,7 +860,7 @@ export default function ValidatorPage({
                       Commission
                     </div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {(parseFloat(validator.commission) * 100).toFixed(2)}%
@@ -896,7 +896,7 @@ export default function ValidatorPage({
                       style={{ color: theme.secondaryTextColor }}
                     ></div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.tokens} KII
@@ -921,7 +921,7 @@ export default function ValidatorPage({
         >
           <div className="flex items-center justify-between mb-4">
             <h3
-              className="text-lg font-medium"
+              className="text-sm font-medium"
               style={{ color: theme.primaryTextColor }}
             >
               Transactions
@@ -932,25 +932,25 @@ export default function ValidatorPage({
               <thead>
                 <tr>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Height
                   </th>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Hash
                   </th>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Messages
                   </th>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Time
@@ -960,19 +960,24 @@ export default function ValidatorPage({
               <tbody>
                 <tr>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     244322
                   </td>
                   <td
-                    className="text-lg py-2 max-w-[300px] truncate"
+                    className="text-sm py-2 max-w-[300px] truncate"
                     style={{ color: theme.primaryTextColor }}
                   >
                     0xc1fe48d...2b7b4b2b
                   </td>
                   <td className="py-2 flex items-center justify-between pr-12">
-                    <span style={{ color: theme.primaryTextColor }}>SEND</span>
+                    <span
+                      className="text-xs"
+                      style={{ color: theme.primaryTextColor }}
+                    >
+                      SEND
+                    </span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
                         d="M13.3334 4L6.00008 11.3333L2.66675 8"
@@ -984,7 +989,7 @@ export default function ValidatorPage({
                     </svg>
                   </td>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     23 Days Ago
@@ -992,19 +997,24 @@ export default function ValidatorPage({
                 </tr>
                 <tr>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     155156
                   </td>
                   <td
-                    className="text-lg py-2 max-w-[300px] truncate"
+                    className="text-sm py-2 max-w-[300px] truncate"
                     style={{ color: theme.primaryTextColor }}
                   >
                     0xf28666d...5b7a6c23
                   </td>
                   <td className="py-2 flex items-center justify-between pr-12">
-                    <span style={{ color: theme.primaryTextColor }}>SEND</span>
+                    <span
+                      className="text-xs"
+                      style={{ color: theme.primaryTextColor }}
+                    >
+                      SEND
+                    </span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
                         d="M13.3334 4L6.00008 11.3333L2.66675 8"
@@ -1016,7 +1026,7 @@ export default function ValidatorPage({
                     </svg>
                   </td>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     23 Days Ago

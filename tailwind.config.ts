@@ -30,6 +30,7 @@ const config: Config = {
         sans: ["var(--font-montserrat)", ...defaultTheme.fontFamily.sans],
       },
       fontSize: {
+        "2xs": ["0.625rem", "0.8125rem"],
         xs: ["0.625rem", "1.25rem"],
         sm: ["0.75rem", "1.25rem"],
         base: ["0.875rem", "1.25rem"],
