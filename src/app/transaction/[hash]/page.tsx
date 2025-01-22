@@ -305,7 +305,7 @@ export default function TransactionPage({
           style={{ backgroundColor: theme.boxColor }}
         >
           <h2
-            className="text-2xl font-semibold mb-6 px-6 pt-6"
+            className="text-base font-semibold mb-6 px-6 pt-6"
             style={{ color: theme.primaryTextColor }}
           >
             Summary
@@ -416,7 +416,7 @@ export default function TransactionPage({
           style={{ backgroundColor: theme.bgCodeColor }}
         >
           <h2
-            className="text-2xl font-semibold mb-6"
+            className="text-base font-semibold mb-6"
             style={{ color: theme.primaryTextColor }}
           >
             JSON
@@ -438,7 +438,7 @@ export default function TransactionPage({
             style={{ backgroundColor: theme.bgCodeColor }}
           >
             <h2
-              className="text-2xl font-semibold mb-6"
+              className="text-base font-semibold mb-6"
               style={{ color: theme.primaryTextColor }}
             >
               Events
@@ -461,7 +461,7 @@ export default function TransactionPage({
             style={{ backgroundColor: theme.bgCodeColor }}
           >
             <h2
-              className="text-2xl font-semibold mb-6"
+              className="text-base font-semibold mb-6"
               style={{ color: theme.primaryTextColor }}
             >
               Contract Code
