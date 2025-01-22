@@ -2,10 +2,12 @@
 
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface SmartContract {
   transaction: {
     hash: string;
+    type: "cosmos" | "evm";
   };
   sender: string;
   timestamp: number;
@@ -20,6 +22,7 @@ interface SmartContractsResponse {
 export function SmartContractsDashboard() {
   const { theme } = useTheme();
   const [contracts, setContracts] = useState<SmartContract[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -28,6 +31,9 @@ export function SmartContractsDashboard() {
           "https://kii.backend.kiivalidator.com/explorer/smartContracts"
         );
         const data: SmartContractsResponse = await response.json();
+
+        console.log("Smart Contracts Data:", data);
+
         if (data.success) {
           setContracts(data.smartContracts);
         }
@@ -38,6 +44,10 @@ export function SmartContractsDashboard() {
 
     fetchContracts();
   }, []);
+
+  const handleTransactionClick = (hash: string) => {
+    router.push(`/transaction/${hash}`);
+  };
 
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
@@ -82,6 +92,11 @@ export function SmartContractsDashboard() {
                     key={index}
                     style={{ backgroundColor: theme.bgColor }}
                     className="mt-2"
+                    onClick={() =>
+                      handleTransactionClick(
+                        contracts[index % contracts.length]?.transaction.hash
+                      )
+                    }
                   >
                     <td
                       className="py-4 px-1 sm:px-3 font-light text-base"
