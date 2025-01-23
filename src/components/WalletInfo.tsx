@@ -40,7 +40,7 @@ export function WalletInfo({ connectWallet }: { connectWallet: () => void }) {
               className="rounded-lg p-4"
               style={{ backgroundColor: theme.bgColor }}
             >
-              <div className="text-gray-400">Staking</div>
+              <div className="text-gray-400">Delegations</div>
               <div className="" style={{ color: theme.primaryTextColor }}>
                 {session?.staking}
               </div>

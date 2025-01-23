@@ -101,25 +101,29 @@ export default function TransactionPage({
           const myHeaders = new Headers();
           myHeaders.append("Content-Type", "application/json");
 
-          const rawTransaction = JSON.stringify({
-            method: "eth_getTransactionByHash",
-            params: [hash],
-            id: 1,
-            jsonrpc: "2.0",
-          });
+          const requestOptions: RequestInit = {
+            method: "POST",
+            headers: myHeaders,
+            body: JSON.stringify({
+              method: "eth_getTransactionByHash",
+              params: [hash],
+              id: 1,
+              jsonrpc: "2.0",
+            }),
+            redirect: "follow" as RequestRedirect,
+          };
 
           const responseTransaction = await fetch(
-            "https://json-rpc.dos.sentry.testnet.v3.kiivalidator.com",
-            {
-              method: "POST",
-              headers: myHeaders,
-              body: rawTransaction,
-            }
+            "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
+            requestOptions
           );
 
           if (!responseTransaction.ok)
             throw new Error("Network response was not ok");
           const dataTransaction = await responseTransaction.json();
+
+          console.log("EVM Transaction Response:", dataTransaction);
+          console.log("EVM Transaction Result:", dataTransaction.result);
 
           if (dataTransaction.result) {
             const result = dataTransaction.result;
@@ -148,20 +152,21 @@ export default function TransactionPage({
               Type: "EVM Transaction",
             });
 
-            const rawReceipt = JSON.stringify({
-              method: "eth_getTransactionReceipt",
-              params: [hash],
-              id: 1,
-              jsonrpc: "2.0",
-            });
+            const receiptRequestOptions: RequestInit = {
+              method: "POST",
+              headers: myHeaders,
+              body: JSON.stringify({
+                method: "eth_getTransactionReceipt",
+                params: [hash],
+                id: 1,
+                jsonrpc: "2.0",
+              }),
+              redirect: "follow" as RequestRedirect,
+            };
 
             const responseReceipt = await fetch(
-              "https://json-rpc.dos.sentry.testnet.v3.kiivalidator.com",
-              {
-                method: "POST",
-                headers: myHeaders,
-                body: rawReceipt,
-              }
+              "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
+              receiptRequestOptions
             );
 
             if (!responseReceipt.ok)

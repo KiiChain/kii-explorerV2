@@ -208,7 +208,7 @@ export default function AccountPage() {
             percentage: "0.01%",
           },
         ]}
-        totalValue={`$${totalValue.toFixed(2)}`}
+        totalValue={`$${Number(totalValue.toFixed(2))}`}
       />
       <WithdrawalsTable withdrawals={withdrawals} />
       <StakesTable delegations={delegations} />
