@@ -94,6 +94,7 @@ interface Block {
   timestamp: string;
   txCount: number;
   proposer: string;
+  transactions: Transaction[];
 }
 
 interface ValidatorSetResponse {
@@ -321,24 +322,42 @@ export function Dashboard() {
 
       for (let i = 0; i < 20; i++) {
         const height = latestHeight - i;
-        const blockResponse = await fetch(
-          `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
-          { signal: controller.signal }
-        );
-        const blockData = await blockResponse.json();
 
-        blocks.push({
-          height: blockData.block.header.height,
-          hash: blockData.block_id.hash,
-          timestamp: new Date(blockData.block.header.time).toLocaleString(),
-          txCount: blockData.block.data.txs.length,
-          proposer: blockData.block.header.proposer_address,
-        });
+        try {
+          // Fetch block data
+          const blockResponse = await fetch(
+            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
+            { signal: controller.signal }
+          );
+          const blockData = await blockResponse.json();
+
+          if (blockData && blockData.block && blockData.block_id) {
+            const blockInfo = {
+              height: blockData.block.header.height,
+              hash: blockData.block_id.hash || "N/A",
+              timestamp: new Date(blockData.block.header.time).toLocaleString(),
+              txCount: blockData.block.data.txs?.length || 0,
+              proposer: blockData.block.header.proposer_address || "N/A",
+              transactions: [],
+            };
+
+            blocks.push(blockInfo);
+            console.log(`Block ${height} processed:`, blockInfo);
+          } else {
+            console.error(
+              `Invalid block data structure for height ${height}:`,
+              blockData
+            );
+          }
+        } catch (blockError) {
+          console.error(`Error processing block ${height}:`, blockError);
+        }
       }
 
+      console.log("Final blocks array:", blocks);
       setLatestBlocks(blocks);
     } catch (error) {
-      console.error("Error fetching latest blocks:", error);
+      console.error("Error in fetchLatestBlocksAndTxs:", error);
     }
   };
 
