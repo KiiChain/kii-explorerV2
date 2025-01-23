@@ -6,7 +6,48 @@ import { useTheme } from "@/context/ThemeContext";
 
 export function FaucetDashboard() {
   const [walletAddress, setWalletAddress] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const { theme } = useTheme();
+
+  const handleClaimTokens = async () => {
+    if (!walletAddress) {
+      setError("Please enter a wallet address");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch(
+        `https://faucet.kiivalidator.com/api/faucet?address=${walletAddress}`,
+        {
+          method: "GET",
+          mode: "cors",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      await response.json();
+      setSuccess("Tokens claimed successfully!");
+      setWalletAddress("");
+    } catch (err) {
+      setError("Failed to claim tokens. Please try again later.");
+      console.error("Faucet error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div style={{ backgroundColor: theme.bgColor }} className="p-6">
@@ -70,18 +111,29 @@ export function FaucetDashboard() {
                   className="w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 shadow-lg"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
+
+              {error && (
+                <div className="text-red-500 text-sm mt-2">{error}</div>
+              )}
+
+              {success && (
+                <div className="text-green-500 text-sm mt-2">{success}</div>
+              )}
 
               <button
                 style={{
                   backgroundColor: theme.faucetColor2,
                   color: theme.faucetTextColor2,
+                  opacity: isLoading ? 0.7 : 1,
                 }}
                 className="w-full py-3 text-left font-bold rounded-lg hover:opacity-90 transition-opacity pl-4 shadow-lg"
-                onClick={() => {}}
+                onClick={handleClaimTokens}
+                disabled={isLoading}
               >
-                Claim your tokens
+                {isLoading ? "Claiming..." : "Claim your tokens"}
               </button>
             </div>
           </div>
