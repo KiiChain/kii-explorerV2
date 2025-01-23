@@ -39,6 +39,7 @@ const config: Config = {
         "2xl": ["2rem", "1.5rem"],
         "3xl": ["2.25rem", "1.75rem"],
         "4xl": ["2.5rem", "2rem"],
+        title: ["24px", "20px"],
       },
     },
   },

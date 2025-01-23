@@ -453,13 +453,8 @@ const SidebarContent = React.forwardRef<
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
   const pathname = usePathname();
-  const [isClient, setIsClient] = React.useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
   const { theme } = useTheme();
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   return (
     <div
@@ -473,21 +468,16 @@ const SidebarContent = React.forwardRef<
     >
       <nav className="grid px-2 h-[calc(75%-2rem)] overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive =
-            isClient &&
-            (pathname === "/"
-              ? item.label === "Dashboard"
-              : pathname.slice(1) ===
-                item.label.toLowerCase().replace(" ", "-"));
+          const isActive = pathname === item.href;
 
           return (
             <SidebarMenuButton
               key={item.label}
-              isActive={isActive}
               className={cn(
                 "w-full justify-start gap-2 text-sm md:text-base p-2",
                 "transition-colors duration-200",
-                "hover:bg-[#231C32] hover:text-white rounded-lg"
+                "hover:bg-[#231C32] hover:text-white rounded-lg",
+                isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
               )}
               style={{
                 backgroundColor: isActive ? theme.boxColor : "transparent",
@@ -499,25 +489,7 @@ const SidebarContent = React.forwardRef<
                 if (isMobile) {
                   setOpenMobile(false);
                 }
-                if (item.label === "Dashboard") {
-                  window.location.href = "/";
-                } else if (item.label === "Staking") {
-                  window.location.href = "/staking";
-                } else if (item.label === "Blocks") {
-                  window.location.href = "/blocks";
-                } else if (item.label === "Uptime") {
-                  window.location.href = "/uptime";
-                } else if (item.label === "Supply") {
-                  window.location.href = "/supply";
-                } else if (item.label === "Parameters") {
-                  window.location.href = "/parameters";
-                } else if (item.label === "State Sync") {
-                  window.location.href = "/stateSync";
-                } else if (item.label === "Faucet") {
-                  window.location.href = "/faucet";
-                } else if (item.label === "Smart Contracts") {
-                  window.location.href = "/smart-contracts";
-                }
+                window.location.href = item.href;
               }}
             >
               {React.cloneElement(item.icon, {
@@ -871,44 +843,47 @@ const menuItems = [
   {
     icon: <Icons.DashboardIcon className="h-6 w-6" />,
     label: "Dashboard",
+    href: "/",
   },
   {
     icon: <Icons.StakingIcon className="h-6 w-6 text-current" />,
     label: "Staking",
+    href: "/staking",
   },
   {
     icon: <Icons.BlocksIcon className="h-6 w-6" />,
     label: "Blocks",
+    href: "/blocks",
   },
   {
     icon: <Icons.UptimeIcon className="h-6 w-6" />,
     label: "Uptime",
+    href: "/uptime",
   },
   {
     icon: <Icons.SupplyIcon className="h-6 w-6" />,
     label: "Supply",
+    href: "/supply",
   },
   {
     icon: <Icons.ParametersIcon className="h-6 w-6" />,
     label: "Parameters",
-    onClick: () => {
-      window.location.href = "/parameters";
-    },
+    href: "/parameters",
   },
   {
     icon: <Icons.StateSyncIcon className="h-6 w-6" />,
     label: "State Sync",
-    onClick: () => {
-      window.location.href = "/stateSync";
-    },
+    href: "/stateSync",
   },
   {
     icon: <Icons.FaucetIcon className="h-6 w-6" />,
     label: "Faucet",
+    href: "/faucet",
   },
   {
     icon: <Icons.SmartContractsIcon className="h-6 w-6" />,
     label: "Smart Contracts",
+    href: "/smartContracts",
   },
 ];
 

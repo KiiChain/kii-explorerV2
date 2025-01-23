@@ -52,7 +52,7 @@ export function StateSyncDashboard() {
             className="list-decimal list-inside text-base pt-1"
           >
             <li>
-              Install Binary (Kiichain Version: 71882bc)
+              Install Binary (Kiichain Version: v3)
               <p className="ml-4">
                 We need to install the binary first and make sure that the
                 version is the one currently in use on mainnet.
@@ -114,7 +114,7 @@ export function StateSyncDashboard() {
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> rpc_servers = </span>
                 <span style={{ color: "#FFFFFF" }}>
-                  &quot;https://a.sentry.testnet.kiivalidator.com:26658,https://b.sentry.testnet.kiivalidator.com:26658&quot;
+                  &quot;https://rpc.uno.sentry.testnet.v3.kiivalidator.com/,https://rpc.dos.sentry.testnet.v3.kiivalidator.com/&quot;
                 </span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
