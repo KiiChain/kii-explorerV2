@@ -36,7 +36,7 @@ export function StakesTable({ delegations }: StakeProps) {
     <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
       <div className="mb-6">
         <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
-          Stakes
+          Delegations
         </div>
         <table className="w-full">
           <thead>

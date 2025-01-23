@@ -23,6 +23,29 @@ export function CreateStakeModal({
 
   if (!isOpen) return null;
 
+  // Add error handling for invalid token amounts
+  const formatTokenAmount = (amount: string) => {
+    try {
+      return `${amount} KII`;
+    } catch {
+      return "N/A";
+    }
+  };
+
+  // Add error handling for percentage calculation
+  const calculateSelfBondedPercentage = () => {
+    try {
+      const selfBonded = parseFloat(validator.selfBonded || "100000");
+      const tokens = parseFloat(validator.tokens);
+      if (isNaN(selfBonded) || isNaN(tokens) || tokens === 0) {
+        return "N/A";
+      }
+      return `${((selfBonded / tokens) * 100).toFixed(1)}%`;
+    } catch {
+      return "N/A";
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
@@ -90,7 +113,7 @@ export function CreateStakeModal({
               className="text-xl font-bold"
               style={{ color: theme.primaryTextColor }}
             >
-              {validator.tokens} KII
+              {formatTokenAmount(validator.tokens)}
             </div>
           </div>
 
@@ -108,13 +131,8 @@ export function CreateStakeModal({
               className="text-xl font-bold"
               style={{ color: theme.primaryTextColor }}
             >
-              {validator.selfBonded || "100,000 KII"} (
-              {(
-                (parseFloat(validator.selfBonded || "100000") /
-                  parseFloat(validator.tokens)) *
-                100
-              ).toFixed(1)}
-              %)
+              {formatTokenAmount(validator.selfBonded || "100,000")} (
+              {calculateSelfBondedPercentage()})
             </div>
           </div>
 
@@ -132,7 +150,7 @@ export function CreateStakeModal({
               className="text-xl font-bold"
               style={{ color: theme.primaryTextColor }}
             >
-              {validator.tokens} KII
+              {formatTokenAmount(validator.tokens)}
             </div>
             <div
               className="text-sm"

@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { setupKeplr } from "./chain-config";
 
 export function getWeb3Provider() {
   if (typeof window === "undefined" || !window.ethereum) {
@@ -32,13 +33,16 @@ export async function getMultiNetworkBalance(address: string) {
           params: [
             {
               chainId: "0x538",
-              chainName: "Kii Chain Testnet",
+              chainName: "Kii-Testnet",
+              rpcUrls: [
+                "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
+              ],
               nativeCurrency: {
                 name: "KII",
                 symbol: "KII",
                 decimals: 18,
               },
-              rpcUrls: ["https://rpc.testnet.kiichain.org"],
+              blockExplorerUrls: ["https://testnet.kiiscan.com"],
             },
           ],
         });
@@ -51,5 +55,16 @@ export async function getMultiNetworkBalance(address: string) {
   } catch (error) {
     console.error("Error getting balance:", error);
     return "0";
+  }
+}
+
+export async function initializeWallet() {
+  try {
+    await setupKeplr();
+    // Continuar con la configuración EVM
+    return await getWeb3Provider();
+  } catch (error) {
+    console.error("Error initializing wallet:", error);
+    throw error;
   }
 }

@@ -129,43 +129,65 @@ export function UptimeHeader() {
     }
 
     try {
-      const chainId = "kiichain3";
-      try {
-        await window.keplr.enable(chainId);
-        const offlineSigner = window.keplr.getOfflineSigner(chainId);
-        const accounts = await offlineSigner.getAccounts();
+      await window.keplr.experimentalSuggestChain({
+        chainId: "kiichain",
+        chainName: "KiiChain Testnet Oro",
+        rpc: "https://rpc.uno.sentry.testnet.v3.kiivalidator.com",
+        rest: "https://lcd.uno.sentry.testnet.v3.kiivalidator.com",
+        bip44: {
+          coinType: 118,
+        },
+        bech32Config: {
+          bech32PrefixAccAddr: "kii",
+          bech32PrefixAccPub: "kiipub",
+          bech32PrefixValAddr: "kiivaloper",
+          bech32PrefixValPub: "kiivaloperpub",
+          bech32PrefixConsAddr: "kiivalcons",
+          bech32PrefixConsPub: "kiivalconspub",
+        },
+        currencies: [
+          {
+            coinDenom: "KII",
+            coinMinimalDenom: "ukii",
+            coinDecimals: 6,
+          },
+        ],
+        feeCurrencies: [
+          {
+            coinDenom: "KII",
+            coinMinimalDenom: "ukii",
+            coinDecimals: 6,
+            gasPriceStep: {
+              low: 0.01,
+              average: 0.025,
+              high: 0.04,
+            },
+          },
+        ],
+        stakeCurrency: {
+          coinDenom: "KII",
+          coinMinimalDenom: "ukii",
+          coinDecimals: 6,
+        },
+        features: ["ibc-transfer", "ibc-go", "eth-address-gen", "eth-key-sign"],
+      });
 
-        const message = "Connect to Kii Explorer";
-        const signature = await window.keplr.signArbitrary(
-          chainId,
-          accounts[0].address,
-          message
-        );
+      await window.keplr.enable("kiichain");
+      const offlineSigner = window.keplr.getOfflineSigner("kiichain");
+      const accounts = await offlineSigner.getAccounts();
 
-        if (!signature) {
-          throw new Error("Signature required to connect");
-        }
+      const message = "Connect to Kii Explorer";
+      const signature = await window.keplr.signArbitrary(
+        "kiichain",
+        accounts[0].address,
+        message
+      );
 
-        handleAccountConnection(accounts);
-      } catch {
-        const testnetChainId = "kiitestnet-1";
-        await window.keplr.enable(testnetChainId);
-        const offlineSigner = window.keplr.getOfflineSigner(testnetChainId);
-        const accounts = await offlineSigner.getAccounts();
-
-        const message = "Connect to Kii Explorer";
-        const signature = await window.keplr.signArbitrary(
-          testnetChainId,
-          accounts[0].address,
-          message
-        );
-
-        if (!signature) {
-          throw new Error("Signature required to connect");
-        }
-
-        handleAccountConnection(accounts);
+      if (!signature) {
+        throw new Error("Signature required to connect");
       }
+
+      handleAccountConnection(accounts);
     } catch (error) {
       console.error("Error connecting to Keplr:", error);
       setAccount("");

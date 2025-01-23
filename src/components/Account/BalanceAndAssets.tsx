@@ -33,6 +33,7 @@ export function BalanceAndAssets({
       numericPercentage: isNaN(percentage) ? 0 : Number(percentage.toFixed(2)),
     };
   });
+  const priceCoin = 0;
 
   const createConicGradient = () => {
     let currentPercentage = 0;
@@ -127,7 +128,10 @@ export function BalanceAndAssets({
             >
               <div style={{ color: theme.primaryTextColor }}>Total Value:</div>
               <div style={{ color: theme.primaryTextColor }} className="ml-2">
-                {totalValue}
+                {(isNaN(parseFloat(totalValue) * priceCoin)
+                  ? 0
+                  : parseFloat(totalValue) * priceCoin
+                ).toFixed(2)}
               </div>
             </div>
           </div>

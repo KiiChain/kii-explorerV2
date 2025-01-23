@@ -68,18 +68,24 @@ export function StakingDashboard() {
           return;
         }
 
-        const validValidators = data.validators.filter(
-          (validator: ValidatorResponse) => {
-            const isValid =
-              validator &&
-              typeof validator.status === "string" &&
-              typeof validator.operator_address === "string";
-
-            if (!isValid) {
-              console.warn("Invalid validator data:", validator);
-            }
-            return isValid;
-          }
+        const validValidators = data.validators.map(
+          (validator: ValidatorResponse) => ({
+            operator_address: validator.operator_address,
+            tokens: validator.tokens,
+            description: {
+              moniker: validator.description.moniker,
+              website: validator.description.website,
+              identity: validator.description.identity,
+              details: validator.description.details,
+            },
+            commission: {
+              commission_rates: {
+                rate: validator.commission.commission_rates.rate,
+              },
+            },
+            status: validator.status,
+            jailed: validator.jailed,
+          })
         );
 
         const active = validValidators.filter(
@@ -446,7 +452,6 @@ export function StakingDashboard() {
           </tbody>
         </table>
 
-        {/* Pagination */}
         <div className="flex justify-between items-center mt-6 px-4">
           <div style={{ color: theme.secondaryTextColor }} className="text-sm">
             Showing {indexOfFirstValidator + 1} to{" "}

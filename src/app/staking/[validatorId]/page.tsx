@@ -137,8 +137,8 @@ function DelegateModal({
     async function getWalletAddress() {
       if (window.keplr) {
         try {
-          await window.keplr.enable("kiichain3");
-          const offlineSigner = window.keplr.getOfflineSigner("kiichain3");
+          await window.keplr.enable("kiichain");
+          const offlineSigner = window.keplr.getOfflineSigner("kiichain");
           const accounts = await offlineSigner.getAccounts();
           setWalletAddress(accounts[0].address);
         } catch (error) {
@@ -337,7 +337,7 @@ async function handleCreateStake(amount: string, validator: Validator) {
       throw new Error("Please install Keplr wallet");
     }
 
-    let chainId = "kiichain3";
+    let chainId = "kiichain";
     try {
       await window.keplr.enable(chainId);
     } catch {
@@ -363,7 +363,7 @@ async function handleCreateStake(amount: string, validator: Validator) {
     const sequence = accountInfo.sequence?.toString() || "0";
 
     const signDoc = {
-      chain_id: "kiichain3",
+      chain_id: "kiichain",
       account_number: accountNumber,
       sequence: sequence,
       fee: {
@@ -387,7 +387,7 @@ async function handleCreateStake(amount: string, validator: Validator) {
     };
 
     const signature = await window.keplr.signAmino(
-      "kiichain3",
+      "kiichain",
       userAddress,
       signDoc
     );

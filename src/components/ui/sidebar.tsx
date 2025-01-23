@@ -285,10 +285,10 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow overflow-hidden"
             style={{
               backgroundColor: theme.bgColor,
-              borderColor: theme.borderColor,
+              borderColor: "transparent",
             }}
           >
             <div className="relative">

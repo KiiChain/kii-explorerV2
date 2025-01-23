@@ -116,9 +116,10 @@ export function connectWallet() {
   console.log("Connecting wallet...");
 }
 
-export function Dashboard() {
+export default function Dashboard() {
   const { theme } = useTheme();
-  const { account, setAccount, setSession } = useWallet();
+  const router = useRouter();
+  const { account, session, setSession } = useWallet();
   const [validatorCount, setValidatorCount] = useState<number>(0);
   const [bondedTokens, setBondedTokens] = useState<string>("0");
   const [communityPool, setCommunityPool] = useState<string>("0");
@@ -126,7 +127,6 @@ export function Dashboard() {
   const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
     []
   );
-  const router = useRouter();
 
   console.log("Connected account:", account);
 
@@ -283,7 +283,6 @@ export function Dashboard() {
 
       const provider = getWeb3Provider();
       const account = accounts[0];
-      setAccount(account);
 
       try {
         const balance = await provider.getBalance(account);
@@ -402,17 +401,16 @@ export function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleBlockClick = (height: string) => {
-    router.push(`/blocksID/${height}`);
-  };
-
-  const handleAddressClick = (address: string) => {
-    const key = address;
-    const addr = /^[a-z\d]+1[a-z\d]{38,58}$/;
-    const evmAddr = /^0x[a-fA-F0-9]{40}$/;
-
-    if (addr.test(key) || evmAddr.test(key)) {
-      router.push(`/account/${key}`);
+  const handleNavigation = (path: string) => {
+    if (!account || !session) {
+      return;
+    }
+    if (path === "/account") {
+      router.push(`/account/${account}`);
+    } else if (path === "/stake") {
+      router.push("/staking");
+    } else {
+      router.push(path);
     }
   };
 
@@ -523,6 +521,22 @@ export function Dashboard() {
         >
           <CardContent className="p-6 rounded-lg">
             <WalletInfo connectWallet={connectWallet} />
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <button
+                className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
+                style={{ backgroundColor: theme.boxColor }}
+                onClick={() => handleNavigation("/account")}
+              >
+                My Account
+              </button>
+              <button
+                className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
+                style={{ backgroundColor: theme.boxColor }}
+                onClick={() => handleNavigation("/stake")}
+              >
+                Create Stake
+              </button>
+            </div>
           </CardContent>
         </Card>
 
@@ -558,8 +572,8 @@ export function Dashboard() {
               <BlockTable
                 latestBlocks={latestBlocks}
                 latestTransactions={latestTransactions}
-                handleBlockClick={handleBlockClick}
-                handleAddressClick={handleAddressClick}
+                handleBlockClick={handleNavigation}
+                handleAddressClick={handleNavigation}
               />
             </div>
           </Card>
