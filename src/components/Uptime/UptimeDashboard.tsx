@@ -39,6 +39,8 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
     {}
   );
   const [localValidators, setLocalValidators] = useState<Validator[]>([]);
+  const [validatorData, setValidatorData] = useState<Validator[]>([]);
+  const [animateBars, setAnimateBars] = useState(false);
 
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 200;
@@ -52,11 +54,12 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
     const fetchSigningInfos = async (page: number) => {
       try {
         const response = await fetch(
-          `https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/slashing/v1beta1/signing_infos?pagination.limit=${pageSize}&pagination.offset=${
+          `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/slashing/v1beta1/signing_infos?pagination.limit=${pageSize}&pagination.offset=${
             (page - 1) * pageSize
           }`
         );
         const data = await response.json();
+        console.log("Fetched signing infos:", data);
 
         const infos = data.info.reduce(
           (acc: Record<string, SigningInfo>, info: SigningInfo) => {
@@ -84,27 +87,61 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
     fetchSigningInfos(1);
   }, [validators]);
 
+  useEffect(() => {
+    const fetchValidators = async () => {
+      try {
+        const response = await fetch(
+          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
+        );
+        const data = await response.json();
+        console.log("Fetched validators:", data);
+        setValidatorData(data.validators);
+      } catch (error) {
+        console.error("Error fetching validators:", error);
+      }
+    };
+
+    fetchValidators();
+  }, []);
+
   const calculateUptime = (validator: Validator) => {
     const signingInfo = signingInfos[validator.operatorAddress];
     if (!signingInfo) return 0;
 
     const missedBlocks = Number(signingInfo.missed_blocks_counter);
-    return ((signedBlocksWindow - missedBlocks) / signedBlocksWindow) * 100;
+    const uptime =
+      ((signedBlocksWindow - missedBlocks) / signedBlocksWindow) * 100;
+    console.log(`Uptime for ${validator.moniker}: ${uptime}%`);
+    return uptime;
   };
 
-  const filteredValidators = localValidators
+  const filteredValidators =
+    validatorData.length > 0 ? validatorData : localValidators;
+
+  const displayedValidators = filteredValidators
     .map((validator) => ({
       ...validator,
       uptime: calculateUptime(validator),
     }))
-    .filter((validator) =>
-      validator.moniker.toLowerCase().includes(filter.toLowerCase())
-    );
+    .filter((validator) => {
+      const moniker = validator.moniker || "";
+      const filterText = filter || "";
+      return moniker.toLowerCase().includes(filterText.toLowerCase());
+    });
 
   const getGridCols = (validatorsCount: number) => {
     if (validatorsCount <= 3) return "grid-cols-1 md:grid-cols-3";
     if (validatorsCount <= 6) return "grid-cols-2 md:grid-cols-3";
     return "grid-cols-3 md:grid-cols-4";
+  };
+
+  const handleTabClick = (tab: "overall" | "blocks" | "customize") => {
+    setActiveTab(tab);
+    if (tab === "blocks") {
+      setAnimateBars(true);
+    } else {
+      setAnimateBars(false);
+    }
   };
 
   return (
@@ -116,7 +153,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
               className={`px-4 py-2 rounded ${
                 activeTab === "overall" ? "bg-primary" : "bg-transparent"
               }`}
-              onClick={() => setActiveTab("overall")}
+              onClick={() => handleTabClick("overall")}
               style={{
                 backgroundColor:
                   activeTab === "overall" ? theme.boxColor : "transparent",
@@ -132,7 +169,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
               className={`px-4 py-2 rounded ${
                 activeTab === "blocks" ? "bg-primary" : "bg-transparent"
               }`}
-              onClick={() => setActiveTab("blocks")}
+              onClick={() => handleTabClick("blocks")}
               style={{
                 backgroundColor:
                   activeTab === "blocks" ? theme.boxColor : "transparent",
@@ -144,11 +181,12 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             >
               Blocks
             </button>
+            {/* 
             <button
               className={`px-4 py-2 rounded ${
                 activeTab === "customize" ? "bg-primary" : "bg-transparent"
               }`}
-              onClick={() => setActiveTab("customize")}
+              onClick={() => handleTabClick("customize")}
               style={{
                 backgroundColor:
                   activeTab === "customize" ? theme.boxColor : "transparent",
@@ -160,6 +198,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             >
               Customize
             </button>
+            */}
           </div>
 
           {activeTab === "overall" && (
@@ -192,11 +231,11 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
                 <div>Start Height</div>
                 <div>Tombstoned</div>
               </div>
-              {filteredValidators.map((validator, index) => {
+              {displayedValidators.map((validator, index) => {
                 const signingInfo = signingInfos[validator.operatorAddress];
                 return (
                   <div
-                    key={validator.operatorAddress}
+                    key={validator.operatorAddress || index}
                     className="grid grid-cols-6 gap-4 py-4 px-8 items-center rounded-lg border transition-colors"
                     style={{
                       backgroundColor: theme.bgColor,
@@ -265,11 +304,17 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
 
               <div
                 className={`grid ${getGridCols(
-                  filteredValidators.length
+                  displayedValidators.length
                 )} gap-4`}
               >
-                {filteredValidators.map((validator) => (
-                  <div key={validator.operatorAddress} className="mb-4">
+                {displayedValidators.map((validator, index) => (
+                  <div
+                    key={
+                      validator.operatorAddress ||
+                      `${validator.moniker}-${index}`
+                    }
+                    className="mb-4"
+                  >
                     <div className="flex justify-between items-center mb-2">
                       <span
                         className="text-sm font-medium"
@@ -284,16 +329,18 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
                         {Math.round(validator.uptime)}%
                       </span>
                     </div>
-                    <div className="flex h-8 gap-1 bg-gray-800 rounded overflow-hidden">
+                    <div className="flex h-8 gap-1 bg-gray-800 rounded overflow-hidden justify-end flex-row-reverse">
                       {[...Array(20)].map((_, i) => (
                         <div
-                          key={i}
-                          className="flex-1 rounded"
+                          key={`${
+                            validator.operatorAddress || validator.moniker
+                          }-${i}`}
+                          className={`flex-1 rounded ${
+                            animateBars ? "animate-fill" : ""
+                          }`}
                           style={{
-                            backgroundColor:
-                              i < validator.uptime / 5
-                                ? "#00FF9D"
-                                : "transparent",
+                            backgroundColor: theme.accentColor,
+                            animationDelay: `${i * 0.1}s`,
                             transition: "background-color 0.3s",
                           }}
                         />
@@ -311,11 +358,11 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
               style={{ backgroundColor: theme.bgColor }}
             >
               <div
-                className="mb-8 p-4 rounded-lg"
+                className="mb-8 p-4 rounded-lg px-10 py-5"
                 style={{ backgroundColor: theme.boxColor }}
               >
                 <h2
-                  className="text-2xl font-semibold mb-4"
+                  className="text-title font-semibold mb-4"
                   style={{ color: theme.primaryTextColor }}
                 >
                   My Validators
@@ -358,17 +405,33 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
 
               <div className="flex justify-center py-8">
                 <button
-                  className="px-6 py-2 rounded-lg text-sm"
+                  className="px-6 py-2 rounded-lg text-base opacity-50 cursor-not-allowed"
                   style={{
                     backgroundColor: theme.boxColor,
                     color: theme.accentColor,
                   }}
+                  disabled={true}
                 >
                   Add Validators
                 </button>
               </div>
             </div>
           )}
+
+          <style jsx>{`
+            .animate-fill {
+              animation: fill 2s forwards;
+            }
+
+            @keyframes fill {
+              from {
+                background-color: transparent;
+              }
+              to {
+                background-color: ${theme.accentColor};
+              }
+            }
+          `}</style>
         </>
       )}
     </div>

@@ -30,10 +30,12 @@ export function WalletInfo({ connectWallet }: { connectWallet: () => void }) {
             >
               <div className="text-gray-400">Balance</div>
               <div style={{ color: theme.primaryTextColor }}>
-                {session?.balance}
+                {session?.balance?.includes("KII")
+                  ? session.balance
+                  : `${session?.balance || "0"} KII`}
               </div>
               <div className="text-gray-400">
-                ${Number(session?.balance ?? 0) * priceCoin}
+                ${Number(session?.balance?.split(" ")[0] || 0) * priceCoin || 0}
               </div>
             </div>
             <div
@@ -42,9 +44,9 @@ export function WalletInfo({ connectWallet }: { connectWallet: () => void }) {
             >
               <div className="text-gray-400">Delegations</div>
               <div className="" style={{ color: theme.primaryTextColor }}>
-                {session?.staking}
+                {session?.staking || "0 KII"}
               </div>
-              <div className=" text-gray-400">${session?.staking}</div>
+              <div className="text-gray-400">$0</div>
             </div>
             <div
               className="rounded-lg p-4"
@@ -52,7 +54,7 @@ export function WalletInfo({ connectWallet }: { connectWallet: () => void }) {
             >
               <div className="text-gray-400">Reward</div>
               <div className="" style={{ color: theme.primaryTextColor }}>
-                {session?.reward}
+                {session?.reward || "0 KII"}
               </div>
               <div className="text-gray-400">$0</div>
             </div>
@@ -62,7 +64,7 @@ export function WalletInfo({ connectWallet }: { connectWallet: () => void }) {
             >
               <div className="text-gray-400">Withdrawals</div>
               <div className="" style={{ color: theme.primaryTextColor }}>
-                {session?.withdrawals}
+                {session?.withdrawals || "0 KII"}
               </div>
               <div className="text-gray-400">$0</div>
             </div>

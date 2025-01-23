@@ -2,7 +2,7 @@
 
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+//import { useRouter } from "next/navigation";
 
 interface Validator {
   operator_address: string;
@@ -40,9 +40,22 @@ interface ValidatorResponse {
   jailed: boolean;
 }
 
+interface StakingParams {
+  params: {
+    unbonding_time: string;
+    max_validators: number;
+    max_entries: number;
+    historical_entries: number;
+    bond_denom: string;
+    min_commission_rate: string;
+    max_voting_power_ratio: string;
+    max_voting_power_enforcement_threshold: string;
+  };
+}
+
 export function StakingDashboard() {
   const { theme } = useTheme();
-  const router = useRouter();
+  //const router = useRouter();
   const [activeButton, setActiveButton] = useState<
     "popular" | "active" | "inactive"
   >("active");
@@ -50,6 +63,12 @@ export function StakingDashboard() {
   const [inactiveValidators, setInactiveValidators] = useState<Validator[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const validatorsPerPage = 10;
+  const [stakingParams, setStakingParams] = useState({
+    unbondingTime: "21 Days",
+    maxValidators: 25,
+    minCommissionRate: "5%",
+    bondDenom: "ukii",
+  });
 
   useEffect(() => {
     async function fetchValidators() {
@@ -111,6 +130,38 @@ export function StakingDashboard() {
     }
 
     fetchValidators();
+  }, []);
+
+  useEffect(() => {
+    async function fetchStakingParams() {
+      try {
+        const response = await fetch(
+          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/params"
+        );
+        const data: StakingParams = await response.json();
+
+        const unbondingDays = Math.floor(
+          parseInt(data.params.unbonding_time.replace("s", "")) / (24 * 60 * 60)
+        );
+
+        const minCommissionPercent = (
+          parseFloat(data.params.min_commission_rate) * 100
+        ).toFixed(0);
+
+        setStakingParams({
+          unbondingTime: `${unbondingDays} Days`,
+          maxValidators: data.params.max_validators,
+          minCommissionRate: `${minCommissionPercent}%`,
+          bondDenom: data.params.bond_denom,
+        });
+
+        console.log("Staking params:", data.params);
+      } catch (error) {
+        console.error("Error fetching staking params:", error);
+      }
+    }
+
+    fetchStakingParams();
   }, []);
 
   const filteredValidators = useMemo(() => {
@@ -179,13 +230,13 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                0%
+                {stakingParams.unbondingTime}
               </div>
               <div
                 className="text-base pt-2"
                 style={{ color: theme.secondaryTextColor }}
               >
-                Inflation
+                Unbonding Time
               </div>
             </div>
           </div>
@@ -208,13 +259,13 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                21 Days
+                {stakingParams.minCommissionRate}
               </div>
               <div
                 className="text-base pt-2"
                 style={{ color: theme.secondaryTextColor }}
               >
-                Unbonding Time
+                Min Commission Rate
               </div>
             </div>
           </div>
@@ -240,13 +291,13 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                5%
+                {stakingParams.bondDenom}
               </div>
               <div
                 className="text-base pt-2"
                 style={{ color: theme.secondaryTextColor }}
               >
-                Double Sign Slashing
+                Bond Denom
               </div>
             </div>
           </div>
@@ -269,13 +320,13 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                1%
+                {stakingParams.maxValidators}
               </div>
               <div
                 className="text-base pt-2"
                 style={{ color: theme.secondaryTextColor }}
               >
-                Downtime Slashing
+                Max Validators
               </div>
             </div>
           </div>
@@ -414,7 +465,7 @@ export function StakingDashboard() {
                     style={{ color: theme.primaryTextColor }}
                   >
                     {(parseInt(validator.tokens) / 1000000).toLocaleString()}{" "}
-                    KII
+                    {stakingParams.bondDenom}
                   </div>
                 </td>
                 <td className="p-4" style={{ color: theme.primaryTextColor }}>
@@ -424,6 +475,7 @@ export function StakingDashboard() {
                   %
                 </td>
                 <td className="p-4">
+                  {/* 
                   <button
                     className="px-4 py-2 rounded-lg text-base"
                     style={{
@@ -446,6 +498,7 @@ export function StakingDashboard() {
                   >
                     Create Stake
                   </button>
+                  */}
                 </td>
               </tr>
             ))}
