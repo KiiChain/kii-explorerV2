@@ -1,11 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import {
-  WalletIcon,
-  ContractIcon,
   HeightIcon,
   ValidatorsIcon,
   CashIcon,
@@ -17,103 +15,11 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
 import { getWeb3Provider } from "@/lib/web3";
 import { useWallet } from "@/context/WalletContext";
+import { StatCard } from "./StatCard";
+import { WalletInfo } from "./WalletInfo";
+import { BlockTable } from "./BlockTable";
 
-interface StatCardProps {
-  title: string;
-  value: string;
-  unit?: string;
-  icon?: React.ReactNode;
-  variant?: "default" | "horizontal";
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-function StatCard({
-  title,
-  value,
-  unit,
-  icon,
-  variant = "default",
-}: StatCardProps) {
-  const { theme } = useTheme();
-
-  if (variant === "horizontal") {
-    return (
-      <Card
-        style={{
-          backgroundColor: theme.boxColor,
-          boxShadow:
-            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-        }}
-        className="border-0"
-      >
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {icon}
-              <span
-                className="text-sm xl:text-base font-normal"
-                style={{ color: theme.secondaryTextColor }}
-              >
-                {title}
-              </span>
-            </div>
-            <div
-              className="text-lg font-bold"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              {value}
-              {unit && (
-                <span
-                  className="pl-1 ml-1 text-[10px] xl:text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  ({unit})
-                </span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card
-      style={{
-        backgroundColor: theme.boxColor,
-        boxShadow:
-          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-      }}
-      className="border-0"
-    >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle
-          className="text-sm xl:text-base font-normal"
-          style={{ color: theme.secondaryTextColor }}
-        >
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div
-          className="text-lg font-bold"
-          style={{ color: theme.secondaryTextColor }}
-        >
-          {value}
-          {unit && (
-            <span
-              className="pl-1 ml-1 text-[10px] xl:text-xs"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              ({unit})
-            </span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import { ApplicationVersions } from "./ApplicationVersions";
 
 export interface WalletSession {
   balance: string;
@@ -149,22 +55,6 @@ interface StakingPoolResponse {
   pool: {
     not_bonded_tokens: string;
     bonded_tokens: string;
-  };
-}
-
-interface BlockResponse {
-  block: {
-    header: {
-      height: string;
-      time: string;
-      proposer_address: string;
-    };
-    data: {
-      txs: string[];
-    };
-  };
-  block_id: {
-    hash: string;
   };
 }
 
@@ -206,25 +96,19 @@ interface Block {
   proposer: string;
 }
 
-interface TxResponse {
-  tx_responses: Array<{
-    txhash: string;
-    code: number;
-    timestamp: string;
-    tx: {
-      body: {
-        messages: Array<{
-          "@type": string;
-          from_address?: string;
-          to_address?: string;
-          amount?: Array<{
-            denom: string;
-            amount: string;
-          }>;
-        }>;
-      };
+interface ValidatorSetResponse {
+  validators: {
+    address: string;
+    pub_key: {
+      "@type": string;
+      key: string;
     };
-  }>;
+    voting_power: string;
+    proposer_priority: string;
+  }[];
+  pagination: {
+    total: string;
+  };
 }
 
 export function connectWallet() {
@@ -233,7 +117,7 @@ export function connectWallet() {
 
 export function Dashboard() {
   const { theme } = useTheme();
-  const { account, session, setAccount, setSession } = useWallet();
+  const { account, setAccount, setSession } = useWallet();
   const [validatorCount, setValidatorCount] = useState<number>(0);
   const [bondedTokens, setBondedTokens] = useState<string>("0");
   const [communityPool, setCommunityPool] = useState<string>("0");
@@ -242,6 +126,8 @@ export function Dashboard() {
     []
   );
   const router = useRouter();
+
+  console.log("Connected account:", account);
 
   useEffect(() => {
     const fetchChainData = async () => {
@@ -311,6 +197,31 @@ export function Dashboard() {
 
     fetchChainData();
     const interval = setInterval(fetchChainData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchValidatorCount = async () => {
+      try {
+        const response = await fetch(
+          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/validatorsets/latest"
+        );
+
+        if (response.ok) {
+          const data: ValidatorSetResponse = await response.json();
+          const count = data.validators.length;
+          setValidatorCount(count);
+        }
+      } catch (error) {
+        console.error("Error fetching validator count:", error);
+        setValidatorCount(0);
+      }
+    };
+
+    fetchValidatorCount();
+
+    const interval = setInterval(fetchValidatorCount, 10000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -397,81 +308,37 @@ export function Dashboard() {
     }
   };
 
-  const fetchBlockData = async (height: number) => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(
-        `https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
-        { signal: controller.signal }
-      );
-
-      clearTimeout(timeoutId);
-
-      const data: BlockResponse = await response.json();
-
-      return {
-        height: data.block.header.height,
-        hash:
-          Buffer.from(data.block_id.hash, "base64")
-            .toString("hex")
-            .slice(0, 10) + "...",
-        timestamp: new Date(data.block.header.time).toLocaleString(),
-        txCount: data.block.data.txs?.length || 0,
-        proposer: data.block.header.proposer_address,
-      };
-    } catch (error) {
-      console.error(`Error fetching block ${height}:`, error);
-      return null;
-    }
-  };
-
   const fetchLatestBlocksAndTxs = async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const heightResponse = await fetch(
-        "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
+      const blocks = [];
+      const latestBlockResponse = await fetch(
+        "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
         { signal: controller.signal }
       );
+      const latestBlockData = await latestBlockResponse.json();
+      const latestHeight = parseInt(latestBlockData.block.header.height);
 
-      clearTimeout(timeoutId);
+      for (let i = 0; i < 20; i++) {
+        const height = latestHeight - i;
+        const blockResponse = await fetch(
+          `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
+          { signal: controller.signal }
+        );
+        const blockData = await blockResponse.json();
 
-      const heightData: BlockResponse = await heightResponse.json();
-      const latestHeight = parseInt(heightData.block.header.height);
+        blocks.push({
+          height: blockData.block.header.height,
+          hash: blockData.block_id.hash,
+          timestamp: new Date(blockData.block.header.time).toLocaleString(),
+          txCount: blockData.block.data.txs.length,
+          proposer: blockData.block.header.proposer_address,
+        });
+      }
 
-      const blockPromises = Array.from({ length: 20 }, (_, i) =>
-        fetchBlockData(latestHeight - i)
-      );
-
-      const blocks = (await Promise.all(blockPromises)).filter(
-        (block): block is Block => block !== null
-      );
       setLatestBlocks(blocks);
-
-      const txsResponse = await fetch(
-        `https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=tx.height=${latestHeight}`,
-        { signal: controller.signal }
-      );
-      const txsData: TxResponse = await txsResponse.json();
-
-      const transactions = txsData.tx_responses.map((txResponse) => {
-        const msg = txResponse.tx.body.messages[0];
-        return {
-          hash: txResponse.txhash,
-          from: msg.from_address || "N/A",
-          to: msg.to_address || "N/A",
-          amount: msg.amount ? msg.amount[0].amount : "0",
-          denom: msg.amount ? msg.amount[0].denom : "ukii",
-          timestamp: txResponse.timestamp,
-        };
-      });
-
-      setLatestTransactions(transactions);
     } catch (error) {
-      console.error("Error fetching latest blocks and transactions:", error);
+      console.error("Error fetching latest blocks:", error);
     }
   };
 
@@ -636,167 +503,7 @@ export function Dashboard() {
           className="border-0 mt-6"
         >
           <CardContent className="p-6 rounded-lg">
-            {!account ? (
-              <button
-                onClick={connectWallet}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:opacity-80"
-                style={{ color: theme.primaryTextColor }}
-              >
-                <WalletIcon />
-                Wallet not connected
-              </button>
-            ) : (
-              <div className="space-y-6">
-                <div className="mb-4" style={{ color: theme.primaryTextColor }}>
-                  {account}
-                </div>
-
-                <div className="grid grid-cols-4 gap-4 ">
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Balance</div>
-                    <div style={{ color: theme.primaryTextColor }}>
-                      {session?.balance}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      ${session?.balance}
-                    </div>
-                  </div>
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Staking</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {session?.staking}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      ${session?.staking}
-                    </div>
-                  </div>
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Reward</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {session?.reward}
-                    </div>
-                    <div className="text-sm text-gray-400">$0</div>
-                  </div>
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Withdrawals</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {session?.withdrawals}
-                    </div>
-                    <div className="text-sm text-gray-400">$0</div>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-left text-gray-400 w-full">
-                        <th className="pb-4 w-1/4">Validator</th>
-                        <th className="pb-4 w-1/4">Stakes</th>
-                        <th className="pb-4 w-1/4">Rewards</th>
-                        <th className="pb-4 w-1/4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(session?.stakes || []).map((stake, index) => (
-                        <tr
-                          key={index}
-                          className="border-t"
-                          style={{
-                            borderColor: theme.borderColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          <td
-                            className="p-4"
-                            style={{ color: theme.primaryTextColor }}
-                          >
-                            {stake.validator}
-                          </td>
-                          <td
-                            className="p-4"
-                            style={{ color: theme.primaryTextColor }}
-                          >
-                            {stake.amount}
-                          </td>
-                          <td
-                            className="p-4"
-                            style={{ color: theme.primaryTextColor }}
-                          >
-                            {stake.rewards}
-                          </td>
-                          <td className="p-4">
-                            <button
-                              className="px-4 py-2 rounded-lg hover:opacity-80"
-                              style={{
-                                backgroundColor: theme.boxColor,
-                                color: theme.accentColor,
-                                boxShadow:
-                                  "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                              }}
-                            >
-                              CLAIM REWARDS
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex justify-center gap-4 mt-8">
-                  <button
-                    className="px-8 py-3 rounded-lg hover:opacity-80"
-                    style={{
-                      backgroundColor: theme.boxColor,
-                      color: theme.primaryTextColor,
-                      boxShadow:
-                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                    }}
-                    onClick={() => {
-                      localStorage.setItem(
-                        "walletSession",
-                        JSON.stringify({ account, session })
-                      );
-                      router.push(`/account/${account}`);
-                    }}
-                  >
-                    My Account
-                  </button>
-                  <button
-                    className="px-8 py-3 rounded-lg hover:opacity-80"
-                    style={{
-                      backgroundColor: theme.boxColor,
-                      color: theme.primaryTextColor,
-                      boxShadow:
-                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                    }}
-                  >
-                    Create Stake
-                  </button>
-                </div>
-              </div>
-            )}
+            <WalletInfo connectWallet={connectWallet} />
           </CardContent>
         </Card>
 
@@ -829,132 +536,12 @@ export function Dashboard() {
                   View All
                 </div>
               </div>
-              <div className="mt-4">
-                <table className="w-full table-fixed">
-                  <tbody className="space-y-4">
-                    {latestBlocks.map((block, index) => (
-                      <tr
-                        key={index}
-                        style={{ backgroundColor: theme.bgColor }}
-                        className="rounded-lg mb-4 w-full"
-                      >
-                        <td className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-4 items-center">
-                          <span
-                            className="col-span-1 lg:col-span-2 flex items-center gap-2 cursor-pointer hover:opacity-80"
-                            style={{ color: theme.accentColor }}
-                            onClick={() => handleBlockClick(block.height)}
-                          >
-                            <ContractIcon className="w-4 h-4" />
-                            <span style={{ color: theme.secondaryTextColor }}>
-                              {block.height}
-                            </span>
-                          </span>
-                          <div className="flex items-center gap-2 col-span-1 lg:col-span-3">
-                            <span style={{ color: theme.secondaryTextColor }}>
-                              Fee Recipient
-                            </span>
-                            <span
-                              style={{ color: theme.accentColor }}
-                              className="truncate md:whitespace-nowrap cursor-pointer hover:opacity-80"
-                              onClick={() => handleAddressClick(block.proposer)}
-                            >
-                              {window.innerWidth < 1024
-                                ? `${block.proposer.slice(0, 8)}...`
-                                : block.proposer}
-                            </span>
-                          </div>
-                          <span
-                            className="col-span-1 lg:col-span-2 flex items-center gap-2 cursor-pointer hover:opacity-80"
-                            style={{ color: theme.accentColor }}
-                          >
-                            <ContractIcon className="w-4 h-4" />
-                            <span style={{ color: theme.secondaryTextColor }}>
-                              {block.hash || "N/A"}
-                            </span>
-                          </span>
-                          <div className="flex flex-col col-span-1 lg:col-span-3">
-                            <span className="text-xs text-gray-400">
-                              <div className="flex items-center gap-1">
-                                <span
-                                  style={{ color: theme.secondaryTextColor }}
-                                >
-                                  From:
-                                </span>
-                                <span
-                                  style={{ color: theme.accentColor }}
-                                  className="cursor-pointer hover:opacity-80"
-                                  onClick={() =>
-                                    latestTransactions[index]?.from &&
-                                    handleAddressClick(
-                                      latestTransactions[index].from
-                                    )
-                                  }
-                                >
-                                  {window.innerWidth < 1600 &&
-                                  latestTransactions[index]?.from
-                                    ? `${latestTransactions[index].from.slice(
-                                        0,
-                                        -15
-                                      )}...`
-                                    : latestTransactions[index]?.from || "N/A"}
-                                </span>
-                              </div>
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              <div className="flex items-center gap-1">
-                                <span
-                                  style={{ color: theme.secondaryTextColor }}
-                                >
-                                  To:
-                                </span>
-                                <span
-                                  style={{ color: theme.accentColor }}
-                                  className="cursor-pointer hover:opacity-80"
-                                  onClick={() =>
-                                    latestTransactions[index]?.to &&
-                                    handleAddressClick(
-                                      latestTransactions[index].to
-                                    )
-                                  }
-                                >
-                                  {window.innerWidth < 1600 &&
-                                  latestTransactions[index]?.to
-                                    ? `${latestTransactions[index].to.slice(
-                                        0,
-                                        -15
-                                      )}...`
-                                    : latestTransactions[index]?.to || "N/A"}
-                                </span>
-                              </div>
-                            </span>
-                          </div>
-                          <div className="flex justify-center col-span-1 lg:col-span-2">
-                            <span
-                              style={{
-                                backgroundColor: theme.boxColor,
-                                color: theme.accentColor,
-                                boxShadow:
-                                  "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                              }}
-                              className="px-3 py-1 rounded-full text-center inline-block w-fit cursor-pointer hover:opacity-80"
-                            >
-                              {latestTransactions[index]?.amount
-                                ? parseInt(latestTransactions[index].amount) /
-                                  1000000
-                                : 0}{" "}
-                              {latestTransactions[index]?.denom?.includes(
-                                "ukii"
-                              )
-                                ? "KII"
-                                : "ORO"}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <BlockTable
+                latestBlocks={latestBlocks}
+                latestTransactions={latestTransactions}
+                handleBlockClick={handleBlockClick}
+                handleAddressClick={handleAddressClick}
+              />
             </div>
           </Card>
         </div>
@@ -968,144 +555,7 @@ export function Dashboard() {
             }}
             className="border-0"
           >
-            <div className="p-6">
-              <h2
-                className="text-lg mb-6"
-                style={{ color: theme.primaryTextColor }}
-              >
-                Application Versions
-              </h2>
-
-              <table className="w-full">
-                <tbody>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Name
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Kiichain
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      App_name
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Kiichaind
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Version
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      26c1fe7
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Git_commit
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      87eefca1ad86ec69374874c25558f430afdb5555c8
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Build_tags
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      App_v1
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Go_version
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Go Version Go1.19 Linux/Amd64
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <table className="w-full mt-4">
-                <tbody>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td className="py-4 w-1/4"></td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Cloud.Google.Com/Go
-                    </td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      V0.110.0
-                    </td>
-                    <td className="py-4" style={{ color: theme.accentColor }}>
-                      H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td className="py-4 w-1/4"></td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Cloud.Google.Com/Go
-                    </td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      V0.110.0
-                    </td>
-                    <td className="py-4" style={{ color: theme.accentColor }}>
-                      H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <ApplicationVersions />
           </Card>
         </div>
       </div>
