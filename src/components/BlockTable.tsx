@@ -1,5 +1,6 @@
 import { ContractIcon } from "./ui/icons";
 import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "next/navigation";
 
 interface Block {
   height: string;
@@ -29,6 +30,11 @@ export function BlockTable({
   handleAddressClick: (address: string) => void;
 }) {
   const { theme } = useTheme();
+  const router = useRouter();
+
+  const handleBlockClick = (height: string) => {
+    router.push(`/blocksID/${height}`);
+  };
 
   return (
     <div className="mt-4 text-base">
@@ -41,7 +47,10 @@ export function BlockTable({
               className="rounded-lg mb-4 w-full"
             >
               <td className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 gap-4 items-center">
-                <span className="col-span-1 lg:col-span-2 flex items-center gap-2">
+                <span
+                  className="col-span-1 lg:col-span-2 flex items-center gap-2 cursor-pointer hover:opacity-80"
+                  onClick={() => handleBlockClick(block.height)}
+                >
                   <ContractIcon className="w-4 h-4" />
                   <span style={{ color: theme.secondaryTextColor }}>
                     {block.height}
@@ -60,7 +69,10 @@ export function BlockTable({
                       : block.proposer}
                   </span>
                 </div>
-                <span className="col-span-1 lg:col-span-2 flex items-center gap-2">
+                <span
+                  className="col-span-1 lg:col-span-2 flex items-center gap-2 cursor-pointer hover:opacity-80"
+                  onClick={() => handleBlockClick(block.height)}
+                >
                   <ContractIcon className="w-4 h-4" />
                   <span style={{ color: theme.secondaryTextColor }}>
                     {block.hash ? `${block.hash.slice(0, 10)}...` : "N/A"}
