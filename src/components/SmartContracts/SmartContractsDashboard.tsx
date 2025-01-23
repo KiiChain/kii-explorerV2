@@ -91,7 +91,7 @@ export function SmartContractsDashboard() {
                   <tr
                     key={index}
                     style={{ backgroundColor: theme.bgColor }}
-                    className="mt-2"
+                    className="mt-2 cursor-pointer hover:bg-opacity-10 hover:bg-white transition-all duration-200"
                     onClick={() =>
                       handleTransactionClick(
                         contracts[index % contracts.length]?.transaction.hash

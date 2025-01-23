@@ -181,6 +181,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             >
               Blocks
             </button>
+            {/* 
             <button
               className={`px-4 py-2 rounded ${
                 activeTab === "customize" ? "bg-primary" : "bg-transparent"
@@ -197,6 +198,7 @@ export const UptimeDashboard: React.FC<UptimeDashboardProps> = ({
             >
               Customize
             </button>
+            */}
           </div>
 
           {activeTab === "overall" && (

@@ -1,9 +1,52 @@
 "use client";
 
 import { useTheme } from "@/context/ThemeContext";
+import { useState, useEffect } from "react";
+
+interface BlockInfo {
+  height: string;
+  hash: string;
+}
 
 export function StateSyncDashboard() {
   const { theme } = useTheme();
+  const [blockInfo, setBlockInfo] = useState<BlockInfo>({
+    height: "0",
+    hash: "",
+  });
+
+  useEffect(() => {
+    const fetchBlockInfo = async () => {
+      try {
+        const latestResponse = await fetch(
+          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
+        );
+        const latestData = await latestResponse.json();
+        const currentHeight = parseInt(latestData.block.header.height);
+        const trustHeight = currentHeight - 500;
+
+        const trustResponse = await fetch(
+          `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${trustHeight}`
+        );
+        const trustData = await trustResponse.json();
+
+        setBlockInfo({
+          height: trustHeight.toString(),
+          hash: trustData.block_id.hash,
+        });
+      } catch (error) {
+        console.error("Error fetching block info:", error);
+      }
+    };
+
+    // Fetch immediately
+    fetchBlockInfo();
+
+    // Then fetch every 6 seconds
+    const interval = setInterval(fetchBlockInfo, 6000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div style={{ backgroundColor: theme.bgColor }} className="px-6">
@@ -114,20 +157,19 @@ export function StateSyncDashboard() {
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> rpc_servers = </span>
                 <span style={{ color: "#FFFFFF" }}>
-                  &quot;https://rpc.uno.sentry.testnet.v3.kiivalidator.com/,https://rpc.dos.sentry.testnet.v3.kiivalidator.com/&quot;
+                  &quot;https://rpc.uno.sentry.testnet.v3.kiivalidator.com,
+                  https://rpc.dos.sentry.testnet.v3.kiivalidator.com&quot;
                 </span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> trust_height = </span>
-                <span style={{ color: "#FFFFFF" }}>800000</span>
+                <span style={{ color: "#FFFFFF" }}>{blockInfo.height}</span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> trust_hash = </span>
                 <span style={{ color: "#FFFFFF" }}>
-                  &quot;1697AC815D2A0367173530BEAD5D126868736AD172613586CF43240D8EF2E050&quot;
+                  &quot;{blockInfo.hash}&quot;
                 </span>
-                <br />
-                <span style={{ color: "#787779" }}>{">"}</span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#00F9A6" }}>
