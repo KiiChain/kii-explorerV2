@@ -35,14 +35,19 @@ export function FaucetDashboard() {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.text();
+        throw new Error(errorData || `HTTP error! status: ${response.status}`);
       }
 
-      await response.json();
-      setSuccess("Tokens claimed successfully!");
+      const data = await response.text();
+      setSuccess(data);
       setWalletAddress("");
-    } catch (err) {
-      setError("Failed to claim tokens. Please try again later.");
+    } catch (err: Error | unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to claim tokens. Please try again later."
+      );
       console.error("Faucet error:", err);
     } finally {
       setIsLoading(false);
