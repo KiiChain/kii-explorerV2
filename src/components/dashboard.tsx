@@ -573,7 +573,7 @@ export default function Dashboard() {
           style={{ backgroundColor: theme.bgColor }}
         >
           <StatCard title="KII Price" value="N/A" unit="TESTNET" />
-          <StatCard title="Gas Price" value="2500" unit="Uki" />
+          <StatCard title="Gas Price" value="2500" unit="Ukii" />
           <StatCard title="Transactions" value={totalTransactions.toString()} />
           <StatCard
             title="Block Height"
