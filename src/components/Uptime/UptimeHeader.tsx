@@ -96,10 +96,36 @@ export function UptimeHeader() {
           throw new Error("Signature required to connect");
         }
 
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0x538" }],
-        });
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x538" }],
+          });
+        } catch (switchError) {
+          const error = switchError as SwitchNetworkError;
+
+          if (error.code === 4902) {
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0x538",
+                  chainName: "Kii Chain Testnet",
+                  nativeCurrency: {
+                    name: "KII",
+                    symbol: "KII",
+                    decimals: 18,
+                  },
+                  rpcUrls: [
+                    "https://json-rpc.dos.sentry.testnet.v3.kiivalidator.com/",
+                  ],
+                },
+              ],
+            });
+          } else {
+            throw error;
+          }
+        }
 
         setAccount(account);
 

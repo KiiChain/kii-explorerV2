@@ -61,7 +61,7 @@ export async function getMultiNetworkBalance(address: string) {
 export async function initializeWallet() {
   try {
     await setupKeplr();
-    // Continuar con la configuración EVM
+
     return await getWeb3Provider();
   } catch (error) {
     console.error("Error initializing wallet:", error);
