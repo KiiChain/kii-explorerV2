@@ -86,7 +86,6 @@ export function UptimeHeader() {
         const account = accounts[0];
 
         const message = ethers.encodeBytes32String("Connect to Kii Explorer");
-
         const signature = await window.ethereum.request({
           method: "personal_sign",
           params: [message, account],
@@ -119,6 +118,10 @@ export function UptimeHeader() {
                   rpcUrls: [
                     "https://json-rpc.dos.sentry.testnet.v3.kiivalidator.com/",
                   ],
+                  blockExplorerUrls: ["https://testnet.kiiscan.com"],
+                  iconUrls: [
+                    "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
+                  ],
                 },
               ],
             });
@@ -128,7 +131,6 @@ export function UptimeHeader() {
         }
 
         setAccount(account);
-
         const provider = getWeb3Provider();
         const balance = await provider.getBalance(account);
         const formattedBalance = ethers.formatEther(balance);
@@ -155,14 +157,12 @@ export function UptimeHeader() {
     }
 
     try {
-      await window.keplr.experimentalSuggestChain({
+      const chainInfo = {
         chainId: "kiichain",
         chainName: "KiiChain Testnet Oro",
         rpc: "https://rpc.uno.sentry.testnet.v3.kiivalidator.com",
         rest: "https://lcd.uno.sentry.testnet.v3.kiivalidator.com",
-        bip44: {
-          coinType: 118,
-        },
+        bip44: { coinType: 118 },
         bech32Config: {
           bech32PrefixAccAddr: "kii",
           bech32PrefixAccPub: "kiipub",
@@ -176,6 +176,9 @@ export function UptimeHeader() {
             coinDenom: "KII",
             coinMinimalDenom: "ukii",
             coinDecimals: 6,
+            coinGeckoId: "kii",
+            coinImageUrl:
+              "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
           },
         ],
         feeCurrencies: [
@@ -183,21 +186,26 @@ export function UptimeHeader() {
             coinDenom: "KII",
             coinMinimalDenom: "ukii",
             coinDecimals: 6,
-            gasPriceStep: {
-              low: 0.01,
-              average: 0.025,
-              high: 0.04,
-            },
+            coinGeckoId: "kii",
+            coinImageUrl:
+              "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
+            gasPriceStep: { low: 0.01, average: 0.025, high: 0.04 },
           },
         ],
         stakeCurrency: {
           coinDenom: "KII",
           coinMinimalDenom: "ukii",
           coinDecimals: 6,
+          coinGeckoId: "kii",
+          coinImageUrl:
+            "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
         },
+        chainSymbolImageUrl:
+          "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
         features: ["ibc-transfer", "ibc-go", "eth-address-gen", "eth-key-sign"],
-      });
+      };
 
+      await window.keplr.experimentalSuggestChain(chainInfo);
       await window.keplr.enable("kiichain");
       const offlineSigner = window.keplr.getOfflineSigner("kiichain");
       const accounts = await offlineSigner.getAccounts();
@@ -262,45 +270,29 @@ export function UptimeHeader() {
               sum + parseInt(del.balance.amount),
             0
           ) || 0;
-        const formattedStaking = (totalStaked / 1_000_000).toString();
+        const formattedStaking = `${totalStaked / 1_000_000} KII`;
 
         const totalRewards =
-          rewardsData.total?.find(
-            (r: { denom: string; amount: string }) => r.denom === "ukii"
-          )?.amount || "0";
-        const formattedRewards = (
-          parseInt(totalRewards) / 1_000_000
-        ).toString();
+          rewardsData.total?.reduce(
+            (sum: number, reward: { denom: string; amount: string }) =>
+              sum + parseInt(reward.amount),
+            0
+          ) || 0;
+        const formattedRewards = `${totalRewards / 1_000_000} KII`;
 
         setSession({
-          balance: formattedBalance,
-          staking: `${formattedStaking} KII`,
-          reward: `${formattedRewards} KII`,
-          withdrawals: "0 KII",
-          stakes:
-            stakingData.delegation_responses?.map(
-              (del: {
-                delegation: { validator_address: string };
-                balance: { amount: string };
-              }) => ({
-                validator: del.delegation.validator_address,
-                amount:
-                  (parseInt(del.balance.amount) / 1_000_000).toString() +
-                  " KII",
-                rewards: "0 KII",
-              })
-            ) || [],
-        });
-      } catch (error) {
-        console.error("Error getting Keplr data:", error);
-        setSession({
-          balance: "0",
-          staking: "0 KII",
-          reward: "0 KII",
+          balance: `${formattedBalance} KII`,
+          staking: formattedStaking,
+          reward: formattedRewards,
           withdrawals: "0 KII",
           stakes: [],
         });
+      } catch (error) {
+        console.error(error);
       }
+    } else {
+      setAccount("");
+      setSession(null);
     }
   };
 

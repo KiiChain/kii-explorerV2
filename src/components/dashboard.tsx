@@ -132,6 +132,7 @@ export default function Dashboard() {
   const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
     []
   );
+  const [totalTransactions, setTotalTransactions] = useState(0);
 
   console.log("Connected account:", account);
 
@@ -521,6 +522,31 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        if (account && account !== "") {
+          const evmTxs = await fetch(
+            "https://kii.backend.kiivalidator.com/explorer/transactions"
+          ).then((res) => res.json());
+          console.log("EVM transactions:", evmTxs?.quantity);
+          setTotalTransactions(evmTxs?.quantity || 0);
+        } else {
+          const cosmosTxs = await fetch(
+            'https://rpc.uno.sentry.testnet.v3.kiivalidator.com/tx_search?query="tx.height>0"&prove=false&page=1&per_page=1&order_by="asc"'
+          ).then((res) => res.json());
+          console.log("Cosmos transactions:", cosmosTxs?.total_count);
+          setTotalTransactions(parseInt(cosmosTxs?.total_count || "0"));
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        setTotalTransactions(0);
+      }
+    };
+
+    fetchTransactions();
+  }, [account]);
+
   const handleNavigation = (path: string) => {
     if (!account || !session) {
       return;
@@ -548,10 +574,7 @@ export default function Dashboard() {
         >
           <StatCard title="KII Price" value="N/A" unit="TESTNET" />
           <StatCard title="Gas Price" value="2500" unit="Tekii" />
-          <StatCard
-            title="Transactions"
-            value={latestTransactions.length.toString()}
-          />
+          <StatCard title="Transactions" value={totalTransactions.toString()} />
           <StatCard
             title="Block Height"
             value={latestBlocks[0]?.height || "0"}
