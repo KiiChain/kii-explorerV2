@@ -12,6 +12,7 @@ import {
 import { Logo } from "@/components/ui/Logo";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
+import { WalletProvider } from "@/context/WalletContext";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -25,10 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={montserrat.variable}>
-      <body>
+    <html lang="en" className={`${montserrat.variable} font-sans`}>
+      <body className={`${montserrat.className}`}>
         <ThemeProvider>
-          <ContentWrapper>{children}</ContentWrapper>
+          <WalletProvider>
+            <ContentWrapper>{children}</ContentWrapper>
+          </WalletProvider>
         </ThemeProvider>
       </body>
     </html>

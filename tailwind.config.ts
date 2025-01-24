@@ -1,11 +1,8 @@
+import defaultTheme from "tailwindcss/defaultTheme";
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -30,7 +27,19 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-montserrat)", "Montserrat", "sans-serif"],
+        sans: ["var(--font-montserrat)", ...defaultTheme.fontFamily.sans],
+      },
+      fontSize: {
+        "2xs": ["0.625rem", "0.8125rem"],
+        xs: ["0.625rem", "1.25rem"],
+        sm: ["0.75rem", "1.25rem"],
+        base: ["0.875rem", "1.25rem"],
+        lg: ["1.5rem", "1.25rem"],
+        xl: ["1.75rem", "1.25rem"],
+        "2xl": ["2rem", "1.5rem"],
+        "3xl": ["2.25rem", "1.75rem"],
+        "4xl": ["2.5rem", "2rem"],
+        title: ["24px", "20px"],
       },
     },
   },

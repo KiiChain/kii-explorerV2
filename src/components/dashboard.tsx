@@ -1,11 +1,9 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import {
-  WalletIcon,
-  ContractIcon,
   HeightIcon,
   ValidatorsIcon,
   CashIcon,
@@ -16,102 +14,16 @@ import {
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
 import { getWeb3Provider } from "@/lib/web3";
+import { useWallet } from "@/context/WalletContext";
+import { StatCard } from "./StatCard";
+import { WalletInfo } from "./WalletInfo";
+import { BlockTable } from "./BlockTable";
 
-interface StatCardProps {
-  title: string;
-  value: string;
-  unit?: string;
-  icon?: React.ReactNode;
-  variant?: "default" | "horizontal";
-  className?: string;
-  style?: React.CSSProperties;
-}
+import { ApplicationVersions } from "./ApplicationVersions";
 
-function StatCard({
-  title,
-  value,
-  unit,
-  icon,
-  variant = "default",
-}: StatCardProps) {
-  const { theme } = useTheme();
-
-  if (variant === "horizontal") {
-    return (
-      <Card
-        style={{
-          backgroundColor: theme.boxColor,
-          boxShadow:
-            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-        }}
-        className="border-0"
-      >
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {icon}
-              <span
-                className="text-sm xl:text-base font-normal"
-                style={{ color: theme.secondaryTextColor }}
-              >
-                {title}
-              </span>
-            </div>
-            <div
-              className="text-xl md:text-2xl xl:text-3xl font-bold"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              {value}
-              {unit && (
-                <span
-                  className="pl-1 ml-1 text-[10px] xl:text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  ({unit})
-                </span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card
-      style={{
-        backgroundColor: theme.boxColor,
-        boxShadow:
-          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-      }}
-      className="border-0"
-    >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle
-          className="text-sm xl:text-base font-normal"
-          style={{ color: theme.secondaryTextColor }}
-        >
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div
-          className="text-xl md:text-2xl xl:text-3xl font-bold"
-          style={{ color: theme.secondaryTextColor }}
-        >
-          {value}
-          {unit && (
-            <span
-              className="pl-1 ml-1 text-[10px] xl:text-xs"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              ({unit})
-            </span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+interface CosmosBalance {
+  denom: string;
+  amount: string;
 }
 
 export interface WalletSession {
@@ -151,39 +63,30 @@ interface StakingPoolResponse {
   };
 }
 
-interface BlockResponse {
-  block: {
-    header: {
-      height: string;
-      time: string;
-      proposer_address: string;
-    };
-    data: {
-      txs: string[];
-    };
-  };
-  block_id: {
-    hash: string;
-  };
-}
-
 interface Transaction {
-  body: {
-    messages: Array<{
-      "@type": string;
-      from_address: string;
-      to_address: string;
-      amount: Array<{
-        denom: string;
-        amount: string;
-      }>;
-    }>;
-  };
+  from: string;
+  to: string;
+  amount: string;
+  denom: string;
   timestamp: string;
+  hash: string;
 }
 
 interface TransactionResponse {
-  txs: Transaction[];
+  txs: Array<{
+    body: {
+      messages: Array<{
+        from_address: string;
+        to_address: string;
+        amount: Array<{
+          denom: string;
+          amount: string;
+        }>;
+      }>;
+    };
+    hash: string;
+    timestamp: string;
+  }>;
   pagination: {
     next_key: string | null;
     total: string;
@@ -196,47 +99,156 @@ interface Block {
   timestamp: string;
   txCount: number;
   proposer: string;
+  transactions: Transaction[];
 }
 
-interface TxResponse {
-  tx_responses: Array<{
-    txhash: string;
-    code: number;
-    timestamp: string;
-    tx: {
-      body: {
-        messages: Array<{
-          "@type": string;
-          from_address?: string;
-          to_address?: string;
-          amount?: Array<{
-            denom: string;
-            amount: string;
-          }>;
-        }>;
-      };
+interface ValidatorSetResponse {
+  validators: {
+    address: string;
+    pub_key: {
+      "@type": string;
+      key: string;
     };
-  }>;
+    voting_power: string;
+    proposer_priority: string;
+  }[];
+  pagination: {
+    total: string;
+  };
 }
 
-export function Dashboard() {
+export function connectWallet() {
+  console.log("Connecting wallet...");
+}
+
+export default function Dashboard() {
   const { theme } = useTheme();
-  const [account, setAccount] = useState<string>("");
-  const [session, setSession] = useState<WalletSession | null>(null);
+  const router = useRouter();
+  const { account, session, setSession } = useWallet();
   const [validatorCount, setValidatorCount] = useState<number>(0);
   const [bondedTokens, setBondedTokens] = useState<string>("0");
   const [communityPool, setCommunityPool] = useState<string>("0");
   const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
-  const [latestTransactions, setLatestTransactions] = useState<
-    Array<{
-      from: string;
-      to: string;
-      amount: string;
-      denom: string;
-      timestamp: string;
-    }>
-  >([]);
-  const router = useRouter();
+  const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
+    []
+  );
+  const [totalTransactions, setTotalTransactions] = useState(0);
+
+  console.log("Connected account:", account);
+
+  useEffect(() => {
+    const getBalance = async () => {
+      if (!account) {
+        setSession({
+          balance: "0 KII",
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        });
+        return;
+      }
+
+      const existingSession = localStorage.getItem("walletSession");
+      if (existingSession) {
+        const { account: storedAccount, session: storedSession } =
+          JSON.parse(existingSession);
+        if (storedAccount === account) {
+          console.log("Using cached wallet session");
+          setSession(storedSession);
+          return;
+        }
+      }
+
+      try {
+        if (account.startsWith("kii1")) {
+          const response = await fetch(
+            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${account}`
+          );
+          const data = await response.json();
+
+          const ukiiBalance =
+            data.balances.find((b: CosmosBalance) => b.denom === "ukii")
+              ?.amount || "0";
+          const formattedBalance = `${(
+            parseInt(ukiiBalance) / 1_000_000
+          ).toString()} KII`;
+          console.log("Cosmos Account balance:", formattedBalance);
+
+          const sessionData = {
+            balance: formattedBalance,
+            staking: "0 KII",
+            reward: "0 KII",
+            withdrawals: "0 KII",
+            stakes: [],
+          };
+
+          setSession(sessionData);
+          localStorage.setItem(
+            "walletSession",
+            JSON.stringify({ account, session: sessionData })
+          );
+        } else {
+          try {
+            const provider = new ethers.JsonRpcProvider(
+              "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/",
+              {
+                chainId: 1336,
+                name: "kii-testnet",
+              }
+            );
+
+            const balance = await provider.getBalance(account);
+            const formattedBalance = ethers.formatEther(balance);
+
+            const sessionData = {
+              balance: `${formattedBalance} KII`,
+              staking: "0 KII",
+              reward: "0 KII",
+              withdrawals: "0 KII",
+              stakes: [],
+            };
+
+            setSession(sessionData);
+            localStorage.setItem(
+              "walletSession",
+              JSON.stringify({ account, session: sessionData })
+            );
+          } catch (evmError) {
+            console.error("EVM error:", evmError);
+            const sessionData = {
+              balance: "0 KII",
+              staking: "0 KII",
+              reward: "0 KII",
+              withdrawals: "0 KII",
+              stakes: [],
+            };
+            setSession(sessionData);
+            localStorage.setItem(
+              "walletSession",
+              JSON.stringify({ account, session: sessionData })
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error getting balance:", error);
+        const sessionData = {
+          balance: "0 KII",
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        };
+        setSession(sessionData);
+        localStorage.setItem(
+          "walletSession",
+          JSON.stringify({ account, session: sessionData })
+        );
+      }
+    };
+
+    getBalance();
+  }, [account, setSession]);
 
   useEffect(() => {
     const fetchChainData = async () => {
@@ -253,13 +265,13 @@ export function Dashboard() {
               }
             ).catch(() => null),
             fetch(
-              "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool",
+              "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool",
               {
                 signal: controller.signal,
               }
             ).catch(() => null),
             fetch(
-              "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool",
+              "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool",
               {
                 signal: controller.signal,
               }
@@ -294,7 +306,13 @@ export function Dashboard() {
           setCommunityPool(communityPoolKii);
         }
       } catch (error) {
-        console.error("Error fetching chain data:", error);
+        if (error instanceof Error) {
+          if (error.name === "AbortError") {
+            console.error("Fetch aborted due to timeout:", error);
+          } else {
+            console.error("Error fetching chain data:", error);
+          }
+        }
       }
     };
 
@@ -303,158 +321,163 @@ export function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const connectWallet = async () => {
-    try {
-      if (typeof window.ethereum !== "undefined") {
-        const provider = getWeb3Provider();
+  useEffect(() => {
+    const fetchValidatorCount = async () => {
+      try {
+        const response = await fetch(
+          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/validatorsets/latest"
+        );
 
-        const network = await provider.getNetwork();
-        if (network.chainId !== BigInt("1336")) {
-          try {
-            await window.ethereum.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: "0x538" }],
-            });
-          } catch (switchError) {
-            if ((switchError as { code: number }).code === 4902) {
-              try {
-                await window.ethereum.request({
-                  method: "wallet_addEthereumChain",
-                  params: [
-                    {
-                      chainId: "0x538",
-                      chainName: "Kii Chain",
-                      nativeCurrency: {
-                        name: "KII",
-                        symbol: "KII",
-                        decimals: 18,
-                      },
-                      rpcUrls: ["https://rpc.kiichain.net"],
-                      blockExplorerUrls: ["https://explorer.kiichain.net"],
+        if (response.ok) {
+          const data: ValidatorSetResponse = await response.json();
+          const count = data.validators.length;
+          setValidatorCount(count);
+        }
+      } catch (error) {
+        console.error("Error fetching validator count:", error);
+        setValidatorCount(0);
+      }
+    };
+
+    fetchValidatorCount();
+
+    const interval = setInterval(fetchValidatorCount, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const connectWallet = async () => {
+    if (typeof window.ethereum === "undefined") {
+      alert("Please install MetaMask!");
+      return;
+    }
+
+    try {
+      await window.ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+
+      const accounts = (await window.ethereum.request({
+        method: "eth_requestAccounts",
+      })) as string[];
+
+      if (!Array.isArray(accounts) || accounts.length === 0) {
+        return;
+      }
+
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x538" }],
+        });
+      } catch (switchError: unknown) {
+        if (switchError instanceof Error && "code" in switchError) {
+          const errorCode = (switchError as { code: number }).code;
+          if (errorCode === 4902) {
+            try {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [
+                  {
+                    chainId: "0x538",
+                    chainName: "Kii Chain",
+                    nativeCurrency: {
+                      name: "KII",
+                      symbol: "KII",
+                      decimals: 18,
                     },
-                  ],
-                });
-              } catch (addError) {
-                console.error("Error adding Kii Chain:", addError);
-                throw addError;
-              }
-            } else {
-              console.error("Error switching to Kii Chain:", switchError);
-              throw switchError;
+                    rpcUrls: ["https://rpc.kiichain.net"],
+                    blockExplorerUrls: ["https://explorer.kiichain.net"],
+                  },
+                ],
+              });
+            } catch {
+              return;
             }
+          } else {
+            return;
           }
         }
-
-        const accounts = await provider.send("eth_requestAccounts", []);
-        const account = accounts[0];
-        setAccount(account);
-
-        try {
-          const balance = await provider.getBalance(account);
-          const formattedBalance = ethers.formatEther(balance);
-          setSession({
-            balance: formattedBalance,
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          });
-        } catch (error) {
-          console.error("Error getting wallet data:", error);
-          // Set default values if there's an error
-          setSession({
-            balance: "0",
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          });
-        }
-      } else {
-        alert("Please install MetaMask!");
       }
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
-      alert(
-        "Error connecting to wallet. Please make sure you're on Kii Chain network."
-      );
-    }
-  };
 
-  const fetchBlockData = async (height: number) => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const provider = getWeb3Provider();
+      const account = accounts[0];
 
-      const response = await fetch(
-        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
-        { signal: controller.signal }
-      );
+      try {
+        const balance = await provider.getBalance(account);
+        const formattedBalance = ethers.formatEther(balance);
+        console.log("Account balance:", formattedBalance, "KII");
 
-      clearTimeout(timeoutId);
-
-      const data: BlockResponse = await response.json();
-
-      return {
-        height: data.block.header.height,
-        hash:
-          Buffer.from(data.block_id.hash, "base64")
-            .toString("hex")
-            .slice(0, 10) + "...",
-        timestamp: new Date(data.block.header.time).toLocaleString(),
-        txCount: data.block.data.txs?.length || 0,
-        proposer: data.block.header.proposer_address,
-      };
-    } catch (error) {
-      console.error(`Error fetching block ${height}:`, error);
-      return null;
+        setSession({
+          balance: formattedBalance,
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        });
+      } catch {
+        setSession({
+          balance: "0",
+          staking: "0 KII",
+          reward: "0 KII",
+          withdrawals: "0 KII",
+          stakes: [],
+        });
+      }
+    } catch {
+      return;
     }
   };
 
   const fetchLatestBlocksAndTxs = async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const heightResponse = await fetch(
-        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
+      const blocks = [];
+      const latestBlockResponse = await fetch(
+        "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
         { signal: controller.signal }
       );
+      const latestBlockData = await latestBlockResponse.json();
+      const latestHeight = parseInt(latestBlockData.block.header.height);
 
-      clearTimeout(timeoutId);
+      for (let i = 0; i < 20; i++) {
+        const height = latestHeight - i;
 
-      const heightData: BlockResponse = await heightResponse.json();
-      const latestHeight = parseInt(heightData.block.header.height);
+        try {
+          const blockResponse = await fetch(
+            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
+            { signal: controller.signal }
+          );
+          const blockData = await blockResponse.json();
 
-      const blockPromises = Array.from({ length: 20 }, (_, i) =>
-        fetchBlockData(latestHeight - i)
-      );
+          if (blockData && blockData.block && blockData.block_id) {
+            const blockInfo = {
+              height: blockData.block.header.height,
+              hash: blockData.block_id.hash || "N/A",
+              timestamp: new Date(blockData.block.header.time).toLocaleString(),
+              txCount: blockData.block.data.txs?.length || 0,
+              proposer: blockData.block.header.proposer_address || "N/A",
+              transactions: [],
+            };
 
-      const blocks = (await Promise.all(blockPromises)).filter(
-        (block): block is Block => block !== null
-      );
+            blocks.push(blockInfo);
+            console.log(`Block ${height} processed:`, blockInfo);
+          } else {
+            console.error(
+              `Invalid block data structure for height ${height}:`,
+              blockData
+            );
+          }
+        } catch (blockError) {
+          console.error(`Error processing block ${height}:`, blockError);
+        }
+      }
+
+      console.log("Final blocks array:", blocks);
       setLatestBlocks(blocks);
-
-      const txsResponse = await fetch(
-        `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=tx.height=${latestHeight}`,
-        { signal: controller.signal }
-      );
-      const txsData: TxResponse = await txsResponse.json();
-
-      const transactions = txsData.tx_responses.map((txResponse) => {
-        const msg = txResponse.tx.body.messages[0];
-        return {
-          from: msg.from_address || "N/A",
-          to: msg.to_address || "N/A",
-          amount: msg.amount ? msg.amount[0].amount : "0",
-          denom: msg.amount ? msg.amount[0].denom : "ukii",
-          timestamp: txResponse.timestamp,
-        };
-      });
-
-      setLatestTransactions(transactions);
     } catch (error) {
-      console.error("Error fetching latest blocks and transactions:", error);
+      console.error("Error in fetchLatestBlocksAndTxs:", error);
     }
   };
 
@@ -464,7 +487,7 @@ export function Dashboard() {
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const response = await fetch(
-        "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2&page=1",
+        "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2&page=1",
         { signal: controller.signal }
       );
 
@@ -478,6 +501,7 @@ export function Dashboard() {
         amount: tx.body.messages[0].amount[0].amount,
         denom: tx.body.messages[0].amount[0].denom,
         timestamp: tx.timestamp,
+        hash: tx.hash,
       }));
 
       setLatestTransactions(formattedTransactions);
@@ -498,6 +522,44 @@ export function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        if (account && account !== "") {
+          const evmTxs = await fetch(
+            "https://kii.backend.kiivalidator.com/explorer/transactions"
+          ).then((res) => res.json());
+          console.log("EVM transactions:", evmTxs?.quantity);
+          setTotalTransactions(evmTxs?.quantity || 0);
+        } else {
+          const cosmosTxs = await fetch(
+            'https://rpc.uno.sentry.testnet.v3.kiivalidator.com/tx_search?query="tx.height>0"&prove=false&page=1&per_page=1&order_by="asc"'
+          ).then((res) => res.json());
+          console.log("Cosmos transactions:", cosmosTxs?.total_count);
+          setTotalTransactions(parseInt(cosmosTxs?.total_count || "0"));
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        setTotalTransactions(0);
+      }
+    };
+
+    fetchTransactions();
+  }, [account]);
+
+  const handleNavigation = (path: string) => {
+    if (!account || !session) {
+      return;
+    }
+    if (path === "/account") {
+      router.push(`/account/${account}`);
+    } else if (path === "/stake") {
+      router.push("/staking");
+    } else {
+      router.push(path);
+    }
+  };
+
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
       <div className="px-6 pt-12"></div>
@@ -511,11 +573,8 @@ export function Dashboard() {
           style={{ backgroundColor: theme.bgColor }}
         >
           <StatCard title="KII Price" value="N/A" unit="TESTNET" />
-          <StatCard title="Gas Price" value="2500" unit="Tekii" />
-          <StatCard
-            title="Transactions"
-            value={latestTransactions.length.toString()}
-          />
+          <StatCard title="Gas Price" value="2500" unit="Ukii" />
+          <StatCard title="Transactions" value={totalTransactions.toString()} />
           <StatCard
             title="Block Height"
             value={latestBlocks[0]?.height || "0"}
@@ -603,172 +662,24 @@ export function Dashboard() {
           }}
           className="border-0 mt-6"
         >
-          <CardContent className="p-6">
-            {!account ? (
-              <button
-                onClick={connectWallet}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:opacity-80"
-                style={{ color: theme.primaryTextColor }}
-              >
-                <WalletIcon />
-                Wallet not connected
-              </button>
-            ) : (
-              <div className="space-y-6">
-                <div
-                  className="text-xl mb-4"
-                  style={{ color: theme.primaryTextColor }}
+          <CardContent className="p-6 rounded-lg">
+            <WalletInfo connectWallet={connectWallet} />
+            {account && session && (
+              <div className="grid grid-cols-2 gap-4 mt-6">
+                <button
+                  className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
+                  style={{ backgroundColor: theme.boxColor }}
+                  onClick={() => handleNavigation("/account")}
                 >
-                  {account}
-                </div>
-
-                <div className="grid grid-cols-4 gap-4 ">
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Balance</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {session?.balance}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      ${session?.balance}
-                    </div>
-                  </div>
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Staking</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {session?.staking}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      ${session?.staking}
-                    </div>
-                  </div>
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Reward</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {session?.reward}
-                    </div>
-                    <div className="text-sm text-gray-400">$0</div>
-                  </div>
-                  <div
-                    className="rounded-lg p-4"
-                    style={{ backgroundColor: theme.bgColor }}
-                  >
-                    <div className="text-gray-400">Withdrawals</div>
-                    <div
-                      className="text-lg"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {session?.withdrawals}
-                    </div>
-                    <div className="text-sm text-gray-400">$0</div>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-left text-gray-400 w-full">
-                        <th className="pb-4 w-1/4">Validator</th>
-                        <th className="pb-4 w-1/4">Stakes</th>
-                        <th className="pb-4 w-1/4">Rewards</th>
-                        <th className="pb-4 w-1/4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {session?.stakes.map((stake, index) => (
-                        <tr
-                          key={index}
-                          className="border-t"
-                          style={{
-                            borderColor: theme.borderColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          <td
-                            className="p-4"
-                            style={{ color: theme.primaryTextColor }}
-                          >
-                            {stake.validator}
-                          </td>
-                          <td
-                            className="p-4"
-                            style={{ color: theme.primaryTextColor }}
-                          >
-                            {stake.amount}
-                          </td>
-                          <td
-                            className="p-4"
-                            style={{ color: theme.primaryTextColor }}
-                          >
-                            {stake.rewards}
-                          </td>
-                          <td className="p-4">
-                            <button
-                              className="px-4 py-2 rounded-lg hover:opacity-80"
-                              style={{
-                                backgroundColor: theme.boxColor,
-                                color: theme.accentColor,
-                                boxShadow:
-                                  "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                              }}
-                            >
-                              CLAIM REWARDS
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex justify-center gap-4 mt-8">
-                  <button
-                    className="px-8 py-3 rounded-lg hover:opacity-80"
-                    style={{
-                      backgroundColor: theme.boxColor,
-                      color: theme.primaryTextColor,
-                      boxShadow:
-                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                    }}
-                    onClick={() => {
-                      localStorage.setItem(
-                        "walletSession",
-                        JSON.stringify({ account, session })
-                      );
-                      router.push("/account/");
-                    }}
-                  >
-                    My Account
-                  </button>
-                  <button
-                    className="px-8 py-3 rounded-lg hover:opacity-80"
-                    style={{
-                      backgroundColor: theme.boxColor,
-                      color: theme.primaryTextColor,
-                      boxShadow:
-                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                    }}
-                  >
-                    Create Stake
-                  </button>
-                </div>
+                  My Account
+                </button>
+                <button
+                  className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
+                  style={{ backgroundColor: theme.boxColor }}
+                  onClick={() => handleNavigation("/stake")}
+                >
+                  Create Stake
+                </button>
               </div>
             )}
           </CardContent>
@@ -783,7 +694,10 @@ export function Dashboard() {
             }}
             className="border-0"
           >
-            <div className="p-6" style={{ backgroundColor: theme.boxColor }}>
+            <div
+              className="p-6 rounded-lg"
+              style={{ backgroundColor: theme.boxColor }}
+            >
               <div className="flex justify-between items-center">
                 <div className="flex gap-6 flex-1">
                   <div style={{ color: theme.primaryTextColor }}>
@@ -800,91 +714,12 @@ export function Dashboard() {
                   View All
                 </div>
               </div>
-              <div className="mt-4">
-                <table className="w-full table-fixed">
-                  <tbody className="space-y-4">
-                    {latestBlocks.map((block, index) => (
-                      <tr
-                        key={index}
-                        style={{ backgroundColor: theme.bgColor }}
-                        className="rounded-lg mb-4 w-full"
-                      >
-                        <td className="p-4 grid grid-cols-12 gap-4 items-center">
-                          <span
-                            className="col-span-2 flex items-center gap-2"
-                            style={{ color: theme.accentColor }}
-                          >
-                            <ContractIcon className="w-4 h-4" />
-                            <span style={{ color: theme.secondaryTextColor }}>
-                              {block.height}
-                            </span>
-                          </span>
-                          <div className="flex items-center gap-2 col-span-3">
-                            <span style={{ color: theme.secondaryTextColor }}>
-                              Fee Recipient
-                            </span>
-                            <span style={{ color: theme.accentColor }}>
-                              {block.proposer}
-                            </span>
-                          </div>
-                          <span
-                            className="col-span-2 flex items-center gap-2"
-                            style={{ color: theme.accentColor }}
-                          >
-                            <ContractIcon className="w-4 h-4" />
-                            <span style={{ color: theme.secondaryTextColor }}>
-                              {block.hash}
-                            </span>
-                          </span>
-                          <div className="flex flex-col col-span-3">
-                            <span className="text-xs text-gray-400">
-                              <div className="flex items-center gap-1">
-                                <span
-                                  style={{ color: theme.secondaryTextColor }}
-                                >
-                                  From:
-                                </span>
-                                <span style={{ color: theme.accentColor }}>
-                                  {latestTransactions[index]?.from || "N/A"}
-                                </span>
-                              </div>
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              <div className="flex items-center gap-1">
-                                <span
-                                  style={{ color: theme.secondaryTextColor }}
-                                >
-                                  To:
-                                </span>
-                                <span style={{ color: theme.accentColor }}>
-                                  {latestTransactions[index]?.to || "N/A"}
-                                </span>
-                              </div>
-                            </span>
-                          </div>
-                          <span
-                            style={{
-                              backgroundColor: theme.boxColor,
-                              color: theme.accentColor,
-                              boxShadow:
-                                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                            }}
-                            className="px-3 py-1 rounded-full col-span-2 text-center inline-block w-fit"
-                          >
-                            {latestTransactions[index]?.amount
-                              ? parseInt(latestTransactions[index].amount) /
-                                1000000
-                              : 0}{" "}
-                            {latestTransactions[index]?.denom?.includes("ukii")
-                              ? "KII"
-                              : "ORO"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <BlockTable
+                latestBlocks={latestBlocks}
+                latestTransactions={latestTransactions}
+                handleBlockClick={handleNavigation}
+                handleAddressClick={handleNavigation}
+              />
             </div>
           </Card>
         </div>
@@ -898,144 +733,7 @@ export function Dashboard() {
             }}
             className="border-0"
           >
-            <div className="p-6">
-              <h2
-                className="text-xl mb-6"
-                style={{ color: theme.primaryTextColor }}
-              >
-                Application Versions
-              </h2>
-
-              <table className="w-full">
-                <tbody>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Name
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Kiichain
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      App_name
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Kiichaind
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Version
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      26c1fe7
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Git_commit
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      87eefca1ad86ec69374874c25558f430afdb5555c8
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Build_tags
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      App_v1
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Go_version
-                    </td>
-                    <td
-                      className="py-4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Go Version Go1.19 Linux/Amd64
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <table className="w-full mt-4">
-                <tbody>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td className="py-4 w-1/4"></td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Cloud.Google.Com/Go
-                    </td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      V0.110.0
-                    </td>
-                    <td className="py-4" style={{ color: theme.accentColor }}>
-                      H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#231C32]/50">
-                    <td className="py-4 w-1/4"></td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      Cloud.Google.Com/Go
-                    </td>
-                    <td
-                      className="py-4 w-1/4"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      V0.110.0
-                    </td>
-                    <td className="py-4" style={{ color: theme.accentColor }}>
-                      H1:Zc8gqp3+A9/Eyph2KDmcGaPtbKRloqq4YTlL4NMD0Ys=Cloud
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <ApplicationVersions />
           </Card>
         </div>
       </div>

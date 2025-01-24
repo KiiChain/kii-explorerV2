@@ -1,7 +1,99 @@
 "use client";
 
+interface SignDoc {
+  chain_id: string;
+  account_number: string;
+  sequence: string;
+  fee: {
+    amount: Array<{ denom: string; amount: string }>;
+    gas: string;
+  };
+  msgs: Array<{
+    type: string;
+    value: {
+      delegator_address: string;
+      validator_address: string;
+      amount: {
+        denom: string;
+        amount: string;
+      };
+    };
+  }>;
+  memo: string;
+}
+
+interface ChainInfo {
+  chainId: string;
+  chainName: string;
+  rpc: string;
+  rest: string;
+  bip44: { coinType: number };
+  bech32Config: {
+    bech32PrefixAccAddr: string;
+    bech32PrefixAccPub: string;
+    bech32PrefixValAddr: string;
+    bech32PrefixValPub: string;
+    bech32PrefixConsAddr: string;
+    bech32PrefixConsPub: string;
+  };
+  currencies: Array<{
+    coinDenom: string;
+    coinMinimalDenom: string;
+    coinDecimals: number;
+    coinGeckoId?: string;
+  }>;
+  feeCurrencies: Array<{
+    coinDenom: string;
+    coinMinimalDenom: string;
+    coinDecimals: number;
+    coinGeckoId?: string;
+    gasPriceStep?: {
+      low: number;
+      average: number;
+      high: number;
+    };
+  }>;
+  stakeCurrency: {
+    coinDenom: string;
+    coinMinimalDenom: string;
+    coinDecimals: number;
+    coinGeckoId?: string;
+  };
+  features?: string[];
+  gasPriceStep?: {
+    low: number;
+    average: number;
+    high: number;
+  };
+}
+
+declare global {
+  interface Window {
+    keplr?: {
+      signAmino: (
+        chainId: string,
+        signer: string,
+        signDoc: SignDoc
+      ) => Promise<{ signed: SignDoc; signature: string }>;
+      signArbitrary: (
+        chainId: string,
+        signer: string,
+        data: string
+      ) => Promise<{ signature: string }>;
+      enable: (chainId: string) => Promise<void>;
+      getOfflineSigner: (chainId: string) => {
+        getAccounts: () => Promise<Array<{ address: string }>>;
+      };
+      getKey: (chainId: string) => Promise<{ address: string }>;
+      experimentalSuggestChain: (chainInfo: ChainInfo) => Promise<void>;
+    };
+  }
+}
+
 import React from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "next/navigation";
+import { use } from "react";
 
 import { useEffect, useState } from "react";
 
@@ -14,44 +106,392 @@ interface Validator {
   commission: string;
 }
 
+interface Theme {
+  boxColor: string;
+  bgColor: string;
+  primaryTextColor: string;
+  secondaryTextColor: string;
+  accentColor: string;
+}
+
+interface DelegateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  validator: Validator;
+  theme: Theme;
+}
+
+function DelegateModal({
+  isOpen,
+  onClose,
+  validator,
+  theme,
+}: DelegateModalProps) {
+  const [amount, setAmount] = useState("");
+  const [fees, setFees] = useState("2000");
+  const [gas, setGas] = useState("200000");
+  const [memo, setMemo] = useState("ping.pub");
+  const [walletAddress, setWalletAddress] = useState("");
+
+  useEffect(() => {
+    async function getWalletAddress() {
+      if (window.keplr) {
+        try {
+          await window.keplr.enable("kiichain");
+          const offlineSigner = window.keplr.getOfflineSigner("kiichain");
+          const accounts = await offlineSigner.getAccounts();
+          setWalletAddress(accounts[0].address);
+        } catch (error) {
+          console.error("Error getting wallet address:", error);
+        }
+      }
+    }
+
+    if (isOpen) {
+      getWalletAddress();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async () => {
+    try {
+      await handleCreateStake(amount, validator);
+      onClose();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div
+        className="relative w-[500px] rounded-xl p-6"
+        style={{ backgroundColor: theme.boxColor }}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2
+            className="font-semibold"
+            style={{ color: theme.primaryTextColor }}
+          >
+            Delegate
+          </h2>
+          <button onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M18 6L6 18M6 6L18 18"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Sender
+            </label>
+            <input
+              type="text"
+              value={walletAddress}
+              readOnly
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Validator
+            </label>
+            <select
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+              defaultValue={`${validator.moniker} (${(
+                parseFloat(validator.commission) * 100
+              ).toFixed(2)}%)`}
+            >
+              <option>{`${validator.moniker} (${(
+                parseFloat(validator.commission) * 100
+              ).toFixed(2)}%)`}</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Amount
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Available: 1882873676"
+                className="flex-1 p-3 rounded-lg"
+                style={{ backgroundColor: theme.bgColor }}
+              />
+              <select
+                className="w-24 p-3 rounded-lg"
+                style={{ backgroundColor: theme.bgColor }}
+              >
+                <option>ukii</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Fees
+            </label>
+            <input
+              type="text"
+              value={fees}
+              onChange={(e) => setFees(e.target.value)}
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Gas
+            </label>
+            <input
+              type="text"
+              value={gas}
+              onChange={(e) => setGas(e.target.value)}
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block mb-2"
+              style={{ color: theme.secondaryTextColor }}
+            >
+              Memo
+            </label>
+            <input
+              type="text"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              className="w-full p-3 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 mt-4">
+            <input type="checkbox" id="advance" />
+            <label htmlFor="advance" style={{ color: theme.primaryTextColor }}>
+              Advance
+            </label>
+          </div>
+
+          <button
+            className="w-full p-3 rounded-lg mt-6 text-white"
+            style={{ backgroundColor: theme.accentColor }}
+            onClick={handleSubmit}
+          >
+            SEND
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const handleCopyClick = (text: string, label: string) => {
+  if (window.confirm(`¿Deseas copiar ${label}?`)) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        alert("Texto copiado al portapapeles");
+      })
+      .catch((err) => {
+        console.error("Error al copiar:", err);
+        alert("No se pudo copiar el texto");
+      });
+  }
+};
+
+async function handleCreateStake(amount: string, validator: Validator) {
+  try {
+    if (!window.keplr) {
+      throw new Error("Please install Keplr wallet");
+    }
+
+    let chainId = "kiichain";
+    try {
+      await window.keplr.enable(chainId);
+    } catch {
+      chainId = "kiitestnet-1";
+      await window.keplr.enable(chainId);
+    }
+
+    const offlineSigner = window.keplr.getOfflineSigner(chainId);
+    const accounts = await offlineSigner.getAccounts();
+    const userAddress = accounts[0].address;
+
+    const accountResponse = await fetch(
+      `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/auth/v1beta1/accounts/${userAddress}`
+    );
+    const accountData = await accountResponse.json();
+
+    if (!accountData?.account) {
+      throw new Error("Failed to get account data");
+    }
+
+    const accountInfo = accountData.account;
+    const accountNumber = accountInfo.account_number?.toString() || "0";
+    const sequence = accountInfo.sequence?.toString() || "0";
+
+    const signDoc = {
+      chain_id: "kiichain",
+      account_number: accountNumber,
+      sequence: sequence,
+      fee: {
+        amount: [{ denom: "ukii", amount: "2000" }],
+        gas: "200000",
+      },
+      msgs: [
+        {
+          type: "cosmos-sdk/MsgDelegate",
+          value: {
+            delegator_address: userAddress,
+            validator_address: validator.operatorAddress,
+            amount: {
+              denom: "ukii",
+              amount: amount,
+            },
+          },
+        },
+      ],
+      memo: "ping.pub",
+    };
+
+    const signature = await window.keplr.signAmino(
+      "kiichain",
+      userAddress,
+      signDoc
+    );
+
+    const txBytes = Buffer.from(JSON.stringify(signature)).toString("base64");
+
+    const broadcastPayload = {
+      tx_bytes: txBytes,
+      mode: "BROADCAST_MODE_SYNC",
+    };
+
+    const broadcastResponse = await fetch(
+      "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(broadcastPayload),
+      }
+    );
+
+    const result = await broadcastResponse.json();
+
+    if (!result.tx_response?.txhash) {
+      throw new Error("Failed to broadcast transaction");
+    }
+
+    const txResponse = await fetch(
+      `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs/${result.tx_response.txhash}`
+    );
+    const txResult = await txResponse.json();
+
+    if (txResult.tx_response.code !== 0) {
+      throw new Error(txResult.tx_response.raw_log || "Transaction failed");
+    }
+
+    alert("Transaction completed successfully!");
+    return txResult;
+  } catch (error) {
+    console.error("Stake creation failed:", error);
+    throw error;
+  }
+}
+
 export default function ValidatorPage({
   params,
 }: {
   params: Promise<{ validatorId: string }>;
 }) {
-  const { validatorId } = React.use(params);
+  const { validatorId } = use(params);
+  const router = useRouter();
   const { theme } = useTheme();
-
   const [validator, setValidator] = useState<Validator | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchValidator = async () => {
+    async function fetchValidator() {
       try {
         const response = await fetch(
-          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators/${validatorId}`
+          `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators/${validatorId}`
         );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
-        const validatorData = data.validator;
+
+        if (!data?.validator) {
+          throw new Error("No validator data found");
+        }
+
+        if (data.validator.status !== "BOND_STATUS_BONDED") {
+          router.push("/staking");
+          return;
+        }
 
         setValidator({
-          moniker: validatorData.description.moniker,
-          operatorAddress: validatorData.operator_address,
-          website: validatorData.description.website,
-          tokens: parseInt(validatorData.tokens).toLocaleString(),
-          commission: `${
-            parseFloat(validatorData.commission.commission_rates.rate) * 100
-          }%`,
+          moniker: data.validator.description.moniker,
+          operatorAddress: data.validator.operator_address,
+          website: data.validator.description.website,
+          tokens: data.validator.tokens,
+          selfBonded: data.validator.delegator_shares,
+          commission: data.validator.commission.commission_rates.rate,
         });
       } catch (error) {
         console.error("Error fetching validator:", error);
+        router.push("/staking");
+      } finally {
+        setLoading(false);
       }
-    };
+    }
 
     fetchValidator();
-  }, [validatorId]);
+  }, [validatorId, router]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!validator) {
-    return <div>Loading...</div>;
+    return null;
   }
 
   return (
@@ -62,8 +502,8 @@ export default function ValidatorPage({
           style={{ backgroundColor: theme.boxColor }}
         >
           <div className="flex flex-col items-start gap-4 p-6 h-full">
-            <div className="flex gap-4">
-              <div className="w-1/3">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-1/3">
                 <div className="relative w-28 h-28">
                   <div
                     style={{ backgroundColor: theme.primaryTextColor }}
@@ -85,26 +525,29 @@ export default function ValidatorPage({
                   </div>
                 </div>
               </div>
-              <div className="w-2/3">
+              <div className="w-full md:w-2/3">
                 <h2
-                  className="text-lg font-bold mb-1"
+                  className="text-base font-bold mb-1 md:truncate"
                   style={{ color: theme.primaryTextColor }}
                 >
-                  {validator.moniker}
+                  {validator.moniker.length > 15
+                    ? `${validator.moniker.substring(0, 15)}...`
+                    : validator.moniker}
                 </h2>
                 <p
-                  className="text-lg font-bold mb-1"
+                  className="text-xs font-bold mb-1 break-all"
                   style={{ color: theme.secondaryTextColor }}
                 >
                   {validator.operatorAddress}
                 </p>
                 <div className="pt-4">
                   <button
-                    className="text-lg p-2 rounded-lg"
+                    className="text-xs p-2 rounded-lg w-full md:w-auto"
                     style={{
                       backgroundColor: theme.bgColor,
                       color: theme.accentColor,
                     }}
+                    onClick={() => setIsDelegateModalOpen(true)}
                   >
                     Create Stake
                   </button>
@@ -120,51 +563,53 @@ export default function ValidatorPage({
                 style={{ color: theme.accentColor }}
               ></a>
             )}
-            <div className="flex flex-col gap-4 mt-4">
+            <div className="flex flex-col gap-4 mt-4 w-full">
               <a
                 href="#"
-                className="text-lg flex items-center gap-2"
+                className="text-sm flex flex-col md:flex-row items-start md:items-center gap-2"
                 style={{ color: theme.primaryTextColor }}
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 18 18"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g clipPath="url(#clip0_810_4212)">
-                    <path
-                      d="M9 16.5C13.1421 16.5 16.5 13.1421 16.5 9C16.5 4.85786 13.1421 1.5 9 1.5C4.85786 1.5 1.5 4.85786 1.5 9C1.5 13.1421 4.85786 16.5 9 16.5Z"
-                      stroke="#D2AAFA"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M9 16.5C10.6569 16.5 12 13.1421 12 9C12 4.85786 10.6569 1.5 9 1.5C7.34315 1.5 6 4.85786 6 9C6 13.1421 7.34315 16.5 9 16.5Z"
-                      stroke="#D2AAFA"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M1.5 9H16.5"
-                      stroke="#D2AAFA"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_810_4212">
-                      <rect width="18" height="18" fill="white" />
-                    </clipPath>
-                  </defs>
-                </svg>
-                Website:
+                <div className="flex items-center gap-2">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g clipPath="url(#clip0_810_4212)">
+                      <path
+                        d="M9 16.5C13.1421 16.5 16.5 13.1421 16.5 9C16.5 4.85786 13.1421 1.5 9 1.5C4.85786 1.5 1.5 4.85786 1.5 9C1.5 13.1421 4.85786 16.5 9 16.5Z"
+                        stroke="#D2AAFA"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9 16.5C10.6569 16.5 12 13.1421 12 9C12 4.85786 10.6569 1.5 9 1.5C7.34315 1.5 6 4.85786 6 9C6 13.1421 7.34315 16.5 9 16.5Z"
+                        stroke="#D2AAFA"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M1.5 9H16.5"
+                        stroke="#D2AAFA"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_810_4212">
+                        <rect width="18" height="18" fill="white" />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                  Website:
+                </div>
                 <p
-                  className="text-base underline"
+                  className="text-sm underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
                   https://app.kiichain.io
@@ -173,28 +618,30 @@ export default function ValidatorPage({
 
               <a
                 href="#"
-                className="text-lg flex items-center gap-2"
+                className="text-sm flex flex-col md:flex-row items-start md:items-center gap-2"
                 style={{ color: theme.primaryTextColor }}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M2 3.5V11.5C2 11.7652 2.10536 12.0196 2.29289 12.2071C2.48043 12.3946 2.73478 12.5 3 12.5H13C13.2652 12.5 13.5196 12.3946 13.7071 12.2071C13.8946 12.0196 14 11.7652 14 11.5V3.5H2ZM2 2.5H14C14.2652 2.5 14.5196 2.60536 14.7071 2.79289C14.8946 2.98043 15 3.23478 15 3.5V11.5C15 12.0304 14.7893 12.5391 14.4142 12.9142C14.0391 13.2893 13.5304 13.5 13 13.5H3C2.46957 13.5 1.96086 13.2893 1.58579 12.9142C1.21071 12.5391 1 12.0304 1 11.5V3.5C1 3.23478 1.10536 2.98043 1.29289 2.79289C1.48043 2.60536 1.73478 2.5 2 2.5Z"
-                    fill="#D2AAFA"
-                  />
-                  <path
-                    d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479 8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439 7.9995 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
-                    fill="#D2AAFA"
-                  />
-                </svg>
-                Contact:
+                <div className="flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2 3.5V11.5C2 11.7652 2.10536 12.0196 2.29289 12.2071C2.48043 12.3946 2.73478 12.5 3 12.5H13C13.2652 12.5 13.5196 12.3946 13.7071 12.2071C13.8946 12.0196 14 11.7652 14 11.5V3.5H2ZM2 2.5H14C14.2652 2.5 14.5196 2.60536 14.7071 2.79289C14.8946 2.98043 15 3.23478 15 3.5V11.5C15 12.0304 14.7893 12.5391 14.4142 12.9142C14.0391 13.2893 13.5304 13.5 13 13.5H3C2.46957 13.5 1.96086 13.2893 1.58579 12.9142C1.21071 12.5391 1 12.0304 1 11.5V3.5C1 3.23478 1.10536 2.98043 1.29289 2.79289C1.48043 2.60536 1.73478 2.5 2 2.5Z"
+                      fill="#D2AAFA"
+                    />
+                    <path
+                      d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479 8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439 7.9995 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
+                      fill="#D2AAFA"
+                    />
+                  </svg>
+                  Contact:
+                </div>
                 <p
-                  className="text-base underline"
+                  className="text-sm underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
                   support@kiichain.io
@@ -202,7 +649,7 @@ export default function ValidatorPage({
               </a>
               <div className="flex items-center gap-2 pt-2 pl-1">
                 <p
-                  className="text-lg"
+                  className="text-sm"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Validator Status
@@ -218,18 +665,18 @@ export default function ValidatorPage({
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M11.8368 9.33334C12.2344 9.33369 12.6156 9.49188 12.8966 9.77315C13.1776 10.0544 13.3354 10.4357 13.3354 10.8333V11.2167C13.3354 11.8127 13.1221 12.3893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 10.5736 3.6681 10.7007 3.6681 10.8333V11.218C3.6681 11.5747 3.7961 11.92 4.0281 12.1913C4.86343 13.1707 6.17477 13.6673 7.99943 13.6673C9.82543 13.6673 11.1368 13.1707 11.9748 12.192C12.2072 11.9202 12.3349 11.5743 12.3348 11.2167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.33667C8.43784 1.33667 8.87129 1.42289 9.27571 1.5904C9.68013 1.75792 10.0476 2.00345 10.3571 2.31298C10.6667 2.62251 10.9122 2.98997 11.0797 3.39439C11.2472 3.79881 11.3334 4.23226 11.3334 4.67C11.3334 5.10774 11.2472 5.5412 11.0797 5.94561C10.9122 6.35003 10.6667 6.7175 10.3571 7.02703C10.0476 7.33655 9.68013 7.58209 9.27571 7.7496C8.87129 7.91712 8.43784 8.00334 8.0001 8.00334C7.11605 8.00334 6.2682 7.65215 5.64308 7.02703C5.01796 6.4019 4.66677 5.55406 4.66677 4.67C4.66677 3.78595 5.01796 2.9381 5.64308 2.31298C6.2682 1.68786 7.11605 1.33667 8.0001 1.33667ZM8.0001 2.33667C7.69368 2.33667 7.39027 2.39702 7.10717 2.51428C6.82408 2.63155 6.56685 2.80342 6.35018 3.02009C6.13351 3.23676 5.96164 3.49398 5.84438 3.77708C5.72712 4.06017 5.66677 4.36359 5.66677 4.67C5.66677 4.97642 5.72712 5.27984 5.84438 5.56293C5.96164 5.84602 6.13351 6.10325 6.35018 6.31992C6.56685 6.53659 6.82408 6.70846 7.10717 6.82572C7.39027 6.94298 7.69368 7.00334 8.0001 7.00334C8.61894 7.00334 9.21243 6.7575 9.65002 6.31992C10.0876 5.88233 10.3334 5.28884 10.3334 4.67C10.3334 4.05116 10.0876 3.45767 9.65002 3.02009C9.21243 2.5825 8.61894 2.33667 8.0001 2.33667Z"
+                    d="M11.8368 9.33334C12.2344 9.33369 12.6156 9.49188 12.8966 9.77315C13.1776 10.0544 13.3354 10.4357 13.3354 10.8333V11.2167C13.3354 11.8127 13.1221 12.3893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.33667C8.43784 1.33667 8.87129 1.42289 9.27571 1.5904C9.68013 1.75792 10.0476 2.00345 10.3571 2.31298C10.6667 2.62251 10.9122 2.98997 11.0797 3.39439C11.2472 3.79881 11.3334 4.23226 11.3334 4.67C11.3334 5.10774 11.2472 5.5412 11.0797 5.94561C10.9122 6.35003 10.6667 6.7175 10.3571 7.02703C10.0476 7.33655 9.68013 7.58209 9.27571 7.7496C8.87129 7.91712 8.43784 8.00334 8.0001 8.00334C7.11605 8.00334 6.2682 7.65215 5.64308 7.02703C5.01796 6.4019 4.66677 5.55406 4.66677 4.67C4.66677 3.78595 5.01796 2.9381 5.64308 2.31298C6.2682 1.68786 7.11605 1.33667 8.0001 1.33667ZM8.0001 2.33667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
                     fill="#D2AAFA"
                   />
                 </svg>
                 <p
-                  className="text-lg"
+                  className="text-sm"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Status:
                 </p>
                 <p
-                  className="text-lg underline"
+                  className="text-sm underline"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Bonded
@@ -253,7 +700,7 @@ export default function ValidatorPage({
                   />
                 </svg>
                 <p
-                  className="text-lg"
+                  className="text-sm"
                   style={{ color: theme.primaryTextColor }}
                 >
                   Jailed: -
@@ -291,7 +738,7 @@ export default function ValidatorPage({
                       Total Bonded Tokens
                     </div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.tokens} KII
@@ -330,7 +777,7 @@ export default function ValidatorPage({
                       Self Bonded
                     </div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.selfBonded || "100,000 KII"} (
@@ -359,7 +806,7 @@ export default function ValidatorPage({
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 11.3333V11.7167C13.3354 12.3127 13.1221 12.8893 12.7354 13.342C11.6888 14.564 10.0974 15.1673 8.0001 15.1673C5.90277 15.1673 4.3121 14.564 3.2681 13.3407C2.88184 12.8882 2.66957 12.3129 2.66943 11.718V11.3327C2.66961 10.9351 2.82763 10.5538 3.10877 10.2727C3.38991 9.99154 3.77117 9.83351 4.16877 9.83334H11.8368ZM11.8368 10.8333H4.1681C4.03549 10.8333 3.90832 10.886 3.81455 10.9798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V11.3327C12.3346 11.2004 12.282 11.0736 12.1886 10.98C12.0951 10.8864 11.969 10.8337 11.8368 10.8333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
+                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 11.3333V11.7167C13.3354 12.3127 13.1221 12.8893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
                         fill="#D2AAFA"
                       />
                     </svg>
@@ -370,13 +817,13 @@ export default function ValidatorPage({
                       style={{ color: theme.secondaryTextColor }}
                     ></div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.tokens} KII
                     </div>
                     <div
-                      className="text-sm"
+                      className="text-xs"
                       style={{ color: theme.secondaryTextColor }}
                     >
                       99.86%
@@ -384,46 +831,6 @@ export default function ValidatorPage({
                   </div>
                 </div>
               </div>
-              <div
-                className="p-3 rounded-lg mt-1"
-                style={{ backgroundColor: theme.bgColor }}
-              >
-                <div className="flex items-center">
-                  <div className="flex mr-3">
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 16 17"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M0.914746 13.1666C0.520954 13.1666 0.244392 12.9812 0.0850573 12.6103C-0.0742768 12.2393 -0.00975576 11.9096 0.278621 11.6212L4.0045 7.89389C4.1711 7.72723 4.37193 7.63632 4.607 7.62117C4.84206 7.60601 5.05016 7.68177 5.23131 7.84844L7.82125 10.0757L12.9102 4.98481H12.365C12.1075 4.98481 11.8918 4.89753 11.718 4.72299C11.5441 4.54844 11.4569 4.33268 11.4562 4.07572C11.4556 3.81875 11.5429 3.60299 11.718 3.42844C11.8931 3.2539 12.1087 3.16663 12.365 3.16663H15.0912C15.3487 3.16663 15.5647 3.2539 15.7392 3.42844C15.9137 3.60299 16.0006 3.81875 16 4.07572V6.80298C16 7.06056 15.9128 7.27662 15.7383 7.45117C15.5638 7.62571 15.3481 7.71268 15.0912 7.71208C14.8344 7.71147 14.6187 7.6242 14.4442 7.45026C14.2697 7.27632 14.1825 7.06056 14.1825 6.80298V6.25753L8.50281 11.9393C8.3362 12.106 8.13537 12.1969 7.90031 12.2121C7.66524 12.2272 7.45714 12.1515 7.276 11.9848L4.68606 9.75753L1.55087 12.8939C1.47514 12.9696 1.38063 13.0342 1.26734 13.0875C1.15405 13.1409 1.03652 13.1672 0.914746 13.1666Z"
-                        fill="#E0B1FF"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex flex-col flex-1">
-                    <div
-                      className="text-xs mb-0.5"
-                      style={{ color: theme.secondaryTextColor }}
-                    ></div>
-                    <div
-                      className="text-base font-bold"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {validator.tokens} KII
-                    </div>
-                    <div
-                      className="text-sm"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      99.86%
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div
                 className="p-3 rounded-lg mt-1"
                 style={{ backgroundColor: theme.bgColor }}
@@ -453,10 +860,10 @@ export default function ValidatorPage({
                       Commission
                     </div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {validator.commission}
+                      {(parseFloat(validator.commission) * 100).toFixed(2)}%
                     </div>
                   </div>
                 </div>
@@ -470,22 +877,17 @@ export default function ValidatorPage({
                     <svg
                       width="14"
                       height="14"
-                      viewBox="0 0 16 17"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill={theme.accentColor}
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        handleCopyClick(
+                          "Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe",
+                          "Account Address"
+                        )
+                      }
                     >
-                      <path
-                        d="M2 8.5C2 9.28793 2.15519 10.0681 2.45672 10.7961C2.75825 11.5241 3.20021 12.1855 3.75736 12.7426C4.31451 13.2998 4.97595 13.7417 5.7039 14.0433C6.43185 14.3448 7.21207 14.5 8 14.5C8.78793 14.5 9.56815 14.3448 10.2961 14.0433C11.0241 13.7417 11.6855 13.2998 12.2426 12.7426C12.7998 12.1855 13.2417 11.5241 13.5433 10.7961C13.8448 10.0681 14 9.28793 14 8.5C14 6.9087 13.3679 5.38258 12.2426 4.25736C11.1174 3.13214 9.5913 2.5 8 2.5C6.4087 2.5 4.88258 3.13214 3.75736 4.25736C2.63214 5.38258 2 6.9087 2 8.5Z"
-                        stroke="#D2AAFA"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M8 5.16663V8.49996L10 10.5"
-                        stroke="#D2AAFA"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
                     </svg>
                   </div>
                   <div className="flex flex-col flex-1">
@@ -494,7 +896,7 @@ export default function ValidatorPage({
                       style={{ color: theme.secondaryTextColor }}
                     ></div>
                     <div
-                      className="text-base font-bold"
+                      className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {validator.tokens} KII
@@ -512,304 +914,6 @@ export default function ValidatorPage({
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-6 mt-6 px-6">
-        <div
-          className="p-6 rounded-xl"
-          style={{ backgroundColor: theme.boxColor }}
-        >
-          <div className="flex flex-col">
-            <h3
-              className="text-lg font-medium"
-              style={{ color: theme.primaryTextColor }}
-            >
-              Commission Rate
-            </h3>
-            <p
-              className="text-xs mt-1"
-              style={{ color: theme.secondaryTextColor }}
-            >
-              Updated At 2024-12-17 12:55:40
-            </p>
-            <div className="relative w-full h-48 flex items-center justify-center mt-4">
-              <div className="relative w-40 h-40">
-                <div className="absolute w-full h-full rounded-full border-[16px] border-[#2A2A3A] rotate-[135deg]"></div>
-                <div
-                  className="absolute w-full h-full rounded-full border-[16px] border-[#00FFB0] rotate-[135deg]"
-                  style={{
-                    clipPath: "polygon(50% 50%, 50% 0%, 100% 0%, 100% 50%)",
-                  }}
-                ></div>
-                <div
-                  className="absolute w-full h-full rounded-full border-[16px] border-[#D2AAFA] rotate-[135deg]"
-                  style={{
-                    clipPath: "polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%)",
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="flex justify-center gap-4 mt-2">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-[#00FFB0]"></div>
-                <span
-                  className="text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Rate: 10%
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-[#D2AAFA]"></div>
-                <span
-                  className="text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  24h: 1%
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-[#00FFB0]"></div>
-                <span
-                  className="text-xs"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Max: 2.0%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="p-6 rounded-xl"
-          style={{ backgroundColor: theme.boxColor }}
-        >
-          <div className="flex flex-col h-full">
-            <h3
-              className="text-lg font-medium"
-              style={{ color: theme.primaryTextColor }}
-            >
-              Commissions & Rewards
-            </h3>
-            <div className="flex flex-col gap-6 mt-6">
-              <div>
-                <p
-                  className="text-sm mb-2"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Commissions
-                </p>
-                <p
-                  className="text-lg font-medium p-2 rounded"
-                  style={{
-                    color: theme.accentColor,
-                    backgroundColor: theme.bgColor,
-                  }}
-                >
-                  14.89 KII
-                </p>
-              </div>
-              <div>
-                <p
-                  className="text-sm mb-2"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  Outstanding Rewards
-                </p>
-                <p
-                  className="text-lg font-medium p-2 rounded"
-                  style={{
-                    color: theme.accentColor,
-                    backgroundColor: theme.bgColor,
-                  }}
-                >
-                  148.91 KII
-                </p>
-              </div>
-              <button
-                className="w-full py-3 text-sm font-medium rounded-lg mt-auto"
-                style={{
-                  backgroundColor: theme.bgColor,
-                  color: theme.accentColor,
-                }}
-              >
-                CLAIM REWARDS
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="p-6 rounded-xl"
-          style={{ backgroundColor: theme.boxColor }}
-        >
-          <div className="flex flex-col">
-            <h3
-              className="text-lg font-medium mb-6"
-              style={{ color: theme.primaryTextColor }}
-            >
-              Addresses
-            </h3>
-            <div className="flex flex-col gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Account Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      navigator.clipboard.writeText(
-                        "Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  Kii1umlbw2c8fxcq36x2zitdrd93Vxmj3cztppe
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Operator Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      navigator.clipboard.writeText(
-                        "Kiivaloperbum1ow2c8fxcq36x2zitdrd93Vxmj3dr5sjdd"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  Kiivaloperbum1ow2c8fxcq36x2zitdrd93Vxmj3dr5sjdd
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Hex Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      navigator.clipboard.writeText(
-                        "5A4F8EA32133508E058FE88F5B0G478F859A22590"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  5A4F8EA32133508E058FE88F5B0G478F859A22590
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Signer Address
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      navigator.clipboard.writeText(
-                        "Kii1akzom318emjzpwq4jqysvp5phs9ckx6y4e3e5fxg"
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  Kii1akzom318emjzpwq4jqysvp5phs9ckx6y4e3e5fxg
-                </p>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-base"
-                    style={{ color: theme.secondaryTextColor }}
-                  >
-                    Consensus Public Key
-                  </span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill={theme.accentColor}
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      navigator.clipboard.writeText(
-                        '{"@type":"cosmos.crypto.Ed25519.PubKey","key":"MSYpPChw/WL9hgoLiupu53xR5LauWv5vdsg=CG="}'
-                      )
-                    }
-                  >
-                    <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" />
-                  </svg>
-                </div>
-                <p
-                  className="text-xs break-all"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  {
-                    '{"@type":"cosmos.crypto.Ed25519.PubKey","key":"MSYpPChw/WL9hgoLiupu53xR5LauWv5vdsg=CG="}'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       <div className="mt-6 px-6">
         <div
           className="rounded-xl p-6"
@@ -817,7 +921,7 @@ export default function ValidatorPage({
         >
           <div className="flex items-center justify-between mb-4">
             <h3
-              className="text-lg font-medium"
+              className="text-sm font-medium"
               style={{ color: theme.primaryTextColor }}
             >
               Transactions
@@ -828,25 +932,25 @@ export default function ValidatorPage({
               <thead>
                 <tr>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Height
                   </th>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Hash
                   </th>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Messages
                   </th>
                   <th
-                    className="text-left text-lg font-normal pb-4"
+                    className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Time
@@ -856,19 +960,24 @@ export default function ValidatorPage({
               <tbody>
                 <tr>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     244322
                   </td>
                   <td
-                    className="text-lg py-2 max-w-[300px] truncate"
+                    className="text-sm py-2 max-w-[300px] truncate"
                     style={{ color: theme.primaryTextColor }}
                   >
                     0xc1fe48d...2b7b4b2b
                   </td>
                   <td className="py-2 flex items-center justify-between pr-12">
-                    <span style={{ color: theme.primaryTextColor }}>SEND</span>
+                    <span
+                      className="text-xs"
+                      style={{ color: theme.primaryTextColor }}
+                    >
+                      SEND
+                    </span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
                         d="M13.3334 4L6.00008 11.3333L2.66675 8"
@@ -880,7 +989,7 @@ export default function ValidatorPage({
                     </svg>
                   </td>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     23 Days Ago
@@ -888,19 +997,24 @@ export default function ValidatorPage({
                 </tr>
                 <tr>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     155156
                   </td>
                   <td
-                    className="text-lg py-2 max-w-[300px] truncate"
+                    className="text-sm py-2 max-w-[300px] truncate"
                     style={{ color: theme.primaryTextColor }}
                   >
                     0xf28666d...5b7a6c23
                   </td>
                   <td className="py-2 flex items-center justify-between pr-12">
-                    <span style={{ color: theme.primaryTextColor }}>SEND</span>
+                    <span
+                      className="text-xs"
+                      style={{ color: theme.primaryTextColor }}
+                    >
+                      SEND
+                    </span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
                         d="M13.3334 4L6.00008 11.3333L2.66675 8"
@@ -912,7 +1026,7 @@ export default function ValidatorPage({
                     </svg>
                   </td>
                   <td
-                    className="text-lg py-2"
+                    className="text-sm py-2"
                     style={{ color: theme.primaryTextColor }}
                   >
                     23 Days Ago
@@ -923,6 +1037,12 @@ export default function ValidatorPage({
           </div>
         </div>
       </div>
+      <DelegateModal
+        isOpen={isDelegateModalOpen}
+        onClose={() => setIsDelegateModalOpen(false)}
+        validator={validator}
+        theme={theme}
+      />
     </div>
   );
 }

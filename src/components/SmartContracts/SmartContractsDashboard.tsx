@@ -2,10 +2,12 @@
 
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface SmartContract {
   transaction: {
     hash: string;
+    type: "cosmos" | "evm";
   };
   sender: string;
   timestamp: number;
@@ -20,6 +22,7 @@ interface SmartContractsResponse {
 export function SmartContractsDashboard() {
   const { theme } = useTheme();
   const [contracts, setContracts] = useState<SmartContract[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -28,6 +31,9 @@ export function SmartContractsDashboard() {
           "https://kii.backend.kiivalidator.com/explorer/smartContracts"
         );
         const data: SmartContractsResponse = await response.json();
+
+        console.log("Smart Contracts Data:", data);
+
         if (data.success) {
           setContracts(data.smartContracts);
         }
@@ -39,9 +45,13 @@ export function SmartContractsDashboard() {
     fetchContracts();
   }, []);
 
+  const handleTransactionClick = (hash: string) => {
+    router.push(`/transaction/${hash}`);
+  };
+
   return (
     <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
-      <div className="mt-24">
+      <div className="mt-16">
         <div
           className="rounded-lg p-6 shadow-lg"
           style={{ backgroundColor: theme.boxColor }}
@@ -51,25 +61,25 @@ export function SmartContractsDashboard() {
               <thead>
                 <tr>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Code ID
                   </th>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Code Hash
                   </th>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Creator
                   </th>
                   <th
-                    className="py-2 px-1 sm:px-3 text-left text-xs font-medium"
+                    className="py-2 px-1 sm:px-3 text-left text-base font-medium"
                     style={{ color: theme.primaryTextColor }}
                   >
                     Created At
@@ -81,10 +91,15 @@ export function SmartContractsDashboard() {
                   <tr
                     key={index}
                     style={{ backgroundColor: theme.bgColor }}
-                    className="mt-2"
+                    className="mt-2 cursor-pointer hover:bg-opacity-10 hover:bg-white transition-all duration-200"
+                    onClick={() =>
+                      handleTransactionClick(
+                        contracts[index % contracts.length]?.transaction.hash
+                      )
+                    }
                   >
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {contracts[index % contracts.length]?.BlockNumber ||
@@ -92,7 +107,7 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.tertiaryTextColor }}
                     >
                       {contracts[
@@ -101,7 +116,7 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {contracts[index % contracts.length]?.sender ||
@@ -109,7 +124,7 @@ export function SmartContractsDashboard() {
                     </td>
 
                     <td
-                      className="py-4 px-1 sm:px-3 font-light text-xs"
+                      className="py-4 px-1 sm:px-3 font-light text-base"
                       style={{ color: theme.primaryTextColor }}
                     >
                       {contracts[index % contracts.length]

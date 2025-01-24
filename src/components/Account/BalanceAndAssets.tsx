@@ -33,6 +33,7 @@ export function BalanceAndAssets({
       numericPercentage: isNaN(percentage) ? 0 : Number(percentage.toFixed(2)),
     };
   });
+  const priceCoin = 0;
 
   const createConicGradient = () => {
     let currentPercentage = 0;
@@ -57,13 +58,13 @@ export function BalanceAndAssets({
       </div>
       <div className="flex gap-12">
         <div className="flex-shrink-0 w-2/5 flex flex-col items-center justify-center">
-          <div className="relative w-3/5 flex items-center justify-center">
+          <div className="relative w-4/5 flex items-center justify-center">
             <div
-              className="w-48 h-48 rounded-full"
+              className="w-64 h-64 rounded-full"
               style={{
                 background: createConicGradient(),
-                mask: "radial-gradient(transparent 40%, white 41%)",
-                WebkitMask: "radial-gradient(transparent 40%, white 41%)",
+                mask: "radial-gradient(transparent 55%, white 56%)",
+                WebkitMask: "radial-gradient(transparent 55%, white 56%)",
               }}
             ></div>
             <div
@@ -127,7 +128,10 @@ export function BalanceAndAssets({
             >
               <div style={{ color: theme.primaryTextColor }}>Total Value:</div>
               <div style={{ color: theme.primaryTextColor }} className="ml-2">
-                {totalValue}
+                {(isNaN(parseFloat(totalValue) * priceCoin)
+                  ? 0
+                  : parseFloat(totalValue) * priceCoin
+                ).toFixed(2)}
               </div>
             </div>
           </div>

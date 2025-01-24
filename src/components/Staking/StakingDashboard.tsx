@@ -1,8 +1,8 @@
 "use client";
 
 import { useTheme } from "@/context/ThemeContext";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+//import { useRouter } from "next/navigation";
 
 interface Validator {
   operator_address: string;
@@ -10,37 +10,193 @@ interface Validator {
   description: {
     moniker: string;
     website: string;
+    identity: string;
+    details: string;
   };
   commission: {
     commission_rates: {
       rate: string;
     };
   };
+  status: string;
+  jailed: boolean;
+}
+
+interface ValidatorResponse {
+  status: string;
+  operator_address: string;
+  description: {
+    moniker: string;
+    website: string;
+    identity: string;
+    details: string;
+  };
+  commission: {
+    commission_rates: {
+      rate: string;
+    };
+  };
+  tokens: string;
+  jailed: boolean;
+}
+
+interface StakingParams {
+  params: {
+    unbonding_time: string;
+    max_validators: number;
+    max_entries: number;
+    historical_entries: number;
+    bond_denom: string;
+    min_commission_rate: string;
+    max_voting_power_ratio: string;
+    max_voting_power_enforcement_threshold: string;
+  };
 }
 
 export function StakingDashboard() {
   const { theme } = useTheme();
-  const router = useRouter();
+  //const router = useRouter();
   const [activeButton, setActiveButton] = useState<
-    "popular" | "active" | "inactive" | null
-  >(null);
-  const [validators, setValidators] = useState<Validator[]>([]);
+    "popular" | "active" | "inactive"
+  >("active");
+  const [activeValidators, setActiveValidators] = useState<Validator[]>([]);
+  const [inactiveValidators, setInactiveValidators] = useState<Validator[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const validatorsPerPage = 10;
+  const [stakingParams, setStakingParams] = useState({
+    unbondingTime: "21 Days",
+    maxValidators: 25,
+    minCommissionRate: "5%",
+    bondDenom: "ukii",
+  });
 
   useEffect(() => {
     async function fetchValidators() {
       try {
         const response = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
+          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
         );
         const data = await response.json();
-        setValidators(data.validators);
+
+        console.log("API Response:", data);
+
+        if (!data?.validators || !Array.isArray(data.validators)) {
+          console.error("Invalid validators data:", data);
+          setActiveValidators([]);
+          setInactiveValidators([]);
+          return;
+        }
+
+        const validValidators = data.validators.map(
+          (validator: ValidatorResponse) => ({
+            operator_address: validator.operator_address,
+            tokens: validator.tokens,
+            description: {
+              moniker: validator.description.moniker,
+              website: validator.description.website,
+              identity: validator.description.identity,
+              details: validator.description.details,
+            },
+            commission: {
+              commission_rates: {
+                rate: validator.commission.commission_rates.rate,
+              },
+            },
+            status: validator.status,
+            jailed: validator.jailed,
+          })
+        );
+
+        const active = validValidators.filter(
+          (validator: Validator) =>
+            validator.status === "BOND_STATUS_BONDED" && !validator.jailed
+        );
+
+        const inactive = validValidators.filter(
+          (validator: Validator) =>
+            validator.status !== "BOND_STATUS_BONDED" || validator.jailed
+        );
+
+        console.log("Active validators:", active.length);
+        console.log("Inactive validators:", inactive.length);
+
+        setActiveValidators(active);
+        setInactiveValidators(inactive);
       } catch (error) {
         console.error("Error fetching validators:", error);
+        setActiveValidators([]);
+        setInactiveValidators([]);
       }
     }
 
     fetchValidators();
   }, []);
+
+  useEffect(() => {
+    async function fetchStakingParams() {
+      try {
+        const response = await fetch(
+          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/params"
+        );
+        const data: StakingParams = await response.json();
+
+        const unbondingDays = Math.floor(
+          parseInt(data.params.unbonding_time.replace("s", "")) / (24 * 60 * 60)
+        );
+
+        const minCommissionPercent = (
+          parseFloat(data.params.min_commission_rate) * 100
+        ).toFixed(0);
+
+        setStakingParams({
+          unbondingTime: `${unbondingDays} Days`,
+          maxValidators: data.params.max_validators,
+          minCommissionRate: `${minCommissionPercent}%`,
+          bondDenom: data.params.bond_denom,
+        });
+
+        console.log("Staking params:", data.params);
+      } catch (error) {
+        console.error("Error fetching staking params:", error);
+      }
+    }
+
+    fetchStakingParams();
+  }, []);
+
+  const filteredValidators = useMemo(() => {
+    let validators: Validator[] = [];
+
+    switch (activeButton) {
+      case "active":
+        validators = activeValidators;
+        break;
+      case "inactive":
+        validators = inactiveValidators;
+        break;
+      case "popular":
+        validators = [...activeValidators, ...inactiveValidators].sort(
+          (a, b) => parseInt(b.tokens) - parseInt(a.tokens)
+        );
+        break;
+    }
+
+    return validators;
+  }, [activeButton, activeValidators, inactiveValidators]);
+
+  const indexOfLastValidator = currentPage * validatorsPerPage;
+  const indexOfFirstValidator = indexOfLastValidator - validatorsPerPage;
+  const currentValidators = filteredValidators.slice(
+    indexOfFirstValidator,
+    indexOfLastValidator
+  );
+  const totalPages = Math.ceil(filteredValidators.length / validatorsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeButton]);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <div
@@ -71,12 +227,17 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                0%
+                {stakingParams.unbondingTime}
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>Inflation</div>
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
+                Unbonding Time
+              </div>
             </div>
           </div>
 
@@ -95,13 +256,16 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                21 Days
+                {stakingParams.minCommissionRate}
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>
-                Unbonding Time
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
+                Min Commission Rate
               </div>
             </div>
           </div>
@@ -124,13 +288,16 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                5%
+                {stakingParams.bondDenom}
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>
-                Double Sign Slashing
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
+                Bond Denom
               </div>
             </div>
           </div>
@@ -150,13 +317,16 @@ export function StakingDashboard() {
             </svg>
             <div>
               <div
-                className="text-2xl font-bold"
+                className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                1%
+                {stakingParams.maxValidators}
               </div>
-              <div style={{ color: theme.secondaryTextColor }}>
-                Downtime Slashing
+              <div
+                className="text-base pt-2"
+                style={{ color: theme.secondaryTextColor }}
+              >
+                Max Validators
               </div>
             </div>
           </div>
@@ -230,7 +400,10 @@ export function StakingDashboard() {
       >
         <table className="w-full">
           <thead>
-            <tr className="text-left" style={{ color: theme.primaryTextColor }}>
+            <tr
+              className="text-left text-base"
+              style={{ color: theme.primaryTextColor }}
+            >
               <th className="p-4">Rank</th>
               <th className="p-4">Validator</th>
               <th className="p-4">Voting Power</th>
@@ -239,7 +412,7 @@ export function StakingDashboard() {
             </tr>
           </thead>
           <tbody>
-            {validators.map((validator, index) => (
+            {currentValidators.map((validator, index) => (
               <tr
                 key={validator.operator_address}
                 style={{ backgroundColor: theme.bgColor }}
@@ -249,59 +422,146 @@ export function StakingDashboard() {
                   style={{ color: theme.accentColor }}
                   className="p-4 font-bold text-center text-4xl"
                 >
-                  {index + 1}
+                  {(currentPage - 1) * validatorsPerPage + index + 1}
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-7">
                     <div
-                      style={{ backgroundColor: theme.accentColor }}
+                      style={{
+                        backgroundColor: theme.accentColor,
+                        minWidth: "2.5rem",
+                        minHeight: "2.5rem",
+                        flexShrink: 0,
+                      }}
                       className="w-10 h-10 rounded-full"
                     ></div>
-                    <div>
+                    <div className="flex-1">
                       <div
-                        className="font-medium"
+                        className="font-medium text-base"
                         style={{ color: theme.primaryTextColor }}
                       >
                         {validator.description.moniker}
                       </div>
                       <div
                         style={{ color: theme.primaryTextColor }}
-                        className="text-sm"
+                        className="text-base pt-1"
                       >
-                        {validator.description.website}
+                        {validator.description.website || "No website provided"}
                       </div>
+                      {validator.description.details && (
+                        <div
+                          style={{ color: theme.secondaryTextColor }}
+                          className="text-base mt-1"
+                        >
+                          {validator.description.details}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </td>
                 <td className="p-4">
-                  <div style={{ color: theme.primaryTextColor }}>
-                    {parseInt(validator.tokens).toLocaleString()} Tokens
+                  <div
+                    className="text-base"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    {(parseInt(validator.tokens) / 1000000).toLocaleString()}{" "}
+                    {stakingParams.bondDenom}
                   </div>
                 </td>
                 <td className="p-4" style={{ color: theme.primaryTextColor }}>
-                  {parseFloat(validator.commission.commission_rates.rate) * 100}
+                  {(
+                    parseFloat(validator.commission.commission_rates.rate) * 100
+                  ).toFixed(1)}
                   %
                 </td>
                 <td className="p-4">
+                  {/* 
                   <button
-                    className="px-4 py-2 rounded-lg"
+                    className="px-4 py-2 rounded-lg text-base"
                     style={{
                       backgroundColor: theme.boxColor,
                       color: theme.accentColor,
                       boxShadow:
                         "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                      opacity:
+                        validator.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
+                      cursor:
+                        validator.status !== "BOND_STATUS_BONDED"
+                          ? "not-allowed"
+                          : "pointer",
                     }}
-                    onClick={() =>
-                      router.push(`/staking/${validator.operator_address}`)
-                    }
+                    onClick={() => {
+                      if (validator.status === "BOND_STATUS_BONDED") {
+                        router.push(`/staking/${validator.operator_address}`);
+                      }
+                    }}
                   >
                     Create Stake
                   </button>
+                  */}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        <div className="flex justify-between items-center mt-6 px-4">
+          <div style={{ color: theme.secondaryTextColor }} className="text-sm">
+            Showing {indexOfFirstValidator + 1} to{" "}
+            {Math.min(indexOfLastValidator, filteredValidators.length)} of{" "}
+            {filteredValidators.length} validators
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 rounded-lg"
+              style={{
+                backgroundColor: theme.boxColor,
+                color:
+                  currentPage === 1
+                    ? theme.secondaryTextColor
+                    : theme.accentColor,
+                opacity: currentPage === 1 ? 0.5 : 1,
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+              }}
+            >
+              Previous
+            </button>
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => paginate(i + 1)}
+                className="px-3 py-1 rounded-lg"
+                style={{
+                  backgroundColor:
+                    currentPage === i + 1 ? theme.accentColor : theme.boxColor,
+                  color:
+                    currentPage === i + 1 ? theme.boxColor : theme.accentColor,
+                }}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 rounded-lg"
+              style={{
+                backgroundColor: theme.boxColor,
+                color:
+                  currentPage === totalPages
+                    ? theme.secondaryTextColor
+                    : theme.accentColor,
+                opacity: currentPage === totalPages ? 0.5 : 1,
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+              }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
         <div className="pr-4 pt-4 mt-12">
           <div
             style={{ color: theme.secondaryTextColor }}

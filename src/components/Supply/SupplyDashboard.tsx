@@ -37,18 +37,17 @@ interface GenesisResponse {
 export function SupplyDashboard() {
   const { theme } = useTheme();
   const [supplies, setSupplies] = useState<BankSupply[]>([]);
-  const [topSupplies, setTopSupplies] = useState<BankSupply[]>([]);
 
   useEffect(() => {
     const fetchSupplyData = async () => {
       try {
         const supplyResponse = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
+          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
         );
         const supplyData: SupplyResponse = await supplyResponse.json();
 
         const genesisResponse = await fetch(
-          "https://uno.sentry.testnet.v3.kiivalidator.com:26671/genesis"
+          "https://rpc.uno.sentry.testnet.v3.kiivalidator.com/genesis"
         );
         const genesisData: GenesisResponse = await genesisResponse.json();
 
@@ -80,7 +79,6 @@ export function SupplyDashboard() {
           .filter((b): b is BankSupply => b !== null)
           .sort((a, b) => Number(b.amount) - Number(a.amount));
 
-        setTopSupplies(balances.slice(0, 4));
         setSupplies(balances.slice(0, 20));
       } catch (error) {
         console.error("Error fetching supply data:", error);
@@ -94,15 +92,15 @@ export function SupplyDashboard() {
     <div className="px-6" style={{ backgroundColor: theme.bgColor }}>
       <div className="mt-20">
         <h2
-          className="text-xl font-semibold mb-4"
+          className="text-base font-semibold mb-4"
           style={{ color: theme.primaryTextColor }}
         >
           Bank Supply
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-8 mt-8 w-3/5">
-          {topSupplies.map((supply) => (
-            <div key={supply.id}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2 mb-8 mt-8 w-full">
+          {supplies.map((supply) => (
+            <div key={supply.id} className="flex flex-col items-center">
               <Card
                 className="px-2 pt-4 pb-2 border-0 rounded-lg shadow-lg w-40 h-52"
                 style={{ backgroundColor: theme.boxColor }}
@@ -118,7 +116,7 @@ export function SupplyDashboard() {
                 </div>
               </Card>
               <div
-                className="text-sm truncate mt-2 flex justify-center"
+                className="text-sm truncate mt-2 text-center"
                 style={{ maxWidth: "90%", color: theme.primaryTextColor }}
               >
                 {supply.address.slice(0, supply.address.length / 2)}...
@@ -135,7 +133,7 @@ export function SupplyDashboard() {
             <table className="w-full">
               <thead>
                 <tr
-                  className="text-left"
+                  className="text-left text-base"
                   style={{ color: theme.secondaryTextColor }}
                 >
                   <th className="py-3 px-4">Wallet Address</th>
@@ -147,6 +145,7 @@ export function SupplyDashboard() {
                 {supplies.map((supply) => (
                   <tr
                     key={supply.id}
+                    className="text-xs"
                     style={{
                       backgroundColor: theme.bgColor,
                       borderTop: `1px solid ${theme.accentColor}`,

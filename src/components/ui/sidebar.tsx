@@ -15,7 +15,6 @@ import {
   StateSyncIcon,
   FaucetIcon,
   SmartContractsIcon,
-  MenuIcon,
   StakingIcon,
 } from "./icons";
 
@@ -70,7 +69,6 @@ const Icons = {
   StateSyncIcon,
   FaucetIcon,
   SmartContractsIcon,
-  MenuIcon,
   StakingIcon,
 };
 
@@ -287,10 +285,10 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow overflow-hidden"
             style={{
               backgroundColor: theme.bgColor,
-              borderColor: theme.borderColor,
+              borderColor: "transparent",
             }}
           >
             <div className="relative">
@@ -298,9 +296,7 @@ const Sidebar = React.forwardRef<
                 <SidebarTrigger
                   className="absolute -right-10 top-[3.75rem] z-20"
                   variant="ghost"
-                >
-                  <MenuIcon className="text-[#F3F5FB]" />
-                </SidebarTrigger>
+                ></SidebarTrigger>
               )}
             </div>
             {children}
@@ -317,7 +313,6 @@ const SidebarTrigger = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar, isMobile } = useSidebar();
-  const { theme } = useTheme();
 
   return (
     <div className="flex justify-center items-center">
@@ -336,9 +331,6 @@ const SidebarTrigger = React.forwardRef<
         }}
         {...props}
       >
-        <div className="flex justify-center items-center">
-          <MenuIcon style={{ color: theme.primaryTextColor }} />
-        </div>
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
     </div>
@@ -461,41 +453,31 @@ const SidebarContent = React.forwardRef<
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
   const pathname = usePathname();
-  const [isClient, setIsClient] = React.useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
   const { theme } = useTheme();
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   return (
     <div
       ref={ref}
       className={cn(
-        "flex flex-col flex-1 h-full overflow-y-auto transition-all duration-300",
+        "flex flex-col flex-1 h-full overflow-hidden",
         isMobile ? "w-full" : "w-60",
         className
       )}
       {...props}
     >
-      <nav className="grid px-2 h-[calc(75%-2rem)] overflow-y-auto">
+      <nav className="grid px-2 h-[calc(75%-2rem)]">
         {menuItems.map((item) => {
-          const isActive =
-            isClient &&
-            (pathname === "/"
-              ? item.label === "Dashboard"
-              : pathname.slice(1) ===
-                item.label.toLowerCase().replace(" ", "-"));
+          const isActive = pathname === item.href;
 
           return (
             <SidebarMenuButton
               key={item.label}
-              isActive={isActive}
               className={cn(
                 "w-full justify-start gap-2 text-sm md:text-base p-2",
                 "transition-colors duration-200",
-                "hover:bg-[#231C32] hover:text-white rounded-lg"
+                "hover:bg-[#231C32] hover:text-white rounded-lg",
+                isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
               )}
               style={{
                 backgroundColor: isActive ? theme.boxColor : "transparent",
@@ -507,25 +489,7 @@ const SidebarContent = React.forwardRef<
                 if (isMobile) {
                   setOpenMobile(false);
                 }
-                if (item.label === "Dashboard") {
-                  window.location.href = "/";
-                } else if (item.label === "Staking") {
-                  window.location.href = "/staking";
-                } else if (item.label === "Blocks") {
-                  window.location.href = "/blocks";
-                } else if (item.label === "Uptime") {
-                  window.location.href = "/uptime";
-                } else if (item.label === "Supply") {
-                  window.location.href = "/supply";
-                } else if (item.label === "Parameters") {
-                  window.location.href = "/parameters";
-                } else if (item.label === "State Sync") {
-                  window.location.href = "/stateSync";
-                } else if (item.label === "Faucet") {
-                  window.location.href = "/faucet";
-                } else if (item.label === "Smart Contracts") {
-                  window.location.href = "/smart-contracts";
-                }
+                window.location.href = item.href;
               }}
             >
               {React.cloneElement(item.icon, {
@@ -879,44 +843,47 @@ const menuItems = [
   {
     icon: <Icons.DashboardIcon className="h-6 w-6" />,
     label: "Dashboard",
+    href: "/",
   },
   {
     icon: <Icons.StakingIcon className="h-6 w-6 text-current" />,
     label: "Staking",
+    href: "/staking",
   },
   {
     icon: <Icons.BlocksIcon className="h-6 w-6" />,
     label: "Blocks",
+    href: "/blocks",
   },
   {
     icon: <Icons.UptimeIcon className="h-6 w-6" />,
     label: "Uptime",
+    href: "/uptime",
   },
   {
     icon: <Icons.SupplyIcon className="h-6 w-6" />,
     label: "Supply",
+    href: "/supply",
   },
   {
     icon: <Icons.ParametersIcon className="h-6 w-6" />,
     label: "Parameters",
-    onClick: () => {
-      window.location.href = "/parameters";
-    },
+    href: "/parameters",
   },
   {
     icon: <Icons.StateSyncIcon className="h-6 w-6" />,
     label: "State Sync",
-    onClick: () => {
-      window.location.href = "/stateSync";
-    },
+    href: "/stateSync",
   },
   {
     icon: <Icons.FaucetIcon className="h-6 w-6" />,
     label: "Faucet",
+    href: "/faucet",
   },
   {
     icon: <Icons.SmartContractsIcon className="h-6 w-6" />,
     label: "Smart Contracts",
+    href: "/smartContracts",
   },
 ];
 
