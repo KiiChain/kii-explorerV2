@@ -33,7 +33,7 @@ export async function getMultiNetworkBalance(address: string) {
           params: [
             {
               chainId: "0x538",
-              chainName: "Kii-Testnet",
+              chainName: "Kii Chain Testnet",
               rpcUrls: [
                 "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
               ],
@@ -43,6 +43,9 @@ export async function getMultiNetworkBalance(address: string) {
                 decimals: 18,
               },
               blockExplorerUrls: ["https://testnet.kiiscan.com"],
+              iconUrls: [
+                "https://raw.githubusercontent.com/KiiChain/testnets/refs/heads/main/testnet_oro/assets/coin_256_256.png",
+              ],
             },
           ],
         });
@@ -61,7 +64,6 @@ export async function getMultiNetworkBalance(address: string) {
 export async function initializeWallet() {
   try {
     await setupKeplr();
-
     return await getWeb3Provider();
   } catch (error) {
     console.error("Error initializing wallet:", error);
