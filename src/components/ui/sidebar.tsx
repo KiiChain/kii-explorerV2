@@ -460,13 +460,13 @@ const SidebarContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex flex-col flex-1 h-full overflow-y-auto transition-all duration-300",
+        "flex flex-col flex-1 h-full overflow-hidden",
         isMobile ? "w-full" : "w-60",
         className
       )}
       {...props}
     >
-      <nav className="grid px-2 h-[calc(75%-2rem)] overflow-y-auto">
+      <nav className="grid px-2 h-[calc(75%-2rem)]">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
 
