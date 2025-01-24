@@ -22,7 +22,6 @@ interface Transaction {
 export function BlockTable({
   latestBlocks,
   latestTransactions,
-  handleAddressClick,
 }: {
   latestBlocks: Block[];
   latestTransactions: Transaction[];
@@ -89,7 +88,9 @@ export function BlockTable({
                         className="cursor-pointer hover:opacity-80"
                         onClick={() =>
                           latestTransactions[index]?.from &&
-                          handleAddressClick(latestTransactions[index].from)
+                          router.push(
+                            `/account/${latestTransactions[index].from}`
+                          )
                         }
                       >
                         {window.innerWidth < 1600 &&
@@ -109,7 +110,9 @@ export function BlockTable({
                         className="cursor-pointer hover:opacity-80"
                         onClick={() =>
                           latestTransactions[index]?.to &&
-                          handleAddressClick(latestTransactions[index].to)
+                          router.push(
+                            `/account/${latestTransactions[index].to}`
+                          )
                         }
                       >
                         {window.innerWidth < 1600 &&
