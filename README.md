@@ -116,10 +116,10 @@ The application includes a theming system with support for light and dark modes,
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+## Code of Conduct
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
+
 ## License
 
-[Specify project license]
-
-## Contact
-
-[Team/maintainer contact information]
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
