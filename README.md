@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KiiChain Explorer
 
-## Getting Started
+A web application for exploring and interacting with the KiiChain blockchain, built with Next.js.
 
-First, run the development server:
+## Features
+
+- 📊 Real-time dashboard statistics
+- 👛 Wallet integration (Metamask and Keplr)
+- 🔍 Block and transaction explorer
+- 💰 Staking and delegation management
+- 🏦 Testnet faucet
+- 📈 Validator uptime monitoring
+- 💼 Smart contract management
+- 📊 Chain parameter visualization
+- 💱 Token supply and distribution information
+
+## Core Technologies
+
+- Next.js 13+ (App Router)
+- TypeScript
+- Tailwind CSS
+- Ethers.js
+- Context API for state management
+
+## Prerequisites
+
+- Node.js 16.8.0 or higher
+- npm or yarn
+- Metamask and/or Keplr wallet installed in browser
+
+## Environment Setup
+
+Create a `.env` file in the project root:
+
+```
+NEXT_PUBLIC_JSON_RPC_URL=https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/
+NEXT_PUBLIC_CHAIN_ID=1336
+```
+
+## Installation
 
 ```bash
+# Clone repository
+git clone [REPOSITORY_URL]
+
+# Install dependencies
+npm install
+# or
+yarn install
+
+# Start development server
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+├── app/                    # Pages and routes (Next.js App Router)
+├── components/            # Reusable components
+├── context/              # React contexts (Theme, Wallet)
+├── hooks/                # Custom hooks
+├── lib/                  # Utilities and configurations
+├── styles/              # Global styles
+└── types/               # TypeScript type definitions
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Core Features
 
-## Learn More
+### Dashboard
 
-To learn more about Next.js, take a look at the following resources:
+- Blockchain statistics visualization
+- Recent blocks information
+- Latest transactions
+- Staking metrics
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Wallet
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Metamask and Keplr support
+- Balance display
+- Asset management
+- Transaction history
 
-## Deploy on Vercel
+### Staking
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Validator list
+- Delegation information
+- Reward management
+- Voting power metrics
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Smart Contracts
+
+- Contract explorer
+- Bytecode decompiler
+- Contract transaction analysis
+
+## API Endpoints
+
+The application interacts with several endpoints:
+
+- `/api/decompile`: Contract decompilation
+- RPC: `https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/`
+- REST: `https://lcd.uno.sentry.testnet.v3.kiivalidator.com`
+
+## Themes and Customization
+
+The application includes a theming system with support for light and dark modes, managed through ThemeContext.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Code of Conduct
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
