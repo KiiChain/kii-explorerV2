@@ -882,6 +882,11 @@ const menuItems = [
   },
   {
     icon: <Icons.SmartContractsIcon className="h-6 w-6" />,
+    label: "Deployer",
+    href: "/iframe",
+  },
+  {
+    icon: <Icons.SmartContractsIcon className="h-6 w-6" />,
     label: "Smart Contracts",
     href: "/smartContracts",
   },
