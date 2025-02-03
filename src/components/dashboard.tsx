@@ -132,7 +132,6 @@ export default function Dashboard() {
   const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
     []
   );
-  const [totalTransactions, setTotalTransactions] = useState(0);
 
   console.log("Connected account:", account);
 
@@ -530,17 +529,14 @@ export default function Dashboard() {
             "https://kii.backend.kiivalidator.com/explorer/transactions"
           ).then((res) => res.json());
           console.log("EVM transactions:", evmTxs?.quantity);
-          setTotalTransactions(evmTxs?.quantity || 0);
         } else {
           const cosmosTxs = await fetch(
             'https://rpc.uno.sentry.testnet.v3.kiivalidator.com/tx_search?query="tx.height>0"&prove=false&page=1&per_page=1&order_by="asc"'
           ).then((res) => res.json());
           console.log("Cosmos transactions:", cosmosTxs?.total_count);
-          setTotalTransactions(parseInt(cosmosTxs?.total_count || "0"));
         }
       } catch (error) {
         console.error("Error fetching transactions:", error);
-        setTotalTransactions(0);
       }
     };
 
