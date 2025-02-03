@@ -569,12 +569,12 @@ export default function Dashboard() {
         style={{ backgroundColor: theme.bgColor }}
       >
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8"
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8"
           style={{ backgroundColor: theme.bgColor }}
         >
           <StatCard title="KII Price" value="N/A" unit="TESTNET" />
           <StatCard title="Gas Price" value="2500" unit="Ukii" />
-          <StatCard title="Transactions" value={totalTransactions.toString()} />
+
           <StatCard
             title="Block Height"
             value={latestBlocks[0]?.height || "0"}
