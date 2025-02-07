@@ -20,6 +20,16 @@ export const KII_TESTNET = {
       coinMinimalDenom: "ukii",
       coinDecimals: 6,
       coinGeckoId: "kii",
+      coinImageUrl:
+        "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
+    },
+    {
+      coinDenom: "ORO",
+      coinMinimalDenom:
+        "factory/kii1ef2eurf9ls4kmhc6adcazscmzn8en73tuh2nvq/ORO",
+      coinDecimals: 6,
+      coinImageUrl:
+        "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
     },
   ],
   feeCurrencies: [
@@ -28,6 +38,8 @@ export const KII_TESTNET = {
       coinMinimalDenom: "ukii",
       coinDecimals: 6,
       coinGeckoId: "kii",
+      coinImageUrl:
+      "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
       gasPriceStep: {
         low: 0.01,
         average: 0.025,
@@ -40,9 +52,10 @@ export const KII_TESTNET = {
     coinMinimalDenom: "ukii",
     coinDecimals: 6,
     coinGeckoId: "kii",
+    coinImageUrl:
+      "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
   },
-  features: ["ibc-transfer", "ibc-go", "eth-address-gen", "eth-key-sign"],
-  evmChainId: 1336,
+  features: ["stargate", "ibc-transfer", "no-legacy-stdTx", "ibc-go"],
 };
 
 export async function setupKeplr() {

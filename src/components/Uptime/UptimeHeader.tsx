@@ -202,7 +202,7 @@ export function UptimeHeader() {
         },
         chainSymbolImageUrl:
           "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
-        features: ["ibc-transfer", "ibc-go", "eth-address-gen", "eth-key-sign"],
+        features: ["stargate", "ibc-transfer", "no-legacy-stdTx", "ibc-go"],
       };
 
       await window.keplr.experimentalSuggestChain(chainInfo);
