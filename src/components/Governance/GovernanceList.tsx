@@ -24,6 +24,9 @@ interface Proposal {
   };
 }
 
+const API_BASE_URL = "https://lcd.uno.sentry.testnet.v3.kiivalidator.com";
+const GOVERNANCE_ENDPOINT = `${API_BASE_URL}/cosmos/gov/v1beta1/proposals`;
+
 const GovernanceList = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,12 +37,10 @@ const GovernanceList = () => {
 
   const fetchProposals = async () => {
     try {
-      const response = await axios.get(
-        "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/proposals"
-      );
+      const response = await axios.get(GOVERNANCE_ENDPOINT);
       setProposals(response.data.proposals || []);
     } catch (err) {
-      setError("Error fetching proposals"); // Ahora es válido
+      setError("Error fetching proposals");
       console.error("Error fetching proposals:", err);
     } finally {
       setIsLoading(false);
@@ -49,7 +50,7 @@ const GovernanceList = () => {
   const fetchParams = async (paramsType: string) => {
     try {
       const response = await axios.get(
-        `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/gov/v1beta1/params/${paramsType}`
+        `${API_BASE_URL}/cosmos/gov/v1beta1/params/${paramsType}`
       );
       setParams(response.data);
       console.log(params);
