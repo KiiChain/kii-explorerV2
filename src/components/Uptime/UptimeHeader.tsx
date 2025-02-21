@@ -13,6 +13,7 @@ import { getWeb3Provider, getMultiNetworkBalance } from "@/lib/web3";
 import { ethers } from "ethers";
 import { useWallet } from "@/context/WalletContext";
 import { useRouter } from "next/navigation";
+import { KII_TESTNET } from "@/lib/chain-config";
 
 interface BalanceResponse {
   balances: Array<{
@@ -157,55 +158,7 @@ export function UptimeHeader() {
     }
 
     try {
-      const chainInfo = {
-        chainId: "kiichain",
-        chainName: "KiiChain Testnet Oro",
-        rpc: "https://rpc.uno.sentry.testnet.v3.kiivalidator.com",
-        rest: "https://lcd.uno.sentry.testnet.v3.kiivalidator.com",
-        bip44: { coinType: 118 },
-        bech32Config: {
-          bech32PrefixAccAddr: "kii",
-          bech32PrefixAccPub: "kiipub",
-          bech32PrefixValAddr: "kiivaloper",
-          bech32PrefixValPub: "kiivaloperpub",
-          bech32PrefixConsAddr: "kiivalcons",
-          bech32PrefixConsPub: "kiivalconspub",
-        },
-        currencies: [
-          {
-            coinDenom: "KII",
-            coinMinimalDenom: "ukii",
-            coinDecimals: 6,
-            coinGeckoId: "kii",
-            coinImageUrl:
-              "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
-          },
-        ],
-        feeCurrencies: [
-          {
-            coinDenom: "KII",
-            coinMinimalDenom: "ukii",
-            coinDecimals: 6,
-            coinGeckoId: "kii",
-            coinImageUrl:
-              "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
-            gasPriceStep: { low: 0.01, average: 0.025, high: 0.04 },
-          },
-        ],
-        stakeCurrency: {
-          coinDenom: "KII",
-          coinMinimalDenom: "ukii",
-          coinDecimals: 6,
-          coinGeckoId: "kii",
-          coinImageUrl:
-            "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
-        },
-        chainSymbolImageUrl:
-          "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
-        features: ["stargate", "ibc-transfer", "no-legacy-stdTx", "ibc-go"],
-      };
-
-      await window.keplr.experimentalSuggestChain(chainInfo);
+      await window.keplr.experimentalSuggestChain(KII_TESTNET);
       await window.keplr.enable("kiichain");
       const offlineSigner = window.keplr.getOfflineSigner("kiichain");
       const accounts = await offlineSigner.getAccounts();
