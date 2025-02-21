@@ -16,6 +16,8 @@ import {
   FaucetIcon,
   SmartContractsIcon,
   StakingIcon,
+  GovernanceIcon,
+  SmartContractIaIcon,
 } from "./icons";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -70,6 +72,8 @@ const Icons = {
   FaucetIcon,
   SmartContractsIcon,
   StakingIcon,
+  GovernanceIcon,
+  SmartContractIaIcon,
 };
 
 const SidebarProvider = React.forwardRef<
@@ -841,7 +845,7 @@ SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 
 const menuItems = [
   {
-    icon: <Icons.DashboardIcon className="h-6 w-6" />,
+    icon: <Icons.DashboardIcon className="h-6 w-6 " />,
     label: "Dashboard",
     href: "/",
   },
@@ -881,12 +885,17 @@ const menuItems = [
     href: "/faucet",
   },
   {
-    icon: <Icons.SmartContractsIcon className="h-6 w-6" />,
-    label: "Deployer",
-    href: "/iframe",
+    icon: <Icons.GovernanceIcon className="h-6 w-6" />,
+    label: "Governance",
+    href: "/governance",
   },
   {
     icon: <Icons.SmartContractsIcon className="h-6 w-6" />,
+    label: "Deploy Smart Contracts",
+    href: "/iframe",
+  },
+  {
+    icon: <Icons.SmartContractIaIcon className="h-6 w-6" />,
     label: "Smart Contracts",
     href: "/smartContracts",
   },
