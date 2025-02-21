@@ -1,5 +1,5 @@
 export const KII_TESTNET = {
-  chainId: "kiichain",
+  chainId: "kiichain3",
   chainName: "KiiChain Testnet Oro",
   rpc: "https://rpc.uno.sentry.testnet.v3.kiivalidator.com",
   rest: "https://lcd.uno.sentry.testnet.v3.kiivalidator.com",
