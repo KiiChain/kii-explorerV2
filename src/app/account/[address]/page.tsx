@@ -42,6 +42,14 @@ interface TxResponse {
   };
 }
 
+interface EthereumProvider {
+  request<T = unknown>(args: {
+    method: string;
+    params?: unknown[];
+  }): Promise<T>;
+  isMetaMask?: boolean;
+}
+
 export default function AccountPage({
   params,
 }: {
@@ -87,8 +95,9 @@ export default function AccountPage({
           if (address.startsWith("0x")) {
             try {
               if (window.ethereum) {
+                const provider = window.ethereum as unknown as EthereumProvider;
                 try {
-                  await window.ethereum.request<void>({
+                  await provider.request({
                     method: "wallet_switchEthereumChain",
                     params: [{ chainId: "0x538" }],
                   });
@@ -100,7 +109,7 @@ export default function AccountPage({
                     error.code === 4902
                   ) {
                     try {
-                      await window.ethereum.request<void>({
+                      await provider.request({
                         method: "wallet_addEthereumChain",
                         params: [
                           {
