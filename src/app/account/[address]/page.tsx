@@ -92,31 +92,36 @@ export default function AccountPage({
             try {
               if (window.ethereum) {
                 try {
-                  await window.ethereum.request({
+                  await (window.ethereum as any).request({
                     method: "wallet_switchEthereumChain",
                     params: [{ chainId: "0x538" }],
                   });
-                } catch (switchError) {
-                  const networkError = switchError as NetworkError;
-                  if (parseInt(networkError.code) === 4902) {
-                    await window.ethereum.request({
-                      method: "wallet_addEthereumChain",
-                      params: [
-                        {
-                          chainId: "0x538",
-                          chainName: "Kii Chain Testnet",
-                          nativeCurrency: {
-                            name: "KII",
-                            symbol: "KII",
-                            decimals: 18,
+                } catch (error: any) {
+                  if (error.code === 4902) {
+                    try {
+                      await (window.ethereum as any).request({
+                        method: "wallet_addEthereumChain",
+                        params: [
+                          {
+                            chainId: "0x538",
+                            chainName: "Kii Testnet Oro",
+                            nativeCurrency: {
+                              name: "KII",
+                              symbol: "KII",
+                              decimals: 18,
+                            },
+                            rpcUrls: [
+                              "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/",
+                            ],
+                            blockExplorerUrls: ["https://app.kiichain.io"],
                           },
-                          rpcUrls: [
-                            "https://rpc.uno.sentry.testnet.v3.kiivalidator.com/",
-                          ],
-                        },
-                      ],
-                    });
+                        ],
+                      });
+                    } catch (addError) {
+                      console.error("Error adding chain:", addError);
+                    }
                   }
+                  console.error("Error switching chain:", error);
                 }
               }
 
