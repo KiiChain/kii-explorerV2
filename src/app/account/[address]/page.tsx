@@ -42,10 +42,6 @@ interface TxResponse {
   };
 }
 
-interface NetworkError extends Error {
-  code: string;
-}
-
 export default function AccountPage({
   params,
 }: {
@@ -92,14 +88,19 @@ export default function AccountPage({
             try {
               if (window.ethereum) {
                 try {
-                  await (window.ethereum as any).request({
+                  await window.ethereum.request<void>({
                     method: "wallet_switchEthereumChain",
                     params: [{ chainId: "0x538" }],
                   });
-                } catch (error: any) {
-                  if (error.code === 4902) {
+                } catch (error: unknown) {
+                  if (
+                    error &&
+                    typeof error === "object" &&
+                    "code" in error &&
+                    error.code === 4902
+                  ) {
                     try {
-                      await (window.ethereum as any).request({
+                      await window.ethereum.request<void>({
                         method: "wallet_addEthereumChain",
                         params: [
                           {
@@ -117,7 +118,7 @@ export default function AccountPage({
                           },
                         ],
                       });
-                    } catch (addError) {
+                    } catch (addError: unknown) {
                       console.error("Error adding chain:", addError);
                     }
                   }
