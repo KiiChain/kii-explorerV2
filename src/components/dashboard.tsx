@@ -389,7 +389,6 @@ export default function Dashboard() {
         <CardContent className="p-6 rounded-lg">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <p style={{ color: theme.primaryTextColor }}>Connected Wallet</p>
               <p style={{ color: theme.secondaryTextColor }}>{address}</p>
             </div>
             <div>

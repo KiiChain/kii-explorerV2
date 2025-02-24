@@ -1,12 +1,19 @@
 import { ethers } from "ethers";
 import { setupKeplr } from "./chain-config";
 
+interface EthereumProvider {
+  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+  isMetaMask?: boolean;
+}
+
 export function getWeb3Provider() {
   if (typeof window === "undefined" || !window.ethereum) {
     throw new Error("MetaMask not installed");
   }
 
-  return new ethers.BrowserProvider(window.ethereum);
+  return new ethers.BrowserProvider(
+    window.ethereum as unknown as ethers.Eip1193Provider
+  );
 }
 
 interface SwitchNetworkError extends Error {
@@ -20,7 +27,8 @@ export async function getMultiNetworkBalance(address: string) {
 
   try {
     try {
-      await window.ethereum.request({
+      const provider = window.ethereum as unknown as EthereumProvider;
+      await provider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: "0x538" }],
       });
@@ -28,7 +36,8 @@ export async function getMultiNetworkBalance(address: string) {
       const error = switchError as SwitchNetworkError;
 
       if (error.code === 4902) {
-        await window.ethereum.request({
+        const provider = window.ethereum as unknown as EthereumProvider;
+        await provider.request({
           method: "wallet_addEthereumChain",
           params: [
             {
@@ -52,7 +61,9 @@ export async function getMultiNetworkBalance(address: string) {
       }
     }
 
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(
+      window.ethereum as unknown as ethers.Eip1193Provider
+    );
     const balance = await provider.getBalance(address);
     return ethers.formatEther(balance);
   } catch (error) {
