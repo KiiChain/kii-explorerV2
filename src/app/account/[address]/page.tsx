@@ -42,14 +42,6 @@ interface TxResponse {
   };
 }
 
-interface EthereumProvider {
-  request<T = unknown>(args: {
-    method: string;
-    params?: unknown[];
-  }): Promise<T>;
-  isMetaMask?: boolean;
-}
-
 export default function AccountPage({
   params,
 }: {
@@ -94,47 +86,6 @@ export default function AccountPage({
 
           if (address.startsWith("0x")) {
             try {
-              if (window.ethereum) {
-                const provider = window.ethereum as unknown as EthereumProvider;
-                try {
-                  await provider.request({
-                    method: "wallet_switchEthereumChain",
-                    params: [{ chainId: "0x538" }],
-                  });
-                } catch (error: unknown) {
-                  if (
-                    error &&
-                    typeof error === "object" &&
-                    "code" in error &&
-                    error.code === 4902
-                  ) {
-                    try {
-                      await provider.request({
-                        method: "wallet_addEthereumChain",
-                        params: [
-                          {
-                            chainId: "0x538",
-                            chainName: "Kii Testnet Oro",
-                            nativeCurrency: {
-                              name: "KII",
-                              symbol: "KII",
-                              decimals: 18,
-                            },
-                            rpcUrls: [
-                              "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/",
-                            ],
-                            blockExplorerUrls: ["https://app.kiichain.io"],
-                          },
-                        ],
-                      });
-                    } catch (addError: unknown) {
-                      console.error("Error adding chain:", addError);
-                    }
-                  }
-                  console.error("Error switching chain:", error);
-                }
-              }
-
               const provider = new ethers.JsonRpcProvider(
                 "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/"
               );
