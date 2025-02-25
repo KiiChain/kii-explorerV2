@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "./ui/card";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   HeightIcon,
@@ -134,9 +135,6 @@ export default function Dashboard() {
   const [bondedTokens, setBondedTokens] = useState<string>("0.0000");
   const [communityPool, setCommunityPool] = useState<string>("0.0000");
   const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
-  const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
-    []
-  );
 
   console.log("Connected account:", address);
 
@@ -277,46 +275,33 @@ export default function Dashboard() {
     }
   };
 
-  const fetchLatestTransactions = async () => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(
-        "https://evm-indexer.testnet.v3.kiivalidator.com/transactions?order=timestamp.desc&limit=20&offset=0",
-        { signal: controller.signal }
-      );
-
-      clearTimeout(timeoutId);
-
-      const transactions = await response.json();
-      const formattedTransactions = transactions.map((tx: EVMTransaction) => ({
-        from: tx.from_address,
-        to: tx.to_address,
-        amount:
-          tx.method === "0x00000000"
-            ? (BigInt(tx.value) / BigInt(1e18)).toString()
-            : "EVM Contract Call",
-        denom: tx.method === "0x00000000" ? "KII" : "",
-        timestamp: tx.timestamp,
-        hash: tx.hash,
-      }));
-
-      setLatestTransactions(formattedTransactions);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-    }
+  const fetchTransactions = async () => {
+    const response = await fetch(
+      "https://evm-indexer.testnet.v3.kiivalidator.com/transactions?order=timestamp.desc&limit=200&offset=0"
+    );
+    const transactions: EVMTransaction[] = await response.json();
+    return transactions.map((tx) => ({
+      from: tx.from_address,
+      to: tx.to_address,
+      amount:
+        tx.method === "0x00000000"
+          ? (BigInt(tx.value) / BigInt(1e18)).toString()
+          : "EVM Contract Call",
+      denom: tx.method === "0x00000000" ? "KII" : "",
+      timestamp: tx.timestamp,
+      hash: tx.hash,
+    }));
   };
+
+  const { data: latestTransactions = [] } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: fetchTransactions,
+    refetchInterval: 30000,
+  });
 
   useEffect(() => {
     fetchLatestBlocksAndTxs();
     const interval = setInterval(fetchLatestBlocksAndTxs, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    fetchLatestTransactions();
-    const interval = setInterval(fetchLatestTransactions, 10000);
     return () => clearInterval(interval);
   }, []);
 
