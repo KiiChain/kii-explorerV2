@@ -32,7 +32,7 @@ interface TxResponse {
   };
 }
 
-export default function AccountPage() {
+export default function AddressPage() {
   const { address } = useParams();
   const validAddress =
     typeof address === "string" && address.startsWith("0x")
@@ -62,6 +62,7 @@ export default function AccountPage() {
           stakes: [],
         };
 
+        // Fetch additional data for non-EVM addresses
         if (typeof address === "string" && !address.startsWith("0x")) {
           const [balanceResponse, stakingResponse, rewardsResponse] =
             await Promise.all([
@@ -84,7 +85,7 @@ export default function AccountPage() {
             balanceData.balances.find(
               (b: { denom: string }) => b.denom === "ukii"
             )?.amount || "0";
-          const formattedBalance = (parseInt(balance) / 1_000_000).toString();
+          const formattedBalance = (parseInt(balance) / 1_000_000).toFixed(4);
 
           const totalStaked =
             stakingData.delegation_responses?.reduce(
@@ -92,15 +93,15 @@ export default function AccountPage() {
                 sum + parseInt(del.balance.amount),
               0
             ) || 0;
-          const formattedStaking = (totalStaked / 1_000_000).toString();
+          const formattedStaking = (totalStaked / 1_000_000).toFixed(4);
 
           const totalRewards =
             rewardsData.total?.find(
               (r: { denom: string }) => r.denom === "ukii"
             )?.amount || "0";
-          const formattedRewards = (
-            parseInt(totalRewards) / 1_000_000
-          ).toString();
+          const formattedRewards = (parseInt(totalRewards) / 1_000_000).toFixed(
+            4
+          );
 
           walletData = {
             ...walletData,
@@ -115,7 +116,7 @@ export default function AccountPage() {
                 }) => ({
                   validator: del.delegation.validator_address,
                   amount:
-                    (parseInt(del.balance.amount) / 1_000_000).toString() +
+                    (parseInt(del.balance.amount) / 1_000_000).toFixed(4) +
                     " KII",
                   rewards: "0 KII",
                 })
@@ -166,13 +167,6 @@ export default function AccountPage() {
     fetchAccountData();
   }, [address, router, balance]);
 
-  const totalValue = session
-    ? parseFloat(session.balance) +
-      parseFloat(session.staking.replace(" KII", "")) +
-      parseFloat(session.reward.replace(" KII", "")) +
-      parseFloat(session.withdrawals.replace(" KII", ""))
-    : 0;
-
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
       <AddressCard account={typeof address === "string" ? address : ""} />
@@ -180,30 +174,29 @@ export default function AccountPage() {
         assets={[
           {
             name: "Balance",
-            amount: session?.balance || "0",
-            value: `$${session?.balance || "0"}`,
+            amount: session?.balance || "0.0000",
+            value: `$${session?.balance || "0.0000"}`,
             percentage: "99.86%",
           },
           {
             name: "Stake",
-            amount: session?.staking || "0 KII",
-            value: `$${session?.staking?.replace(" KII", "") || "0"}`,
+            amount: session?.staking || "0.0000 KII",
+            value: `$${session?.staking?.replace(" KII", "") || "0.0000"}`,
             percentage: "0%",
           },
           {
             name: "Reward",
-            amount: session?.reward || "0 KII",
-            value: `$${session?.reward?.replace(" KII", "") || "0"}`,
+            amount: session?.reward || "0.0000 KII",
+            value: `$${session?.reward?.replace(" KII", "") || "0.0000"}`,
             percentage: "0.13%",
           },
           {
             name: "Withdrawals",
-            amount: session?.withdrawals || "0 KII",
-            value: `$${session?.withdrawals?.replace(" KII", "") || "0"}`,
+            amount: session?.withdrawals || "0.0000 KII",
+            value: `$${session?.withdrawals?.replace(" KII", "") || "0.0000"}`,
             percentage: "0.01%",
           },
         ]}
-        totalValue={`$${Number(totalValue.toFixed(2))}`}
       />
       <WithdrawalsTable withdrawals={withdrawals} />
       <StakesTable delegations={delegations} />

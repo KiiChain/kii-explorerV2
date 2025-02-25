@@ -10,13 +10,9 @@ interface Asset {
 
 interface BalanceAndAssetsProps {
   assets: Asset[];
-  totalValue: string;
 }
 
-export function BalanceAndAssets({
-  assets,
-  totalValue,
-}: BalanceAndAssetsProps) {
+export function BalanceAndAssets({ assets }: BalanceAndAssetsProps) {
   const { theme } = useTheme();
 
   const total = assets.reduce((acc, asset) => {
@@ -29,11 +25,14 @@ export function BalanceAndAssets({
     const percentage = total === 0 ? 0 : (amount / total) * 100;
     return {
       ...asset,
+      amount: amount.toFixed(4) + " KII",
+      value: parseFloat(asset.value.replace("$", "")).toFixed(4),
       percentage: `${isNaN(percentage) ? "0" : percentage.toFixed(2)}%`,
       numericPercentage: isNaN(percentage) ? 0 : Number(percentage.toFixed(2)),
     };
   });
-  const priceCoin = 0;
+
+  const totalValue = total.toFixed(4);
 
   const createConicGradient = () => {
     let currentPercentage = 0;
@@ -116,7 +115,7 @@ export function BalanceAndAssets({
                   </div>
                 </div>
                 <div style={{ color: theme.primaryTextColor }}>
-                  {asset.value}
+                  ${asset.value}
                 </div>
               </div>
             ))}
@@ -128,10 +127,7 @@ export function BalanceAndAssets({
             >
               <div style={{ color: theme.primaryTextColor }}>Total Value:</div>
               <div style={{ color: theme.primaryTextColor }} className="ml-2">
-                {(isNaN(parseFloat(totalValue) * priceCoin)
-                  ? 0
-                  : parseFloat(totalValue) * priceCoin
-                ).toFixed(2)}
+                {totalValue} KII
               </div>
             </div>
           </div>
