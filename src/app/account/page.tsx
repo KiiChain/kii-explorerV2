@@ -9,9 +9,8 @@ import { StakesTable } from "@/components/Account/StakesTable";
 import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
-import { ethers } from "ethers";
-import { getWeb3Provider } from "@/lib/web3";
 import { useRouter, useParams } from "next/navigation";
+import { useBalance } from "wagmi";
 
 interface Transaction {
   height: string;
@@ -35,6 +34,11 @@ interface TxResponse {
 
 export default function AccountPage() {
   const { address } = useParams();
+  const validAddress =
+    typeof address === "string" && address.startsWith("0x")
+      ? (address as `0x${string}`)
+      : undefined;
+  const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -43,7 +47,7 @@ export default function AccountPage() {
   const [withdrawals, setWithdrawals] = useState([]);
 
   useEffect(() => {
-    if (!address || Array.isArray(address)) {
+    if (!address) {
       router.push("/");
       return;
     }
@@ -51,23 +55,15 @@ export default function AccountPage() {
     const fetchAccountData = async () => {
       try {
         let walletData: WalletSession = {
-          balance: "0",
+          balance: balance?.formatted || "0",
           staking: "0 KII",
           reward: "0 KII",
           withdrawals: "0 KII",
           stakes: [],
         };
 
-        if (address.startsWith("0x")) {
-          const provider = getWeb3Provider();
-          const balance = await provider.getBalance(address);
-          const formattedBalance = ethers.formatEther(balance);
-
-          walletData = {
-            ...walletData,
-            balance: formattedBalance,
-          };
-        } else {
+        // Fetch additional data for non-EVM addresses
+        if (typeof address === "string" && !address.startsWith("0x")) {
           const [balanceResponse, stakingResponse, rewardsResponse] =
             await Promise.all([
               fetch(
@@ -169,7 +165,7 @@ export default function AccountPage() {
     };
 
     fetchAccountData();
-  }, [address, router]);
+  }, [address, router, balance]);
 
   const totalValue = session
     ? parseFloat(session.balance) +
