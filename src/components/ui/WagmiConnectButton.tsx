@@ -19,12 +19,64 @@ export const WagmiConnectButton = () => {
   const handleConnect = async () => {
     if (!isConnected) {
       open();
-      if (chainId !== TESTNET_ORO_EVM.id) {
-        try {
-          await switchChain?.({ chainId: TESTNET_ORO_EVM.id });
-        } catch (error) {
-          console.error("Failed to switch network:", error);
+    } else if (chainId !== TESTNET_ORO_EVM.id) {
+      try {
+        // Primero solicitamos acceso a la cuenta
+        await (
+          window.ethereum as {
+            request: (args: {
+              method: string;
+              params: unknown[];
+            }) => Promise<unknown>;
+          }
+        )?.request({
+          method: "eth_requestAccounts",
+          params: [],
+        });
+
+        // Luego intentamos cambiar la red
+        await (
+          window.ethereum as {
+            request: (args: {
+              method: string;
+              params: unknown[];
+            }) => Promise<unknown>;
+          }
+        )?.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: `0x${TESTNET_ORO_EVM.id.toString(16)}` }],
+        });
+      } catch (error: any) {
+        if (error?.code === 4902) {
+          try {
+            await (
+              window.ethereum as {
+                request: (args: {
+                  method: string;
+                  params: unknown[];
+                }) => Promise<unknown>;
+              }
+            )?.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: `0x${TESTNET_ORO_EVM.id.toString(16)}`,
+                  chainName: "Kiichain Testnet",
+                  nativeCurrency: {
+                    name: "UORO",
+                    symbol: "UORO",
+                    decimals: 18,
+                  },
+                  rpcUrls: ["https://rpc.testnet.kiichain.org"],
+                  blockExplorerUrls: ["https://testnet.kiiexplorer.io"],
+                },
+              ],
+            });
+          } catch (addError) {
+            console.error("Failed to add network:", addError);
+          }
         }
+        console.error("Failed to switch network:", error);
       }
     } else {
       setShowDropdown(!showDropdown);

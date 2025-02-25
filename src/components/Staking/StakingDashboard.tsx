@@ -2,7 +2,7 @@
 
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect, useMemo } from "react";
-//import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 interface Validator {
   operator_address: string;
@@ -55,7 +55,7 @@ interface StakingParams {
 
 export function StakingDashboard() {
   const { theme } = useTheme();
-  //const router = useRouter();
+  const router = useRouter();
   const [activeButton, setActiveButton] = useState<
     "popular" | "active" | "inactive"
   >("active");
@@ -475,7 +475,6 @@ export function StakingDashboard() {
                   %
                 </td>
                 <td className="p-4">
-                  {/* 
                   <button
                     className="px-4 py-2 rounded-lg text-base"
                     style={{
@@ -498,7 +497,6 @@ export function StakingDashboard() {
                   >
                     Create Stake
                   </button>
-                  */}
                 </td>
               </tr>
             ))}

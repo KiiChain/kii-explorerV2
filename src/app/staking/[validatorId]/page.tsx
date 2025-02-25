@@ -1,5 +1,13 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
+import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "next/navigation";
+import { useAccount, useBalance } from "wagmi";
+import { useStaking } from "@/lib/hooks/useStaking";
+import { toast } from "react-hot-toast";
+import { use } from "react";
+
 interface SignDoc {
   chain_id: string;
   account_number: string;
@@ -90,19 +98,12 @@ declare global {
   }
 }
 
-import React from "react";
-import { useTheme } from "@/context/ThemeContext";
-import { useRouter } from "next/navigation";
-import { use } from "react";
-
-import { useEffect, useState } from "react";
-
 interface Validator {
   moniker: string;
   operatorAddress: string;
-  website?: string;
+  website: string;
   tokens: string;
-  selfBonded?: string;
+  selfBonded: string;
   commission: string;
 }
 
@@ -127,41 +128,54 @@ function DelegateModal({
   validator,
   theme,
 }: DelegateModalProps) {
+  const { address, isConnected } = useAccount();
+  const { data: balance } = useBalance({
+    address: address,
+  });
   const [amount, setAmount] = useState("");
   const [fees, setFees] = useState("2000");
   const [gas, setGas] = useState("200000");
   const [memo, setMemo] = useState("ping.pub");
-  const [walletAddress, setWalletAddress] = useState("");
+
+  const availableBalance = balance?.formatted || "0";
+
+  const { stake, isLoading, isSuccess, error } = useStaking(
+    validator.operatorAddress,
+    amount
+  );
 
   useEffect(() => {
-    async function getWalletAddress() {
-      if (window.keplr) {
-        try {
-          await window.keplr.enable("kiichain");
-          const offlineSigner = window.keplr.getOfflineSigner("kiichain");
-          const accounts = await offlineSigner.getAccounts();
-          setWalletAddress(accounts[0].address);
-        } catch (error) {
-          console.error("Error getting wallet address:", error);
-        }
-      }
+    if (isSuccess) {
+      toast.success("Stake created successfully!");
+      onClose();
     }
-
-    if (isOpen) {
-      getWalletAddress();
+    if (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error("Failed to create stake: " + errorMessage);
     }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+  }, [isSuccess, error, onClose]);
 
   const handleSubmit = async () => {
+    if (!isConnected || !address) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+    if (!amount) {
+      toast.error("Please enter an amount");
+      return;
+    }
     try {
-      await handleCreateStake(amount, validator);
-      onClose();
+      await stake();
     } catch (error) {
-      console.error(error);
+      console.error("Error creating stake:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error("Failed to create stake: " + errorMessage);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -197,7 +211,7 @@ function DelegateModal({
             </label>
             <input
               type="text"
-              value={walletAddress}
+              value={address}
               readOnly
               className="w-full p-3 rounded-lg"
               style={{ backgroundColor: theme.bgColor }}
@@ -231,22 +245,17 @@ function DelegateModal({
             >
               Amount
             </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Available: 1882873676"
-                className="flex-1 p-3 rounded-lg"
-                style={{ backgroundColor: theme.bgColor }}
-              />
-              <select
-                className="w-24 p-3 rounded-lg"
-                style={{ backgroundColor: theme.bgColor }}
-              >
-                <option>ukii</option>
-              </select>
-            </div>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder={`Available: ${availableBalance}`}
+              className="w-full p-3 rounded-lg mt-2"
+              style={{
+                backgroundColor: theme.bgColor,
+                color: theme.primaryTextColor,
+              }}
+            />
           </div>
 
           <div>
@@ -308,8 +317,9 @@ function DelegateModal({
             className="w-full p-3 rounded-lg mt-6 text-white"
             style={{ backgroundColor: theme.accentColor }}
             onClick={handleSubmit}
+            disabled={isLoading}
           >
-            SEND
+            {isLoading ? "Processing..." : "Stake"}
           </button>
         </div>
       </div>
@@ -330,108 +340,6 @@ const handleCopyClick = (text: string, label: string) => {
       });
   }
 };
-
-async function handleCreateStake(amount: string, validator: Validator) {
-  try {
-    if (!window.keplr) {
-      throw new Error("Please install Keplr wallet");
-    }
-
-    let chainId = "kiichain";
-    try {
-      await window.keplr.enable(chainId);
-    } catch {
-      chainId = "kiitestnet-1";
-      await window.keplr.enable(chainId);
-    }
-
-    const offlineSigner = window.keplr.getOfflineSigner(chainId);
-    const accounts = await offlineSigner.getAccounts();
-    const userAddress = accounts[0].address;
-
-    const accountResponse = await fetch(
-      `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/auth/v1beta1/accounts/${userAddress}`
-    );
-    const accountData = await accountResponse.json();
-
-    if (!accountData?.account) {
-      throw new Error("Failed to get account data");
-    }
-
-    const accountInfo = accountData.account;
-    const accountNumber = accountInfo.account_number?.toString() || "0";
-    const sequence = accountInfo.sequence?.toString() || "0";
-
-    const signDoc = {
-      chain_id: "kiichain",
-      account_number: accountNumber,
-      sequence: sequence,
-      fee: {
-        amount: [{ denom: "ukii", amount: "2000" }],
-        gas: "200000",
-      },
-      msgs: [
-        {
-          type: "cosmos-sdk/MsgDelegate",
-          value: {
-            delegator_address: userAddress,
-            validator_address: validator.operatorAddress,
-            amount: {
-              denom: "ukii",
-              amount: amount,
-            },
-          },
-        },
-      ],
-      memo: "ping.pub",
-    };
-
-    const signature = await window.keplr.signAmino(
-      "kiichain",
-      userAddress,
-      signDoc
-    );
-
-    const txBytes = Buffer.from(JSON.stringify(signature)).toString("base64");
-
-    const broadcastPayload = {
-      tx_bytes: txBytes,
-      mode: "BROADCAST_MODE_SYNC",
-    };
-
-    const broadcastResponse = await fetch(
-      "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(broadcastPayload),
-      }
-    );
-
-    const result = await broadcastResponse.json();
-
-    if (!result.tx_response?.txhash) {
-      throw new Error("Failed to broadcast transaction");
-    }
-
-    const txResponse = await fetch(
-      `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs/${result.tx_response.txhash}`
-    );
-    const txResult = await txResponse.json();
-
-    if (txResult.tx_response.code !== 0) {
-      throw new Error(txResult.tx_response.raw_log || "Transaction failed");
-    }
-
-    alert("Transaction completed successfully!");
-    return txResult;
-  } catch (error) {
-    console.error("Stake creation failed:", error);
-    throw error;
-  }
-}
 
 export default function ValidatorPage({
   params,
