@@ -358,7 +358,7 @@ export default function Dashboard() {
     }
     if (path === "/account") {
       router.push(`/account/${address}`);
-    } else if (path === "/stake") {
+    } else if (path === "/staking") {
       router.push("/staking");
     } else {
       router.push(path);
@@ -449,7 +449,7 @@ export default function Dashboard() {
             <button
               className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
               style={{ backgroundColor: theme.boxColor }}
-              onClick={() => router.push("/stake")}
+              onClick={() => router.push("/staking")}
             >
               Create Stake
             </button>
