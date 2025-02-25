@@ -1,5 +1,5 @@
 import { useAppKit } from "@reown/appkit/react";
-import { useAccount, useDisconnect, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useDisconnect, useChainId } from "wagmi";
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useRef, useEffect } from "react";
 import { TESTNET_ORO_EVM } from "@/config/chain";
@@ -10,7 +10,6 @@ export const WagmiConnectButton = () => {
   const { open } = useAppKit();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
   const { disconnect } = useDisconnect();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -46,8 +45,8 @@ export const WagmiConnectButton = () => {
           method: "wallet_switchEthereumChain",
           params: [{ chainId: `0x${TESTNET_ORO_EVM.id.toString(16)}` }],
         });
-      } catch (error: any) {
-        if (error?.code === 4902) {
+      } catch (error: unknown) {
+        if (error instanceof Error && "code" in error && error.code === 4902) {
           try {
             await (
               window.ethereum as {
