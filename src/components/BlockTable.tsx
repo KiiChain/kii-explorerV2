@@ -132,12 +132,9 @@ export function BlockTable({
                     }}
                     className="px-3 py-1 rounded-full text-center inline-block w-fit cursor-pointer hover:opacity-80"
                   >
-                    {latestTransactions[index]?.amount
-                      ? parseInt(latestTransactions[index].amount) / 1000000
-                      : 0}{" "}
-                    {latestTransactions[index]?.denom?.includes("ukii")
-                      ? "KII"
-                      : "ORO"}
+                    {latestTransactions[index]?.amount === "EVM Contract Call"
+                      ? "EVM CONTRACT CALL"
+                      : `${latestTransactions[index]?.amount || 0} KII`}
                   </span>
                 </div>
               </td>

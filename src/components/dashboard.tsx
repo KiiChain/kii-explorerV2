@@ -290,19 +290,17 @@ export default function Dashboard() {
       clearTimeout(timeoutId);
 
       const transactions = await response.json();
-      const formattedTransactions = transactions
-        .filter(
-          (tx: EVMTransaction) =>
-            tx.method === "0x00000000" && BigInt(tx.value) > 0
-        )
-        .map((tx: EVMTransaction) => ({
-          from: tx.from_address,
-          to: tx.to_address,
-          amount: (BigInt(tx.value) / BigInt(1e12)).toString(),
-          denom: "KII",
-          timestamp: tx.timestamp,
-          hash: tx.hash,
-        }));
+      const formattedTransactions = transactions.map((tx: EVMTransaction) => ({
+        from: tx.from_address,
+        to: tx.to_address,
+        amount:
+          tx.method === "0x00000000"
+            ? (BigInt(tx.value) / BigInt(1e18)).toString()
+            : "EVM Contract Call",
+        denom: tx.method === "0x00000000" ? "KII" : "",
+        timestamp: tx.timestamp,
+        hash: tx.hash,
+      }));
 
       setLatestTransactions(formattedTransactions);
     } catch (error) {
