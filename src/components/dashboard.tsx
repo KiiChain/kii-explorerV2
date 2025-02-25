@@ -126,10 +126,10 @@ export default function Dashboard() {
   });
 
   const [session, setSession] = useState<WalletSession>({
-    balance: "0 KII",
-    staking: "0 KII",
-    reward: "0 KII",
-    withdrawals: "0 KII",
+    balance: "0.0000 KII",
+    staking: "0.0000 KII",
+    reward: "0.0000 KII",
+    withdrawals: "0.0000 KII",
     stakes: [],
   });
 
@@ -137,14 +137,14 @@ export default function Dashboard() {
     if (isConnected && balanceData) {
       setSession((prev) => ({
         ...prev,
-        balance: `${balanceData.formatted} KII`,
+        balance: `${parseFloat(balanceData.formatted).toFixed(4)} KII`,
       }));
     }
   }, [isConnected, balanceData]);
 
   const [validatorCount, setValidatorCount] = useState<number>(0);
-  const [bondedTokens, setBondedTokens] = useState<string>("0");
-  const [communityPool, setCommunityPool] = useState<string>("0");
+  const [bondedTokens, setBondedTokens] = useState<string>("0.0000");
+  const [communityPool, setCommunityPool] = useState<string>("0.0000");
   const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
   const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
     []
@@ -187,7 +187,7 @@ export default function Dashboard() {
           const stakingData: StakingPoolResponse = await stakingResponse.json();
           const bondedKii = (
             parseInt(stakingData.pool.bonded_tokens) / 1_000_000
-          ).toLocaleString();
+          ).toFixed(4);
           setBondedTokens(bondedKii);
         }
 
@@ -198,8 +198,8 @@ export default function Dashboard() {
           )?.amount;
 
           const communityPoolKii = communityPoolAmount
-            ? (parseFloat(communityPoolAmount) / 1_000_000).toLocaleString()
-            : "0";
+            ? (parseFloat(communityPoolAmount) / 1_000_000).toFixed(4)
+            : "0.0000";
 
           setCommunityPool(communityPoolKii);
         }
