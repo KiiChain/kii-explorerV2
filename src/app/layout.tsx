@@ -26,7 +26,14 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const projectId = "e471f55bc9c6f7da3205b4343042da59";
 

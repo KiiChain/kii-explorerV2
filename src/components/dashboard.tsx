@@ -68,27 +68,6 @@ interface Transaction {
   hash: string;
 }
 
-interface TransactionResponse {
-  txs: Array<{
-    body: {
-      messages: Array<{
-        from_address: string;
-        to_address: string;
-        amount: Array<{
-          denom: string;
-          amount: string;
-        }>;
-      }>;
-    };
-    hash: string;
-    timestamp: string;
-  }>;
-  pagination: {
-    next_key: string | null;
-    total: string;
-  };
-}
-
 interface Block {
   height: string;
   hash: string;
@@ -111,6 +90,15 @@ interface ValidatorSetResponse {
   pagination: {
     total: string;
   };
+}
+
+interface EVMTransaction {
+  from_address: string;
+  to_address: string;
+  value: string;
+  method: string;
+  hash: string;
+  timestamp: string;
 }
 
 export function connectWallet() {
@@ -295,22 +283,26 @@ export default function Dashboard() {
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const response = await fetch(
-        "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2&page=1",
+        "https://evm-indexer.testnet.v3.kiivalidator.com/transactions?order=timestamp.desc&limit=200&offset=0",
         { signal: controller.signal }
       );
 
       clearTimeout(timeoutId);
 
-      const data: TransactionResponse = await response.json();
-
-      const formattedTransactions = data.txs.map((tx) => ({
-        from: tx.body.messages[0].from_address,
-        to: tx.body.messages[0].to_address,
-        amount: tx.body.messages[0].amount[0].amount,
-        denom: tx.body.messages[0].amount[0].denom,
-        timestamp: tx.timestamp,
-        hash: tx.hash,
-      }));
+      const transactions = await response.json();
+      const formattedTransactions = transactions
+        .filter(
+          (tx: EVMTransaction) =>
+            tx.method === "0x00000000" && BigInt(tx.value) > 0
+        )
+        .map((tx: EVMTransaction) => ({
+          from: tx.from_address,
+          to: tx.to_address,
+          amount: (BigInt(tx.value) / BigInt(1e12)).toString(),
+          denom: "KII",
+          timestamp: tx.timestamp,
+          hash: tx.hash,
+        }));
 
       setLatestTransactions(formattedTransactions);
     } catch (error) {

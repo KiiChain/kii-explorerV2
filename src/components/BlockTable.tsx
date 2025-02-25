@@ -52,7 +52,7 @@ export function BlockTable({
                 >
                   <ContractIcon className="w-4 h-4" />
                   <span style={{ color: theme.secondaryTextColor }}>
-                    {block.height}
+                    {block.height || "N/A"}
                   </span>
                 </span>
                 <div className="flex items-center gap-2 col-span-1 lg:col-span-3">
@@ -68,13 +68,12 @@ export function BlockTable({
                       : block.proposer}
                   </span>
                 </div>
-                <span
-                  className="col-span-1 lg:col-span-2 flex items-center gap-2 cursor-pointer hover:opacity-80"
-                  onClick={() => handleBlockClick(block.height)}
-                >
+                <span className="col-span-1 lg:col-span-2 flex items-center gap-2">
                   <ContractIcon className="w-4 h-4" />
                   <span style={{ color: theme.secondaryTextColor }}>
-                    {block.hash ? `${block.hash.slice(0, 10)}...` : "N/A"}
+                    {latestTransactions[index]?.hash
+                      ? `${latestTransactions[index].hash.slice(0, 10)}...`
+                      : "N/A"}
                   </span>
                 </span>
                 <div className="flex flex-col col-span-1 lg:col-span-3">
