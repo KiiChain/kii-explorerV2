@@ -13,11 +13,53 @@ import { Logo } from "@/components/ui/Logo";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { UptimeHeader } from "@/components/Uptime/UptimeHeader";
 import { WalletProvider } from "@/context/WalletContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
+import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import { createAppKit } from "@reown/appkit/react";
+import { TESTNET_ORO_EVM } from "@/config/chain";
+import { defineChain } from "@reown/appkit/networks";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-montserrat",
+});
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const projectId = "e471f55bc9c6f7da3205b4343042da59";
+
+const networks = [TESTNET_ORO_EVM] as [
+  ReturnType<typeof defineChain>,
+  ...ReturnType<typeof defineChain>[]
+];
+
+const wagmiAdapter = new WagmiAdapter({
+  networks,
+  projectId,
+  ssr: true,
+});
+
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks,
+  projectId,
+  features: {
+    analytics: true,
+    email: false,
+    socials: false,
+    receive: false,
+    send: false,
+    swaps: false,
+  },
 });
 
 export default function RootLayout({
@@ -30,7 +72,11 @@ export default function RootLayout({
       <body className={`${montserrat.className}`}>
         <ThemeProvider>
           <WalletProvider>
-            <ContentWrapper>{children}</ContentWrapper>
+            <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+              <QueryClientProvider client={queryClient}>
+                <ContentWrapper>{children}</ContentWrapper>
+              </QueryClientProvider>
+            </WagmiProvider>
           </WalletProvider>
         </ThemeProvider>
       </body>

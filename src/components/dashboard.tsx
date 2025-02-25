@@ -2,7 +2,8 @@
 
 import { Card, CardContent } from "./ui/card";
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import { useQuery } from "@tanstack/react-query";
+
 import {
   HeightIcon,
   ValidatorsIcon,
@@ -13,18 +14,14 @@ import {
 } from "./ui/icons";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
-import { getWeb3Provider } from "@/lib/web3";
-import { useWallet } from "@/context/WalletContext";
+
 import { StatCard } from "./StatCard";
-import { WalletInfo } from "./WalletInfo";
+
 import { BlockTable } from "./BlockTable";
 
 import { ApplicationVersions } from "./ApplicationVersions";
-
-interface CosmosBalance {
-  denom: string;
-  amount: string;
-}
+import { useAccount, useBalance } from "wagmi";
+import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 
 export interface WalletSession {
   balance: string;
@@ -72,27 +69,6 @@ interface Transaction {
   hash: string;
 }
 
-interface TransactionResponse {
-  txs: Array<{
-    body: {
-      messages: Array<{
-        from_address: string;
-        to_address: string;
-        amount: Array<{
-          denom: string;
-          amount: string;
-        }>;
-      }>;
-    };
-    hash: string;
-    timestamp: string;
-  }>;
-  pagination: {
-    next_key: string | null;
-    total: string;
-  };
-}
-
 interface Block {
   height: string;
   hash: string;
@@ -117,6 +93,15 @@ interface ValidatorSetResponse {
   };
 }
 
+interface EVMTransaction {
+  from_address: string;
+  to_address: string;
+  value: string;
+  method: string;
+  hash: string;
+  timestamp: string;
+}
+
 export function connectWallet() {
   console.log("Connecting wallet...");
 }
@@ -124,160 +109,50 @@ export function connectWallet() {
 export default function Dashboard() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { account, session, setSession } = useWallet();
-  const [validatorCount, setValidatorCount] = useState<number>(0);
-  const [bondedTokens, setBondedTokens] = useState<string>("0");
-  const [communityPool, setCommunityPool] = useState<string>("0");
-  const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
-  const [latestTransactions, setLatestTransactions] = useState<Transaction[]>(
-    []
-  );
+  const { address, isConnected } = useAccount();
+  const { data: balanceData } = useBalance({
+    address: address,
+  });
 
-  console.log("Connected account:", account);
+  const [session, setSession] = useState<WalletSession>({
+    balance: "0.0000 KII",
+    staking: "0.0000 KII",
+    reward: "0.0000 KII",
+    withdrawals: "0.0000 KII",
+    stakes: [],
+  });
 
   useEffect(() => {
-    const getBalance = async () => {
-      if (!account) {
-        setSession({
-          balance: "0 KII",
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        });
-        return;
-      }
+    if (isConnected && balanceData) {
+      setSession((prev) => ({
+        ...prev,
+        balance: `${parseFloat(balanceData.formatted).toFixed(4)} KII`,
+      }));
+    }
+  }, [isConnected, balanceData]);
 
-      const existingSession = localStorage.getItem("walletSession");
-      if (existingSession) {
-        const { account: storedAccount, session: storedSession } =
-          JSON.parse(existingSession);
-        if (storedAccount === account) {
-          console.log("Using cached wallet session");
-          setSession(storedSession);
-          return;
-        }
-      }
+  const [validatorCount, setValidatorCount] = useState<number>(0);
+  const [bondedTokens, setBondedTokens] = useState<string>("0.0000");
+  const [communityPool, setCommunityPool] = useState<string>("0.0000");
+  const [latestBlocks, setLatestBlocks] = useState<Block[]>([]);
 
-      try {
-        if (account.startsWith("kii1")) {
-          const response = await fetch(
-            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${account}`
-          );
-          const data = await response.json();
-
-          const ukiiBalance =
-            data.balances.find((b: CosmosBalance) => b.denom === "ukii")
-              ?.amount || "0";
-          const formattedBalance = `${(
-            parseInt(ukiiBalance) / 1_000_000
-          ).toString()} KII`;
-          console.log("Cosmos Account balance:", formattedBalance);
-
-          const sessionData = {
-            balance: formattedBalance,
-            staking: "0 KII",
-            reward: "0 KII",
-            withdrawals: "0 KII",
-            stakes: [],
-          };
-
-          setSession(sessionData);
-          localStorage.setItem(
-            "walletSession",
-            JSON.stringify({ account, session: sessionData })
-          );
-        } else {
-          try {
-            const provider = new ethers.JsonRpcProvider(
-              "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/",
-              {
-                chainId: 1336,
-                name: "kii-testnet",
-              }
-            );
-
-            const balance = await provider.getBalance(account);
-            const formattedBalance = ethers.formatEther(balance);
-
-            const sessionData = {
-              balance: `${formattedBalance} KII`,
-              staking: "0 KII",
-              reward: "0 KII",
-              withdrawals: "0 KII",
-              stakes: [],
-            };
-
-            setSession(sessionData);
-            localStorage.setItem(
-              "walletSession",
-              JSON.stringify({ account, session: sessionData })
-            );
-          } catch (evmError) {
-            console.error("EVM error:", evmError);
-            const sessionData = {
-              balance: "0 KII",
-              staking: "0 KII",
-              reward: "0 KII",
-              withdrawals: "0 KII",
-              stakes: [],
-            };
-            setSession(sessionData);
-            localStorage.setItem(
-              "walletSession",
-              JSON.stringify({ account, session: sessionData })
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Error getting balance:", error);
-        const sessionData = {
-          balance: "0 KII",
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        };
-        setSession(sessionData);
-        localStorage.setItem(
-          "walletSession",
-          JSON.stringify({ account, session: sessionData })
-        );
-      }
-    };
-
-    getBalance();
-  }, [account, setSession]);
+  console.log("Connected account:", address);
 
   useEffect(() => {
     const fetchChainData = async () => {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
         const [genesisResponse, stakingResponse, communityPoolResponse] =
           await Promise.all([
             fetch(
               "https://rpc.dos.sentry.testnet.v3.kiivalidator.com/genesis",
-              {
-                signal: controller.signal,
-              }
             ).catch(() => null),
             fetch(
               "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool",
-              {
-                signal: controller.signal,
-              }
             ).catch(() => null),
             fetch(
               "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool",
-              {
-                signal: controller.signal,
-              }
             ).catch(() => null),
           ]);
-
-        clearTimeout(timeoutId);
 
         if (genesisResponse) {
           const genesisData: GenesisResponse = await genesisResponse.json();
@@ -288,7 +163,7 @@ export default function Dashboard() {
           const stakingData: StakingPoolResponse = await stakingResponse.json();
           const bondedKii = (
             parseInt(stakingData.pool.bonded_tokens) / 1_000_000
-          ).toLocaleString();
+          ).toFixed(4);
           setBondedTokens(bondedKii);
         }
 
@@ -299,19 +174,13 @@ export default function Dashboard() {
           )?.amount;
 
           const communityPoolKii = communityPoolAmount
-            ? (parseFloat(communityPoolAmount) / 1_000_000).toLocaleString()
-            : "0";
+            ? (parseFloat(communityPoolAmount) / 1_000_000).toFixed(4)
+            : "0.0000";
 
           setCommunityPool(communityPoolKii);
         }
       } catch (error) {
-        if (error instanceof Error) {
-          if (error.name === "AbortError") {
-            console.error("Fetch aborted due to timeout:", error);
-          } else {
-            console.error("Error fetching chain data:", error);
-          }
-        }
+        console.error("Error fetching chain data:", error);
       }
     };
 
@@ -345,97 +214,11 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const connectWallet = async () => {
-    if (typeof window.ethereum === "undefined") {
-      alert("Please install MetaMask!");
-      return;
-    }
-
-    try {
-      await window.ethereum.request({
-        method: "wallet_requestPermissions",
-        params: [{ eth_accounts: {} }],
-      });
-
-      const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-
-      if (!Array.isArray(accounts) || accounts.length === 0) {
-        return;
-      }
-
-      try {
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0x538" }],
-        });
-      } catch (switchError: unknown) {
-        if (switchError instanceof Error && "code" in switchError) {
-          const errorCode = (switchError as { code: number }).code;
-          if (errorCode === 4902) {
-            try {
-              await window.ethereum.request({
-                method: "wallet_addEthereumChain",
-                params: [
-                  {
-                    chainId: "0x538",
-                    chainName: "Kii Chain",
-                    nativeCurrency: {
-                      name: "KII",
-                      symbol: "KII",
-                      decimals: 18,
-                    },
-                    rpcUrls: ["https://rpc.kiichain.net"],
-                    blockExplorerUrls: ["https://explorer.kiichain.net"],
-                  },
-                ],
-              });
-            } catch {
-              return;
-            }
-          } else {
-            return;
-          }
-        }
-      }
-
-      const provider = getWeb3Provider();
-      const account = accounts[0];
-
-      try {
-        const balance = await provider.getBalance(account);
-        const formattedBalance = ethers.formatEther(balance);
-        console.log("Account balance:", formattedBalance, "KII");
-
-        setSession({
-          balance: formattedBalance,
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        });
-      } catch {
-        setSession({
-          balance: "0",
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        });
-      }
-    } catch {
-      return;
-    }
-  };
-
   const fetchLatestBlocksAndTxs = async () => {
     try {
-      const controller = new AbortController();
       const blocks = [];
       const latestBlockResponse = await fetch(
         "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
-        { signal: controller.signal }
       );
       const latestBlockData = await latestBlockResponse.json();
       const latestHeight = parseInt(latestBlockData.block.header.height);
@@ -446,7 +229,6 @@ export default function Dashboard() {
         try {
           const blockResponse = await fetch(
             `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
-            { signal: controller.signal }
           );
           const blockData = await blockResponse.json();
 
@@ -480,34 +262,29 @@ export default function Dashboard() {
     }
   };
 
-  const fetchLatestTransactions = async () => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(
-        "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2&page=1",
-        { signal: controller.signal }
-      );
-
-      clearTimeout(timeoutId);
-
-      const data: TransactionResponse = await response.json();
-
-      const formattedTransactions = data.txs.map((tx) => ({
-        from: tx.body.messages[0].from_address,
-        to: tx.body.messages[0].to_address,
-        amount: tx.body.messages[0].amount[0].amount,
-        denom: tx.body.messages[0].amount[0].denom,
-        timestamp: tx.timestamp,
-        hash: tx.hash,
-      }));
-
-      setLatestTransactions(formattedTransactions);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-    }
+  const fetchTransactions = async () => {
+    const response = await fetch(
+      "https://evm-indexer.testnet.v3.kiivalidator.com/transactions?order=timestamp.desc&limit=200&offset=0"
+    );
+    const transactions: EVMTransaction[] = await response.json();
+    return transactions.map((tx) => ({
+      from: tx.from_address,
+      to: tx.to_address,
+      amount:
+        tx.method === "0x00000000"
+          ? (BigInt(tx.value) / BigInt(1e18)).toString()
+          : "EVM Contract Call",
+      denom: tx.method === "0x00000000" ? "KII" : "",
+      timestamp: tx.timestamp,
+      hash: tx.hash,
+    }));
   };
+
+  const { data: latestTransactions = [] } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: fetchTransactions,
+    refetchInterval: 30000,
+  });
 
   useEffect(() => {
     fetchLatestBlocksAndTxs();
@@ -516,15 +293,9 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetchLatestTransactions();
-    const interval = setInterval(fetchLatestTransactions, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        if (account && account !== "") {
+        if (address) {
           const evmTxs = await fetch(
             "https://kii.backend.kiivalidator.com/explorer/transactions"
           ).then((res) => res.json());
@@ -541,19 +312,113 @@ export default function Dashboard() {
     };
 
     fetchTransactions();
-  }, [account]);
+  }, [address]);
 
   const handleNavigation = (path: string) => {
-    if (!account || !session) {
+    if (!address || !session) {
       return;
     }
     if (path === "/account") {
-      router.push(`/account/${account}`);
-    } else if (path === "/stake") {
+      router.push(`/account/${address}`);
+    } else if (path === "/staking") {
       router.push("/staking");
     } else {
       router.push(path);
     }
+  };
+
+  const renderWalletSection = () => {
+    if (!isConnected) {
+      return (
+        <Card
+          style={{ backgroundColor: theme.boxColor }}
+          className="border-0 mt-6"
+        >
+          <CardContent className="p-6 rounded-lg">
+            <div className="text-center">
+              <WagmiConnectButton />
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card
+        style={{ backgroundColor: theme.boxColor }}
+        className="border-0 mt-6"
+      >
+        <CardContent className="p-6 rounded-lg">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <p style={{ color: theme.secondaryTextColor }}>{address}</p>
+            </div>
+            <div>
+              <p style={{ color: theme.primaryTextColor }}>Balance</p>
+              <p style={{ color: theme.secondaryTextColor }}>
+                {session.balance}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              className="p-4 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            >
+              <p style={{ color: theme.primaryTextColor }}>Balance</p>
+              <p style={{ color: theme.secondaryTextColor }}>
+                {session.balance}
+              </p>
+            </div>
+            <div
+              className="p-4 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            >
+              <p style={{ color: theme.primaryTextColor }}>Delegations</p>
+              <p style={{ color: theme.secondaryTextColor }}>
+                {session.staking}
+              </p>
+            </div>
+            <div
+              className="p-4 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            >
+              <p style={{ color: theme.primaryTextColor }}>Rewards</p>
+              <p style={{ color: theme.secondaryTextColor }}>
+                {session.reward}
+              </p>
+            </div>
+            <div
+              className="p-4 rounded-lg"
+              style={{ backgroundColor: theme.bgColor }}
+            >
+              <p style={{ color: theme.primaryTextColor }}>Withdrawals</p>
+              <p style={{ color: theme.secondaryTextColor }}>
+                {session.withdrawals}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <button
+              className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
+              style={{ backgroundColor: theme.boxColor }}
+              onClick={() => router.push(`/account/${address}`)}
+            >
+              My Account
+            </button>
+            <button
+              className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
+              style={{ backgroundColor: theme.boxColor }}
+              onClick={() => router.push("/staking")}
+            >
+              Create Stake
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -650,36 +515,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <Card
-          style={{
-            backgroundColor: theme.boxColor,
-            boxShadow:
-              "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-          }}
-          className="border-0 mt-6"
-        >
-          <CardContent className="p-6 rounded-lg">
-            <WalletInfo connectWallet={connectWallet} />
-            {account && session && (
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <button
-                  className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
-                  style={{ backgroundColor: theme.boxColor }}
-                  onClick={() => handleNavigation("/account")}
-                >
-                  My Account
-                </button>
-                <button
-                  className="w-full px-4 py-2 rounded-lg text-white font-medium hover:opacity-80"
-                  style={{ backgroundColor: theme.boxColor }}
-                  onClick={() => handleNavigation("/stake")}
-                >
-                  Create Stake
-                </button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {renderWalletSection()}
 
         <div className="mt-6">
           <Card

@@ -9,9 +9,8 @@ import { StakesTable } from "@/components/Account/StakesTable";
 import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
-import { ethers } from "ethers";
-import { getWeb3Provider } from "@/lib/web3";
 import { useRouter, useParams } from "next/navigation";
+import { useBalance } from "wagmi";
 
 interface Transaction {
   height: string;
@@ -35,6 +34,11 @@ interface TxResponse {
 
 export default function AccountPage() {
   const { address } = useParams();
+  const validAddress =
+    typeof address === "string" && address.startsWith("0x")
+      ? (address as `0x${string}`)
+      : undefined;
+  const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -43,7 +47,7 @@ export default function AccountPage() {
   const [withdrawals, setWithdrawals] = useState([]);
 
   useEffect(() => {
-    if (!address || Array.isArray(address)) {
+    if (!address) {
       router.push("/");
       return;
     }
@@ -51,23 +55,15 @@ export default function AccountPage() {
     const fetchAccountData = async () => {
       try {
         let walletData: WalletSession = {
-          balance: "0",
+          balance: balance?.formatted || "0",
           staking: "0 KII",
           reward: "0 KII",
           withdrawals: "0 KII",
           stakes: [],
         };
 
-        if (address.startsWith("0x")) {
-          const provider = getWeb3Provider();
-          const balance = await provider.getBalance(address);
-          const formattedBalance = ethers.formatEther(balance);
-
-          walletData = {
-            ...walletData,
-            balance: formattedBalance,
-          };
-        } else {
+        // Fetch additional data for non-EVM addresses
+        if (typeof address === "string" && !address.startsWith("0x")) {
           const [balanceResponse, stakingResponse, rewardsResponse] =
             await Promise.all([
               fetch(
@@ -89,7 +85,7 @@ export default function AccountPage() {
             balanceData.balances.find(
               (b: { denom: string }) => b.denom === "ukii"
             )?.amount || "0";
-          const formattedBalance = (parseInt(balance) / 1_000_000).toString();
+          const formattedBalance = (parseInt(balance) / 1_000_000).toFixed(4);
 
           const totalStaked =
             stakingData.delegation_responses?.reduce(
@@ -97,15 +93,15 @@ export default function AccountPage() {
                 sum + parseInt(del.balance.amount),
               0
             ) || 0;
-          const formattedStaking = (totalStaked / 1_000_000).toString();
+          const formattedStaking = (totalStaked / 1_000_000).toFixed(4);
 
           const totalRewards =
             rewardsData.total?.find(
               (r: { denom: string }) => r.denom === "ukii"
             )?.amount || "0";
-          const formattedRewards = (
-            parseInt(totalRewards) / 1_000_000
-          ).toString();
+          const formattedRewards = (parseInt(totalRewards) / 1_000_000).toFixed(
+            4
+          );
 
           walletData = {
             ...walletData,
@@ -120,7 +116,7 @@ export default function AccountPage() {
                 }) => ({
                   validator: del.delegation.validator_address,
                   amount:
-                    (parseInt(del.balance.amount) / 1_000_000).toString() +
+                    (parseInt(del.balance.amount) / 1_000_000).toFixed(4) +
                     " KII",
                   rewards: "0 KII",
                 })
@@ -169,14 +165,7 @@ export default function AccountPage() {
     };
 
     fetchAccountData();
-  }, [address, router]);
-
-  const totalValue = session
-    ? parseFloat(session.balance) +
-      parseFloat(session.staking.replace(" KII", "")) +
-      parseFloat(session.reward.replace(" KII", "")) +
-      parseFloat(session.withdrawals.replace(" KII", ""))
-    : 0;
+  }, [address, router, balance]);
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
@@ -185,30 +174,29 @@ export default function AccountPage() {
         assets={[
           {
             name: "Balance",
-            amount: session?.balance || "0",
-            value: `$${session?.balance || "0"}`,
+            amount: session?.balance || "0.0000",
+            value: `$${session?.balance || "0.0000"}`,
             percentage: "99.86%",
           },
           {
             name: "Stake",
-            amount: session?.staking || "0 KII",
-            value: `$${session?.staking?.replace(" KII", "") || "0"}`,
+            amount: session?.staking || "0.0000 KII",
+            value: `$${session?.staking?.replace(" KII", "") || "0.0000"}`,
             percentage: "0%",
           },
           {
             name: "Reward",
-            amount: session?.reward || "0 KII",
-            value: `$${session?.reward?.replace(" KII", "") || "0"}`,
+            amount: session?.reward || "0.0000 KII",
+            value: `$${session?.reward?.replace(" KII", "") || "0.0000"}`,
             percentage: "0.13%",
           },
           {
             name: "Withdrawals",
-            amount: session?.withdrawals || "0 KII",
-            value: `$${session?.withdrawals?.replace(" KII", "") || "0"}`,
+            amount: session?.withdrawals || "0.0000 KII",
+            value: `$${session?.withdrawals?.replace(" KII", "") || "0.0000"}`,
             percentage: "0.01%",
           },
         ]}
-        totalValue={`$${Number(totalValue.toFixed(2))}`}
       />
       <WithdrawalsTable withdrawals={withdrawals} />
       <StakesTable delegations={delegations} />
