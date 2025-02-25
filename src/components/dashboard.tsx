@@ -283,7 +283,7 @@ export default function Dashboard() {
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const response = await fetch(
-        "https://evm-indexer.testnet.v3.kiivalidator.com/transactions?order=timestamp.desc&limit=200&offset=0",
+        "https://evm-indexer.testnet.v3.kiivalidator.com/transactions?order=timestamp.desc&limit=20&offset=0",
         { signal: controller.signal }
       );
 
