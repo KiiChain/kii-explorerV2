@@ -141,28 +141,18 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchChainData = async () => {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
         const [genesisResponse, stakingResponse, communityPoolResponse] =
           await Promise.all([
             fetch(
               "https://rpc.dos.sentry.testnet.v3.kiivalidator.com/genesis",
-              {
-                signal: controller.signal,
-              }
             ).catch(() => null),
             fetch(
               "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool",
-              { signal: controller.signal }
             ).catch(() => null),
             fetch(
               "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool",
-              { signal: controller.signal }
             ).catch(() => null),
           ]);
-
-        clearTimeout(timeoutId);
 
         if (genesisResponse) {
           const genesisData: GenesisResponse = await genesisResponse.json();
@@ -226,11 +216,9 @@ export default function Dashboard() {
 
   const fetchLatestBlocksAndTxs = async () => {
     try {
-      const controller = new AbortController();
       const blocks = [];
       const latestBlockResponse = await fetch(
         "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
-        { signal: controller.signal }
       );
       const latestBlockData = await latestBlockResponse.json();
       const latestHeight = parseInt(latestBlockData.block.header.height);
@@ -241,7 +229,6 @@ export default function Dashboard() {
         try {
           const blockResponse = await fetch(
             `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
-            { signal: controller.signal }
           );
           const blockData = await blockResponse.json();
 
