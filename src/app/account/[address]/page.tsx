@@ -9,8 +9,8 @@ import { StakesTable } from "@/components/Account/StakesTable";
 import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter } from "next/navigation";
-import { useAccount, useBalance } from "wagmi";
+import { useRouter, useParams } from "next/navigation";
+import { useBalance } from "wagmi";
 
 interface Transaction {
   height: string;
@@ -33,8 +33,12 @@ interface TxResponse {
 }
 
 export default function AccountPage() {
-  const { address } = useAccount();
-  const { data: balance } = useBalance({ address });
+  const { address } = useParams();
+  const validAddress =
+    typeof address === "string" && address.startsWith("0x")
+      ? (address as `0x${string}`)
+      : undefined;
+  const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -58,7 +62,7 @@ export default function AccountPage() {
           stakes: [],
         };
 
-        if (!address.startsWith("0x")) {
+        if (typeof address === "string" && !address.startsWith("0x")) {
           const [balanceResponse, stakingResponse, rewardsResponse] =
             await Promise.all([
               fetch(

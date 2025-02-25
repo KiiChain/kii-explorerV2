@@ -11,14 +11,12 @@ export function UptimeHeader() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
+  const [searchKey, setSearchKey] = useState("");
 
   const confirm = async () => {
     setErrorMessage("");
-    const key = (
-      document.querySelector('input[type="text"]') as HTMLInputElement
-    ).value;
 
-    if (!key) {
+    if (!searchKey) {
       setErrorMessage("Please enter a value!");
       return;
     }
@@ -29,12 +27,12 @@ export function UptimeHeader() {
     const evmAddr = /^0x[a-fA-F0-9]{40}$/;
     const evmTxHash = /^0x[a-fA-F0-9]{64}$/;
 
-    if (height.test(key)) {
-      router.push(`/blocksID/${key}`);
-    } else if (txhash.test(key) || evmTxHash.test(key)) {
-      router.push(`/transaction/${key}`);
-    } else if (addr.test(key) || evmAddr.test(key)) {
-      router.push(`/account/${key}`);
+    if (height.test(searchKey)) {
+      router.push(`/blocksID/${searchKey}`);
+    } else if (txhash.test(searchKey) || evmTxHash.test(searchKey)) {
+      router.push(`/transaction/${searchKey}`);
+    } else if (addr.test(searchKey) || evmAddr.test(searchKey)) {
+      router.push(`/account/${searchKey}`);
     } else {
       setErrorMessage("The input not recognized");
     }
@@ -55,6 +53,7 @@ export function UptimeHeader() {
             placeholder="Search by Address / Txn Hash / Block"
             className="w-full pl-10 pr-4 py-2 rounded-lg shadow-lg"
             onKeyPress={handleKeyPress}
+            onChange={(e) => setSearchKey(e.target.value)}
             style={{
               backgroundColor: theme.boxColor,
               color: theme.primaryTextColor,
