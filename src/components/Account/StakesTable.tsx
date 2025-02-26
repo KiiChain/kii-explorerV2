@@ -5,6 +5,7 @@ interface DelegationResponse {
     delegator_address: string;
     validator_address: string;
     shares: string;
+    moniker?: string;
   };
   balance: {
     denom: string;
@@ -33,36 +34,73 @@ export function StakesTable({ delegations }: StakeProps) {
   }
 
   return (
-    <div className={`mt-8 p-6 bg-[${theme.boxColor}]/40 rounded-lg`}>
+    <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
       <div className="mb-6">
-        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
-          Delegations
+        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl pb-2`}>
+          Stakes
         </div>
         <table className="w-full">
           <thead>
             <tr className={`text-left text-[${theme.secondaryTextColor}]`}>
-              <th className="pb-4">Validator</th>
-              <th className="pb-4">Shares</th>
-              <th className="pb-4">Balance</th>
-              <th className="pb-4">Action</th>
+              <th
+                className="p-4"
+                style={{
+                  backgroundColor: theme.bgColor,
+                }}
+              >
+                Validator
+              </th>
+              <th
+                className="p-4"
+                style={{
+                  backgroundColor: theme.bgColor,
+                }}
+              >
+                Shares
+              </th>
+              <th
+                className="p-4"
+                style={{
+                  backgroundColor: theme.bgColor,
+                }}
+              >
+                Balance
+              </th>
+              <th
+                className="p-4"
+                style={{
+                  backgroundColor: theme.bgColor,
+                }}
+              >
+                Action
+              </th>
             </tr>
           </thead>
           <tbody>
             {delegations.map((delegation, index) => (
               <tr
                 key={index}
-                className={`border-b border-[${theme.borderColor}] bg-[${theme.bgColor}]`}
+                className={`border border-solid border-[${theme.borderColor}]`}
+                style={{
+                  backgroundColor: theme.bgColor,
+                }}
               >
-                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
-                  {delegation.delegation.validator_address}
+                <td
+                  className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
+                >
+                  {delegation.delegation.moniker || "Unknown"}
                 </td>
-                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                <td
+                  className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
+                >
                   {delegation.delegation.shares}
                 </td>
-                <td className={`py-4 text-[${theme.primaryTextColor}]`}>
+                <td
+                  className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
+                >
                   {`${delegation.balance.amount} ${delegation.balance.denom}`}
                 </td>
-                <td className="py-4">
+                <td className="p-4">
                   <button
                     className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
                   >

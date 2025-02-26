@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
-import { useAccount, useBalance } from "wagmi";
-import { useStaking } from "@/lib/hooks/useStaking";
+import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { toast } from "react-hot-toast";
 import { use } from "react";
+import { ethers } from "ethers";
+import { Contract } from "ethers";
+import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
 
 interface SignDoc {
   chain_id: string;
@@ -122,42 +124,27 @@ interface DelegateModalProps {
   theme: Theme;
 }
 
-function DelegateModal({
+const DelegateModal = ({
   isOpen,
   onClose,
   validator,
   theme,
-}: DelegateModalProps) {
+}: DelegateModalProps) => {
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({
     address: address,
   });
+  const { data: walletClient } = useWalletClient();
   const [amount, setAmount] = useState("");
   const [fees, setFees] = useState("2000");
   const [gas, setGas] = useState("200000");
   const [memo, setMemo] = useState("ping.pub");
+  const [isLoading, setIsLoading] = useState(false);
 
   const availableBalance = balance?.formatted || "0";
 
-  const { stake, isLoading, isSuccess, error } = useStaking(
-    validator.operatorAddress,
-    amount
-  );
-
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success("Stake created successfully!");
-      onClose();
-    }
-    if (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error("Failed to create stake: " + errorMessage);
-    }
-  }, [isSuccess, error, onClose]);
-
-  const handleSubmit = async () => {
-    if (!isConnected || !address) {
+  const handleStake = async () => {
+    if (!isConnected || !address || !walletClient) {
       toast.error("Please connect your wallet first");
       return;
     }
@@ -165,13 +152,36 @@ function DelegateModal({
       toast.error("Please enter an amount");
       return;
     }
+
     try {
-      await stake();
+      setIsLoading(true);
+      const provider = new ethers.BrowserProvider(walletClient.transport);
+      const signer = await provider.getSigner();
+      const stakingContract = new Contract(
+        "0x0000000000000000000000000000000000001005",
+        STAKING_PRECOMPILE_ABI,
+        signer
+      );
+
+      const amountInWei = ethers.parseUnits(amount, 6);
+      const amountIn18Dec = amountInWei * BigInt(10 ** 12);
+      const feeData = await provider.getFeeData();
+
+      const tx = await stakingContract.delegate(validator.operatorAddress, {
+        value: amountIn18Dec,
+        maxFeePerGas: feeData.maxFeePerGas,
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+        gasLimit: 300000,
+      });
+
+      await tx.wait();
+      toast.success("Staking successful!");
+      onClose();
     } catch (error) {
-      console.error("Error creating stake:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error("Failed to create stake: " + errorMessage);
+      console.error("Staking error:", error);
+      toast.error("Failed to stake tokens");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -316,7 +326,7 @@ function DelegateModal({
           <button
             className="w-full p-3 rounded-lg mt-6 text-white"
             style={{ backgroundColor: theme.accentColor }}
-            onClick={handleSubmit}
+            onClick={handleStake}
             disabled={isLoading}
           >
             {isLoading ? "Processing..." : "Stake"}
@@ -325,7 +335,7 @@ function DelegateModal({
       </div>
     </div>
   );
-}
+};
 
 const handleCopyClick = (text: string, label: string) => {
   if (window.confirm(`¿Deseas copiar ${label}?`)) {
