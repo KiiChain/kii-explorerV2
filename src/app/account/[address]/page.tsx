@@ -44,7 +44,6 @@ export default function AddressPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState([]);
-  const [withdrawals, setWithdrawals] = useState([]);
   const [validators, setValidators] = useState<Record<string, string>>({});
 
   const formatAmount = (amount: string, decimals: number = 6) => {
@@ -82,7 +81,7 @@ export default function AddressPage() {
         setValidators(validatorsMap);
 
         // Then fetch account data with the map
-        await fetchAccountData(validatorsMap);
+        await fetchAccountData();
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -91,7 +90,7 @@ export default function AddressPage() {
     fetchData();
   }, [address, router, balance]);
 
-  const fetchAccountData = async (validatorsMap: Record<string, string>) => {
+  const fetchAccountData = async () => {
     let kiiAddress = "";
 
     try {
@@ -117,20 +116,30 @@ export default function AddressPage() {
         }
 
         if (kiiAddress) {
-          const [balanceResponse, stakingResponse, rewardsResponse] =
-            await Promise.all([
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${kiiAddress}`
-              ),
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
-              ),
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
-              ),
-            ]);
+          const stakingResponse = await fetch(
+            `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
+          );
 
           const stakingData = await stakingResponse.json();
+
+          // Calcular balance total incluyendo staking
+          let totalStaking = 0;
+          if (stakingData.delegation_responses) {
+            totalStaking = stakingData.delegation_responses.reduce(
+              (sum: number, del: { balance: { amount: string } }) =>
+                sum + parseInt(del.balance.amount),
+              0
+            );
+          }
+
+          const normalBalance = parseFloat(balance?.formatted || "0");
+          const stakingBalance = parseFloat(
+            formatAmount(totalStaking.toString())
+          );
+          const totalBalance = normalBalance + stakingBalance;
+
+          walletData.balance = totalBalance.toFixed(4);
+          walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
 
           if (stakingData.delegation_responses) {
             const formattedDelegations = stakingData.delegation_responses.map(
@@ -149,8 +158,7 @@ export default function AddressPage() {
                   ...del.delegation,
                   shares: formatAmount(del.delegation.shares),
                   moniker:
-                    validatorsMap[del.delegation.validator_address] ||
-                    "Unknown",
+                    validators[del.delegation.validator_address] || "Unknown",
                 },
                 balance: {
                   ...del.balance,
@@ -219,7 +227,7 @@ export default function AddressPage() {
           },
         ]}
       />
-      <WithdrawalsTable withdrawals={withdrawals} />
+      <WithdrawalsTable withdrawals={[]} />
       <StakesTable delegations={delegations} />
       <TransactionsTable transactions={transactions} />
       <AccountInfo account={typeof address === "string" ? address : ""} />

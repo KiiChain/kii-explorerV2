@@ -44,6 +44,7 @@ export default function AddressPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState([]);
+  const [validators, setValidators] = useState<Record<string, string>>({});
 
   const formatAmount = (amount: string, decimals: number = 6) => {
     const value = parseInt(amount);
@@ -57,115 +58,9 @@ export default function AddressPage() {
       return;
     }
 
-    const fetchAccountData = async (validatorsMap: Record<string, string>) => {
-      let kiiAddress = "";
-
-      try {
-        const walletData: WalletSession = {
-          balance: balance?.formatted || "0",
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        };
-
-        if (typeof address === "string") {
-          kiiAddress = address;
-
-          if (address.startsWith("0x")) {
-            const kiiAddressResponse = await fetch(
-              `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/kiichain/evm/kii_address?evm_address=${address}`
-            );
-            const kiiAddressData = await kiiAddressResponse.json();
-            if (kiiAddressData.associated) {
-              kiiAddress = kiiAddressData.kii_address;
-            }
-          }
-
-          if (kiiAddress) {
-            const [stakingResponse] = await Promise.all([
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${kiiAddress}`
-              ),
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
-              ),
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
-              ),
-            ]);
-
-            const stakingData = await stakingResponse.json();
-            //const rewardsData = await rewardsResponse.json();
-
-            let totalStaking = 0;
-            if (stakingData.delegation_responses) {
-              totalStaking = stakingData.delegation_responses.reduce(
-                (sum: number, del: { balance: { amount: string } }) =>
-                  sum + parseInt(del.balance.amount),
-                0
-              );
-              walletData.staking = `${formatAmount(
-                totalStaking.toString()
-              )} KII`;
-            }
-
-            if (stakingData.delegation_responses) {
-              const formattedDelegations = stakingData.delegation_responses.map(
-                (del: {
-                  delegation: {
-                    validator_address: string;
-                    shares: string;
-                  };
-                  balance: {
-                    amount: string;
-                  };
-                }) => ({
-                  delegation: {
-                    ...del.delegation,
-                    shares: formatAmount(del.delegation.shares),
-                    moniker:
-                      validatorsMap[del.delegation.validator_address] ||
-                      "Unknown",
-                  },
-                  balance: {
-                    ...del.balance,
-                    amount: formatAmount(del.balance.amount),
-                  },
-                })
-              );
-              setDelegations(formattedDelegations);
-            }
-
-            const txResponse = await fetch(
-              `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.sender='${kiiAddress}'`
-            );
-
-            if (txResponse.ok) {
-              const txData = await txResponse.json();
-              if (txData && Array.isArray(txData.tx_responses)) {
-                const formattedTxs = txData.tx_responses.map(
-                  (tx: TxResponse) => ({
-                    height: tx.height,
-                    hash: tx.txhash,
-                    messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
-                    time: new Date(tx.timestamp).toLocaleString(),
-                  })
-                );
-                setTransactions(formattedTxs);
-              }
-            }
-          }
-        }
-
-        setSession(walletData);
-      } catch (error) {
-        console.error("Error fetching account data:", error);
-      }
-    };
-
     const fetchData = async () => {
       try {
+        // Fetch validators first
         const validatorsResponse = await fetch(
           "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
         );
@@ -183,8 +78,10 @@ export default function AddressPage() {
           },
           {}
         );
+        setValidators(validatorsMap);
 
-        await fetchAccountData(validatorsMap);
+        // Then fetch account data with the map
+        await fetchAccountData();
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -192,6 +89,112 @@ export default function AddressPage() {
 
     fetchData();
   }, [address, router, balance]);
+
+  const fetchAccountData = async () => {
+    let kiiAddress = "";
+
+    try {
+      const walletData: WalletSession = {
+        balance: balance?.formatted || "0",
+        staking: "0 KII",
+        reward: "0 KII",
+        withdrawals: "0 KII",
+        stakes: [],
+      };
+
+      if (typeof address === "string") {
+        kiiAddress = address;
+
+        if (address.startsWith("0x")) {
+          const kiiAddressResponse = await fetch(
+            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/kiichain/evm/kii_address?evm_address=${address}`
+          );
+          const kiiAddressData = await kiiAddressResponse.json();
+          if (kiiAddressData.associated) {
+            kiiAddress = kiiAddressData.kii_address;
+          }
+        }
+
+        if (kiiAddress) {
+          const stakingResponse = await fetch(
+            `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
+          );
+
+          const stakingData = await stakingResponse.json();
+
+          // Calcular balance total incluyendo staking
+          let totalStaking = 0;
+          if (stakingData.delegation_responses) {
+            totalStaking = stakingData.delegation_responses.reduce(
+              (sum: number, del: { balance: { amount: string } }) =>
+                sum + parseInt(del.balance.amount),
+              0
+            );
+          }
+
+          const normalBalance = parseFloat(balance?.formatted || "0");
+          const stakingBalance = parseFloat(
+            formatAmount(totalStaking.toString())
+          );
+          const totalBalance = normalBalance + stakingBalance;
+
+          walletData.balance = totalBalance.toFixed(4);
+          walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
+
+          if (stakingData.delegation_responses) {
+            const formattedDelegations = stakingData.delegation_responses.map(
+              (del: {
+                delegation: {
+                  validator_address: string;
+                  delegator_address: string;
+                  shares: string;
+                };
+                balance: {
+                  amount: string;
+                  denom: string;
+                };
+              }) => ({
+                delegation: {
+                  ...del.delegation,
+                  shares: formatAmount(del.delegation.shares),
+                  moniker:
+                    validators[del.delegation.validator_address] || "Unknown",
+                },
+                balance: {
+                  ...del.balance,
+                  amount: formatAmount(del.balance.amount),
+                },
+              })
+            );
+            setDelegations(formattedDelegations);
+          }
+
+          const txResponse = await fetch(
+            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.sender='${kiiAddress}'`
+          );
+
+          if (txResponse.ok) {
+            const txData = await txResponse.json();
+            if (txData && Array.isArray(txData.tx_responses)) {
+              const formattedTxs = txData.tx_responses.map(
+                (tx: TxResponse) => ({
+                  height: tx.height,
+                  hash: tx.txhash,
+                  messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
+                  time: new Date(tx.timestamp).toLocaleString(),
+                })
+              );
+              setTransactions(formattedTxs);
+            }
+          }
+        }
+      }
+
+      setSession(walletData);
+    } catch (error) {
+      console.error("Error fetching account data:", error);
+    }
+  };
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
