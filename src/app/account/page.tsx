@@ -14,6 +14,7 @@ import { useBalance, useAccount, useWalletClient } from "wagmi";
 import { Contract, ethers } from "ethers";
 import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
 import { toast } from "react-toastify";
+import { useRedelegateMutation } from "@/services/mutations/staking";
 
 interface Transaction {
   height: string;
@@ -62,7 +63,8 @@ const RedelegateModal = ({
   const { data: walletClient } = useWalletClient();
   const [amount, setAmount] = useState("");
   const [destinationValidator, setDestinationValidator] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+
+  const redelegateMutation = useRedelegateMutation();
 
   const handleRedelegate = async () => {
     if (!isConnected || !address || !walletClient) {
@@ -70,32 +72,19 @@ const RedelegateModal = ({
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const stakingContract = new Contract(
-        "0x0000000000000000000000000000000000001005",
-        STAKING_PRECOMPILE_ABI,
-        signer
-      );
-
-      const amountInWei = ethers.parseUnits(amount, 6);
-      const tx = await stakingContract.redelegate(
+    redelegateMutation.mutate(
+      {
+        walletClient,
+        amount,
         validatorAddress,
         destinationValidator,
-        amountInWei
-      );
-
-      await tx.wait();
-      toast.success("Redelegation successful!");
-      onClose();
-    } catch (error) {
-      console.error("Redelegation error:", error);
-      toast.error("Failed to redelegate tokens");
-    } finally {
-      setIsLoading(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          onClose();
+        },
+      }
+    );
   };
 
   if (!isOpen) return null;
@@ -149,14 +138,14 @@ const RedelegateModal = ({
           </button>
           <button
             onClick={handleRedelegate}
-            disabled={isLoading}
+            disabled={redelegateMutation.isPending}
             className="px-4 py-2 rounded"
             style={{
               backgroundColor: theme.accentColor,
               color: theme.primaryTextColor,
             }}
           >
-            {isLoading ? "Processing..." : "Redelegate"}
+            {redelegateMutation.isPending ? "Processing..." : "Redelegate"}
           </button>
         </div>
       </div>
