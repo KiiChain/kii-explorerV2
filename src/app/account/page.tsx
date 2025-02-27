@@ -10,7 +10,10 @@ import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
-import { useBalance } from "wagmi";
+import { useBalance, useAccount, useWalletClient } from "wagmi";
+import { Contract, ethers } from "ethers";
+import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
+import { toast } from "react-toastify";
 
 interface Transaction {
   height: string;
@@ -32,6 +35,236 @@ interface TxResponse {
   };
 }
 
+interface Theme {
+  bgColor: string;
+  boxColor: string;
+  primaryTextColor: string;
+  secondaryTextColor: string;
+  accentColor: string;
+}
+
+interface RedelegateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  validatorAddress: string;
+  theme: Theme;
+  validators: Record<string, string>;
+}
+
+const RedelegateModal = ({
+  isOpen,
+  onClose,
+  validatorAddress,
+  theme,
+  validators,
+}: RedelegateModalProps) => {
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const [amount, setAmount] = useState("");
+  const [destinationValidator, setDestinationValidator] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRedelegate = async () => {
+    if (!isConnected || !address || !walletClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const provider = new ethers.BrowserProvider(walletClient.transport);
+      const signer = await provider.getSigner();
+      const stakingContract = new Contract(
+        "0x0000000000000000000000000000000000001005",
+        STAKING_PRECOMPILE_ABI,
+        signer
+      );
+
+      const amountInWei = ethers.parseUnits(amount, 6);
+      const tx = await stakingContract.redelegate(
+        validatorAddress,
+        destinationValidator,
+        amountInWei
+      );
+
+      await tx.wait();
+      toast.success("Redelegation successful!");
+      onClose();
+    } catch (error) {
+      console.error("Redelegation error:", error);
+      toast.error("Failed to redelegate tokens");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div
+        className="bg-white rounded-lg p-6 w-96"
+        style={{ backgroundColor: theme.boxColor }}
+      >
+        <h2 className="text-xl mb-4" style={{ color: theme.primaryTextColor }}>
+          Redelegate Tokens
+        </h2>
+        <input
+          type="text"
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full p-2 mb-4 rounded"
+          style={{
+            backgroundColor: theme.bgColor,
+            color: theme.primaryTextColor,
+          }}
+        />
+        <select
+          value={destinationValidator}
+          onChange={(e) => setDestinationValidator(e.target.value)}
+          className="w-full p-2 mb-4 rounded"
+          style={{
+            backgroundColor: theme.bgColor,
+            color: theme.primaryTextColor,
+          }}
+        >
+          <option value="">Select Destination Validator</option>
+          {Object.entries(validators).map(([address, moniker]) => (
+            <option key={address} value={address}>
+              {moniker}
+            </option>
+          ))}
+        </select>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.bgColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleRedelegate}
+            disabled={isLoading}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.accentColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            {isLoading ? "Processing..." : "Redelegate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface UndelegateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  validatorAddress: string;
+  theme: Theme;
+}
+
+const UndelegateModal = ({
+  isOpen,
+  onClose,
+  validatorAddress,
+  theme,
+}: UndelegateModalProps) => {
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const [amount, setAmount] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleUndelegate = async () => {
+    if (!isConnected || !address || !walletClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const provider = new ethers.BrowserProvider(walletClient.transport);
+      const signer = await provider.getSigner();
+      const stakingContract = new Contract(
+        "0x0000000000000000000000000000000000001005",
+        STAKING_PRECOMPILE_ABI,
+        signer
+      );
+
+      const amountInWei = ethers.parseUnits(amount, 6);
+      const tx = await stakingContract.undelegate(
+        validatorAddress,
+        amountInWei
+      );
+
+      await tx.wait();
+      toast.success("Undelegation successful!");
+      onClose();
+    } catch (error) {
+      console.error("Undelegation error:", error);
+      toast.error("Failed to undelegate tokens");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div
+        className="bg-white rounded-lg p-6 w-96"
+        style={{ backgroundColor: theme.boxColor }}
+      >
+        <h2 className="text-xl mb-4" style={{ color: theme.primaryTextColor }}>
+          Undelegate Tokens
+        </h2>
+        <input
+          type="text"
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full p-2 mb-4 rounded"
+          style={{
+            backgroundColor: theme.bgColor,
+            color: theme.primaryTextColor,
+          }}
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.bgColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUndelegate}
+            disabled={isLoading}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.accentColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            {isLoading ? "Processing..." : "Undelegate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function AddressPage() {
   const { address } = useParams();
   const validAddress =
@@ -45,6 +278,9 @@ export default function AddressPage() {
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState([]);
   const [validators, setValidators] = useState<Record<string, string>>({});
+  const [selectedValidator, setSelectedValidator] = useState("");
+  const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
+  const [isUndelegateModalOpen, setIsUndelegateModalOpen] = useState(false);
 
   const formatAmount = (amount: string, decimals: number = 6) => {
     const value = parseInt(amount);
@@ -60,7 +296,6 @@ export default function AddressPage() {
 
     const fetchData = async () => {
       try {
-        // Fetch validators first
         const validatorsResponse = await fetch(
           "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
         );
@@ -80,7 +315,6 @@ export default function AddressPage() {
         );
         setValidators(validatorsMap);
 
-        // Then fetch account data with the map
         await fetchAccountData();
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -116,13 +350,18 @@ export default function AddressPage() {
         }
 
         if (kiiAddress) {
-          const stakingResponse = await fetch(
-            `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
-          );
+          const [stakingResponse, rewardsResponse] = await Promise.all([
+            fetch(
+              `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
+            ),
+            fetch(
+              `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
+            ),
+          ]);
 
           const stakingData = await stakingResponse.json();
+          const rewardsData = await rewardsResponse.json();
 
-          // Calcular balance total incluyendo staking
           let totalStaking = 0;
           if (stakingData.delegation_responses) {
             totalStaking = stakingData.delegation_responses.reduce(
@@ -132,14 +371,26 @@ export default function AddressPage() {
             );
           }
 
+          let totalRewards = 0;
+          if (rewardsData.total) {
+            const ukiiRewards = rewardsData.total.find(
+              (reward: { denom: string }) => reward.denom === "ukii"
+            );
+            if (ukiiRewards) {
+              totalRewards = parseInt(ukiiRewards.amount);
+            }
+          }
+
           const normalBalance = parseFloat(balance?.formatted || "0");
           const stakingBalance = parseFloat(
             formatAmount(totalStaking.toString())
           );
+
           const totalBalance = normalBalance + stakingBalance;
 
           walletData.balance = totalBalance.toFixed(4);
           walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
+          walletData.reward = `${formatAmount(totalRewards.toString())} KII`;
 
           if (stakingData.delegation_responses) {
             const formattedDelegations = stakingData.delegation_responses.map(
@@ -228,9 +479,32 @@ export default function AddressPage() {
         ]}
       />
       <WithdrawalsTable withdrawals={[]} />
-      <StakesTable delegations={delegations} />
+      <StakesTable
+        delegations={delegations}
+        theme={theme}
+        selectedValidator={selectedValidator}
+        setSelectedValidator={setSelectedValidator}
+        setIsRedelegateModalOpen={setIsRedelegateModalOpen}
+        setIsUndelegateModalOpen={setIsUndelegateModalOpen}
+        isRedelegateModalOpen={isRedelegateModalOpen}
+        isUndelegateModalOpen={isUndelegateModalOpen}
+      />
       <TransactionsTable transactions={transactions} />
       <AccountInfo account={typeof address === "string" ? address : ""} />
+
+      <RedelegateModal
+        isOpen={isRedelegateModalOpen}
+        onClose={() => setIsRedelegateModalOpen(false)}
+        validatorAddress={selectedValidator}
+        theme={theme}
+        validators={validators}
+      />
+      <UndelegateModal
+        isOpen={isUndelegateModalOpen}
+        onClose={() => setIsUndelegateModalOpen(false)}
+        validatorAddress={selectedValidator}
+        theme={theme}
+      />
     </div>
   );
 }

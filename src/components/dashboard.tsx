@@ -22,6 +22,7 @@ import { BlockTable } from "./BlockTable";
 import { ApplicationVersions } from "./ApplicationVersions";
 import { useAccount, useBalance } from "wagmi";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
+import { cosmosService } from "@/services/cosmos";
 
 export interface WalletSession {
   balance: string;
@@ -122,6 +123,9 @@ export default function Dashboard() {
     stakes: [],
   });
 
+  const [stakingBalance, setStakingBalance] = useState("0.0000");
+  const [rewardsBalance, setRewardsBalance] = useState("0.0000");
+
   useEffect(() => {
     if (isConnected && balanceData) {
       setSession((prev) => ({
@@ -144,13 +148,13 @@ export default function Dashboard() {
         const [genesisResponse, stakingResponse, communityPoolResponse] =
           await Promise.all([
             fetch(
-              "https://rpc.dos.sentry.testnet.v3.kiivalidator.com/genesis",
+              "https://rpc.dos.sentry.testnet.v3.kiivalidator.com/genesis"
             ).catch(() => null),
             fetch(
-              "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool",
+              "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/pool"
             ).catch(() => null),
             fetch(
-              "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool",
+              "https://dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/community_pool"
             ).catch(() => null),
           ]);
 
@@ -218,7 +222,7 @@ export default function Dashboard() {
     try {
       const blocks = [];
       const latestBlockResponse = await fetch(
-        "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest",
+        "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
       );
       const latestBlockData = await latestBlockResponse.json();
       const latestHeight = parseInt(latestBlockData.block.header.height);
@@ -228,7 +232,7 @@ export default function Dashboard() {
 
         try {
           const blockResponse = await fetch(
-            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`,
+            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`
           );
           const blockData = await blockResponse.json();
 
@@ -314,6 +318,32 @@ export default function Dashboard() {
     fetchTransactions();
   }, [address]);
 
+  useEffect(() => {
+    const fetchCosmosBalances = async () => {
+      if (!address) return;
+
+      try {
+        const cosmosData = await cosmosService.getKiiAddress(address);
+
+        if (cosmosData?.kii_address) {
+          const totalStaked = await cosmosService.getDelegations(
+            cosmosData.kii_address
+          );
+          setStakingBalance(totalStaked.toFixed(4));
+
+          const totalRewards = await cosmosService.getRewards(
+            cosmosData.kii_address
+          );
+          setRewardsBalance(totalRewards.toFixed(4));
+        }
+      } catch (error) {
+        console.error("Error fetching cosmos balances:", error);
+      }
+    };
+
+    fetchCosmosBalances();
+  }, [address]);
+
   const handleNavigation = (path: string) => {
     if (!address || !session) {
       return;
@@ -375,9 +405,9 @@ export default function Dashboard() {
               className="p-4 rounded-lg"
               style={{ backgroundColor: theme.bgColor }}
             >
-              <p style={{ color: theme.primaryTextColor }}>Delegations</p>
+              <p style={{ color: theme.primaryTextColor }}>Staked</p>
               <p style={{ color: theme.secondaryTextColor }}>
-                {session.staking}
+                {stakingBalance} KII
               </p>
             </div>
             <div
@@ -386,16 +416,21 @@ export default function Dashboard() {
             >
               <p style={{ color: theme.primaryTextColor }}>Rewards</p>
               <p style={{ color: theme.secondaryTextColor }}>
-                {session.reward}
+                {rewardsBalance} KII
               </p>
             </div>
             <div
               className="p-4 rounded-lg"
               style={{ backgroundColor: theme.bgColor }}
             >
-              <p style={{ color: theme.primaryTextColor }}>Withdrawals</p>
+              <p style={{ color: theme.primaryTextColor }}>Total</p>
               <p style={{ color: theme.secondaryTextColor }}>
-                {session.withdrawals}
+                {(
+                  parseFloat(session.balance) +
+                  parseFloat(stakingBalance) +
+                  parseFloat(rewardsBalance)
+                ).toFixed(4)}{" "}
+                KII
               </p>
             </div>
           </div>
