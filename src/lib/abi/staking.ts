@@ -3,12 +3,18 @@ export const STAKING_PRECOMPILE_ABI = [
     inputs: [
       {
         internalType: "string",
-        name: "validatorAddress",
+        name: "valAddress",
         type: "string",
       },
     ],
     name: "delegate",
-    outputs: [],
+    outputs: [
+      {
+        internalType: "bool",
+        name: "success",
+        type: "bool",
+      },
+    ],
     stateMutability: "payable",
     type: "function",
   },
@@ -16,12 +22,28 @@ export const STAKING_PRECOMPILE_ABI = [
     inputs: [
       {
         internalType: "string",
-        name: "validatorAddress",
+        name: "srcAddress",
         type: "string",
       },
+      {
+        internalType: "string",
+        name: "dstAddress",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
     ],
-    name: "undelegate",
-    outputs: [],
+    name: "redelegate",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "success",
+        type: "bool",
+      },
+    ],
     stateMutability: "nonpayable",
     type: "function",
   },
@@ -29,21 +51,27 @@ export const STAKING_PRECOMPILE_ABI = [
     inputs: [
       {
         internalType: "string",
-        name: "srcValidatorAddress",
+        name: "valAddress",
         type: "string",
       },
       {
-        internalType: "string",
-        name: "dstValidatorAddress",
-        type: "string",
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
       },
     ],
-    name: "redelegate",
-    outputs: [],
+    name: "undelegate",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "success",
+        type: "bool",
+      },
+    ],
     stateMutability: "nonpayable",
     type: "function",
   },
-] as const;
+];
 
 export const STAKING_PRECOMPILE_ADDRESS =
-  "0x0000000000000000000000000000000000000800";
+  "0x0000000000000000000000000000000000001005";
