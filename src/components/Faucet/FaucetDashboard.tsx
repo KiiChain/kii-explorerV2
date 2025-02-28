@@ -26,6 +26,7 @@ export function FaucetDashboard() {
 
     try {
       const captchaToken = recaptchaRef.current?.getValue()
+      recaptchaRef.current?.reset()
 
       // Send request to backend with CAPTCHA token
       const response = await fetch(
@@ -50,7 +51,7 @@ export function FaucetDashboard() {
       }
 
       const data = await response.text();
-      setSuccess(data);
+      setSuccess("Successfully claimed the faucet");
       setWalletAddress("");
     } catch (err: Error | unknown) {
       setError(
