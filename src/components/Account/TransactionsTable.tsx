@@ -43,7 +43,7 @@ export function TransactionsTable({
                 Height
               </th>
               <th className="p-4" style={{ backgroundColor: theme.bgColor }}>
-                Has h
+                Hash
               </th>
               <th className="p-4" style={{ backgroundColor: theme.bgColor }}>
                 Messages
