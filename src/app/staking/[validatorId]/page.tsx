@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { toast } from "react-hot-toast";
 import { use } from "react";
-import { ethers } from "ethers";
-import { Contract } from "ethers";
-import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
+
+import { useDelegateMutation } from "@/services/mutations/staking";
 
 interface SignDoc {
   chain_id: string;
@@ -141,6 +140,8 @@ const DelegateModal = ({
   const [memo, setMemo] = useState("ping.pub");
   const [isLoading, setIsLoading] = useState(false);
 
+  const delegateMutation = useDelegateMutation();
+
   const availableBalance = balance?.formatted || "0";
 
   const handleStake = async () => {
@@ -155,31 +156,14 @@ const DelegateModal = ({
 
     try {
       setIsLoading(true);
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const stakingContract = new Contract(
-        "0x0000000000000000000000000000000000001005",
-        STAKING_PRECOMPILE_ABI,
-        signer
-      );
-
-      const amountInWei = ethers.parseUnits(amount, 6);
-      const amountIn18Dec = amountInWei * BigInt(10 ** 12);
-      const feeData = await provider.getFeeData();
-
-      const tx = await stakingContract.delegate(validator.operatorAddress, {
-        value: amountIn18Dec,
-        maxFeePerGas: feeData.maxFeePerGas,
-        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
-        gasLimit: 300000,
+      await delegateMutation.mutateAsync({
+        walletClient,
+        amount,
+        validatorAddress: validator.operatorAddress,
       });
-
-      await tx.wait();
-      toast.success("Staking successful!");
       onClose();
     } catch (error) {
-      console.error("Staking error:", error);
-      toast.error("Failed to stake tokens");
+      console.error("Error delegating:", error);
     } finally {
       setIsLoading(false);
     }

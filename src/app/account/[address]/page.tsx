@@ -11,10 +11,13 @@ import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 import { useBalance, useAccount, useWalletClient } from "wagmi";
-import { Contract, ethers } from "ethers";
-import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
+import { useValidators } from "../../../services/queries/validators";
+
 import { toast } from "react-toastify";
-import { useRedelegateMutation } from "@/services/mutations/staking";
+import {
+  useRedelegateMutation,
+  useUndelegateMutation,
+} from "@/services/mutations/staking";
 
 interface Transaction {
   height: string;
@@ -171,6 +174,8 @@ const UndelegateModal = ({
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const undelegateMutation = useUndelegateMutation();
+
   const handleUndelegate = async () => {
     if (!isConnected || !address || !walletClient) {
       toast.error("Please connect your wallet first");
@@ -179,26 +184,14 @@ const UndelegateModal = ({
 
     try {
       setIsLoading(true);
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const stakingContract = new Contract(
-        "0x0000000000000000000000000000000000001005",
-        STAKING_PRECOMPILE_ABI,
-        signer
-      );
-
-      const amountInWei = ethers.parseUnits(amount, 6);
-      const tx = await stakingContract.undelegate(
+      await undelegateMutation.mutateAsync({
+        walletClient,
+        amount,
         validatorAddress,
-        amountInWei
-      );
-
-      await tx.wait();
-      toast.success("Undelegation successful!");
+      });
       onClose();
     } catch (error) {
-      console.error("Undelegation error:", error);
-      toast.error("Failed to undelegate tokens");
+      console.error("Error undelegating:", error);
     } finally {
       setIsLoading(false);
     }
@@ -266,7 +259,7 @@ export default function AddressPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState([]);
-  const [validators, setValidators] = useState<Record<string, string>>({});
+  const { data: validators = {} } = useValidators();
   const [selectedValidator, setSelectedValidator] = useState("");
   const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
   const [isUndelegateModalOpen, setIsUndelegateModalOpen] = useState(false);
@@ -285,25 +278,6 @@ export default function AddressPage() {
 
     const fetchData = async () => {
       try {
-        const validatorsResponse = await fetch(
-          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
-        );
-        const validatorsData = await validatorsResponse.json();
-        const validatorsMap = validatorsData.validators.reduce(
-          (
-            acc: Record<string, string>,
-            validator: {
-              operator_address: string;
-              description: { moniker: string };
-            }
-          ) => {
-            acc[validator.operator_address] = validator.description.moniker;
-            return acc;
-          },
-          {}
-        );
-        setValidators(validatorsMap);
-
         await fetchAccountData();
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -470,6 +444,7 @@ export default function AddressPage() {
       <WithdrawalsTable withdrawals={[]} />
       <StakesTable
         delegations={delegations}
+        validators={validators}
         theme={theme}
         selectedValidator={selectedValidator}
         setSelectedValidator={setSelectedValidator}

@@ -3,6 +3,8 @@ import { useAccount, useWalletClient } from "wagmi";
 import { Contract, ethers } from "ethers";
 import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
 import { toast } from "react-toastify";
+import { useRedelegations } from "../../services/queries/redelegations";
+import { useQuery } from "@tanstack/react-query";
 
 interface Theme {
   boxColor: string;
@@ -70,6 +72,20 @@ interface UndelegateModalProps {
 interface ValidatorDetails {
   moniker: string;
   operator_address: string;
+}
+
+interface RedelegationEntry {
+  redelegation_entry: {
+    completion_time: string;
+  };
+}
+
+interface RedelegationResponse {
+  redelegation: {
+    validator_dst_address: string;
+    validator_src_address: string;
+  };
+  entries: RedelegationEntry[];
 }
 
 const RedelegateModal = ({
@@ -236,6 +252,7 @@ const UndelegateModal = ({
 
 export function StakesTable({
   delegations,
+  validators = {},
   theme,
   selectedValidator,
   setSelectedValidator,
@@ -243,10 +260,28 @@ export function StakesTable({
   setIsUndelegateModalOpen,
   isRedelegateModalOpen,
   isUndelegateModalOpen,
-}: Omit<StakeProps, "validators">) {
-  const { address, isConnected } = useAccount();
+}: StakeProps) {
+  const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const [validators, setValidators] = useState<Record<string, string>>({});
+
+  const { data: cosmosAddress } = useQuery({
+    queryKey: ["cosmosAddress", address],
+    queryFn: async () => {
+      if (!address) return "";
+      const response = await fetch(
+        `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/kiichain/evm/kii_address?evm_address=${address}`
+      );
+      const data = await response.json();
+      return data.kii_address;
+    },
+    enabled: !!address,
+  });
+
+  const { data: redelegations } = useRedelegations(cosmosAddress);
+
+  console.log("Cosmos Address:", cosmosAddress);
+  console.log("Redelegations:", redelegations);
+
   const [validatorDetails, setValidatorDetails] = useState<
     Record<string, ValidatorDetails>
   >({});
@@ -274,7 +309,6 @@ export function StakesTable({
           });
 
           console.log("Validators mapping:", validatorsMap);
-          setValidators(validatorsMap);
         }
       } catch (error) {
         console.error("Error fetching validators:", error);
@@ -335,7 +369,7 @@ export function StakesTable({
     destinationAddr: string,
     amount: string
   ) => {
-    if (!isConnected || !address || !walletClient) {
+    if (!address || !walletClient) {
       toast.error("Please connect your wallet first");
       return;
     }
@@ -377,7 +411,7 @@ export function StakesTable({
   };
 
   const handleUndelegate = async (validatorAddress: string, amount: string) => {
-    if (!isConnected || !address || !walletClient) {
+    if (!address || !walletClient) {
       toast.error("Please connect your wallet first");
       return;
     }
@@ -413,6 +447,48 @@ export function StakesTable({
         "Failed to undelegate tokens. Please check the console for details."
       );
     }
+  };
+
+  const hasActiveRedelegation = (
+    redelegations: RedelegationResponse[],
+    validatorAddress: string
+  ): { hasRedelegation: boolean; completionTime: string } => {
+    const activeRedelegation = redelegations.find((r) => {
+      const isInvolved =
+        r.redelegation.validator_src_address === validatorAddress ||
+        r.redelegation.validator_dst_address === validatorAddress;
+
+      if (!isInvolved) return false;
+
+      return r.entries.some((entry) => {
+        const completionTime = new Date(
+          entry.redelegation_entry.completion_time
+        );
+        return completionTime > new Date();
+      });
+    });
+
+    if (activeRedelegation && activeRedelegation.entries.length > 0) {
+      const latestCompletion = activeRedelegation.entries.reduce(
+        (latest, entry) => {
+          const completionTime = new Date(
+            entry.redelegation_entry.completion_time
+          );
+          return completionTime > latest ? completionTime : latest;
+        },
+        new Date(0)
+      );
+
+      return {
+        hasRedelegation: true,
+        completionTime: latestCompletion.toLocaleString(),
+      };
+    }
+
+    return {
+      hasRedelegation: false,
+      completionTime: "",
+    };
   };
 
   if (!delegations || delegations.length === 0) {
@@ -475,6 +551,17 @@ export function StakesTable({
             {delegations.map((delegation, index) => {
               const validatorAddress = delegation.delegation?.validator_address;
               const moniker = getValidatorMoniker(validatorAddress);
+              const { hasRedelegation, completionTime } = hasActiveRedelegation(
+                redelegations?.redelegation_responses || [],
+                validatorAddress || ""
+              );
+
+              console.log(
+                "Checking redelegation for:",
+                validatorAddress,
+                hasRedelegation
+              );
+
               return (
                 <tr
                   key={index}
@@ -507,15 +594,25 @@ export function StakesTable({
                   </td>
                   <td className="p-4">
                     <button
-                      className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
+                      className={`px-4 py-2 rounded-lg ${
+                        hasRedelegation
+                          ? "bg-gray-400 cursor-not-allowed opacity-50"
+                          : `bg-[${theme.boxColor}] hover:opacity-80`
+                      }`}
                       onClick={() => {
-                        setSelectedValidator(
-                          delegation.delegation.validator_address
-                        );
-                        setIsRedelegateModalOpen(true);
+                        if (!hasRedelegation) {
+                          setSelectedValidator(validatorAddress || "");
+                          setIsRedelegateModalOpen(true);
+                        }
                       }}
+                      disabled={hasRedelegation}
+                      title={
+                        hasRedelegation
+                          ? `Redelegation in progress until ${completionTime}`
+                          : "Relocate stake"
+                      }
                     >
-                      Relocate
+                      {hasRedelegation ? "In Progress" : "Relocate"}
                     </button>
                     <button
                       className={`ml-2 px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}

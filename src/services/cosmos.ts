@@ -1,3 +1,5 @@
+import { API_ENDPOINTS } from "@/constants/endpoints";
+
 interface DelegationResponse {
   balance?: {
     amount: string;
@@ -16,14 +18,14 @@ interface ValidatorReward {
 export const cosmosService = {
   getKiiAddress: async (evmAddress: string) => {
     const response = await fetch(
-      `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/kiichain/evm/kii_address?evm_address=${evmAddress}`
+      `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${evmAddress}`
     );
     return await response.json();
   },
 
   getDelegations: async (kiiAddress: string) => {
     const response = await fetch(
-      `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
+      `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
     );
     const data = await response.json();
     return (
@@ -41,7 +43,7 @@ export const cosmosService = {
 
   getRewards: async (kiiAddress: string) => {
     const response = await fetch(
-      `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
+      `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
     );
     const data = await response.json();
     return (
