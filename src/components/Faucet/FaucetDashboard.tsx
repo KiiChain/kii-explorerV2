@@ -50,7 +50,6 @@ export function FaucetDashboard() {
         throw new Error(errorData || `HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.text();
       setSuccess("Successfully claimed the faucet");
       setWalletAddress("");
     } catch (err: Error | unknown) {
