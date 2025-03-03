@@ -4,7 +4,9 @@ import { Contract, ethers } from "ethers";
 import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
 import { toast } from "react-toastify";
 import { useRedelegations } from "../../services/queries/redelegations";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCosmosAddress } from "@/services/queries/cosmosAddress";
+import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface Theme {
   boxColor: string;
@@ -13,13 +15,6 @@ interface Theme {
   accentColor: string;
   secondaryTextColor: string;
   borderColor: string;
-}
-
-interface Validator {
-  operator_address: string;
-  description: {
-    moniker: string;
-  };
 }
 
 interface DelegationResponse {
@@ -263,19 +258,7 @@ export function StakesTable({
 }: StakeProps) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
-
-  const { data: cosmosAddress } = useQuery({
-    queryKey: ["cosmosAddress", address],
-    queryFn: async () => {
-      if (!address) return "";
-      const response = await fetch(
-        `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/kiichain/evm/kii_address?evm_address=${address}`
-      );
-      const data = await response.json();
-      return data.kii_address;
-    },
-    enabled: !!address,
-  });
+  const { data: cosmosAddress } = useCosmosAddress(address);
 
   const { data: redelegations } = useRedelegations(cosmosAddress);
 
@@ -287,42 +270,10 @@ export function StakesTable({
   >({});
 
   useEffect(() => {
-    const fetchValidators = async () => {
-      try {
-        const response = await fetch(
-          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED"
-        );
-        const data = await response.json();
-
-        if (data.validators) {
-          const validatorsMap: Record<string, string> = {};
-
-          data.validators.forEach((validator: Validator) => {
-            validatorsMap[validator.operator_address] =
-              validator.description.moniker;
-
-            const addressWithoutPrefix = validator.operator_address.replace(
-              "kiivaloper",
-              ""
-            );
-            validatorsMap[addressWithoutPrefix] = validator.description.moniker;
-          });
-
-          console.log("Validators mapping:", validatorsMap);
-        }
-      } catch (error) {
-        console.error("Error fetching validators:", error);
-      }
-    };
-
-    fetchValidators();
-  }, []);
-
-  useEffect(() => {
     const fetchValidatorDetails = async (operatorAddress: string) => {
       try {
         const response = await fetch(
-          `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators/${operatorAddress}`
+          `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${operatorAddress}`
         );
         const data = await response.json();
 
@@ -364,17 +315,22 @@ export function StakesTable({
     return "Loading...";
   };
 
-  const handleRedelegate = async (
-    validatorAddress: string,
-    destinationAddr: string,
-    amount: string
-  ) => {
-    if (!address || !walletClient) {
-      toast.error("Please connect your wallet first");
-      return;
-    }
+  const queryClient = useQueryClient();
 
-    try {
+  const redelegateMutation = useMutation({
+    mutationFn: async ({
+      validatorAddress,
+      destinationAddr,
+      amount,
+    }: {
+      validatorAddress: string;
+      destinationAddr: string;
+      amount: string;
+    }) => {
+      if (!address || !walletClient) {
+        throw new Error("Please connect your wallet first");
+      }
+
       const provider = new ethers.BrowserProvider(walletClient.transport);
       const signer = await provider.getSigner();
       const stakingContract = new Contract(
@@ -397,26 +353,41 @@ export function StakesTable({
         destinationAddr,
         amountInWei
       );
-
       await tx.wait();
+    },
+    onSuccess: () => {
       toast.success("Redelegation successful!");
       setIsRedelegateModalOpen(false);
-      window.location.reload();
-    } catch (error: unknown) {
+      queryClient.invalidateQueries({ queryKey: ["delegations"] }); // Adjust query key as needed
+    },
+    onError: (error) => {
       console.error("Redelegation error:", error);
       toast.error(
         "Failed to redelegate tokens. Please check the console for details."
       );
-    }
+    },
+  });
+
+  const handleRedelegate = async (
+    validatorAddress: string,
+    destinationAddr: string,
+    amount: string
+  ) => {
+    redelegateMutation.mutate({ validatorAddress, destinationAddr, amount });
   };
 
-  const handleUndelegate = async (validatorAddress: string, amount: string) => {
-    if (!address || !walletClient) {
-      toast.error("Please connect your wallet first");
-      return;
-    }
+  const undelegateMutation = useMutation({
+    mutationFn: async ({
+      validatorAddress,
+      amount,
+    }: {
+      validatorAddress: string;
+      amount: string;
+    }) => {
+      if (!address || !walletClient) {
+        throw new Error("Please connect your wallet first");
+      }
 
-    try {
       const provider = new ethers.BrowserProvider(walletClient.transport);
       const signer = await provider.getSigner();
       const stakingContract = new Contract(
@@ -438,15 +409,22 @@ export function StakesTable({
         amountInWei
       );
       await tx.wait();
+    },
+    onSuccess: () => {
       toast.success("Undelegation successful!");
       setIsUndelegateModalOpen(false);
-      window.location.reload();
-    } catch (error: unknown) {
+      queryClient.invalidateQueries({ queryKey: ["delegations"] });
+    },
+    onError: (error) => {
       console.error("Undelegation error:", error);
       toast.error(
         "Failed to undelegate tokens. Please check the console for details."
       );
-    }
+    },
+  });
+
+  const handleUndelegate = async (validatorAddress: string, amount: string) => {
+    undelegateMutation.mutate({ validatorAddress, amount });
   };
 
   const hasActiveRedelegation = (

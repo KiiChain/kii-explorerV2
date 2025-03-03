@@ -7,11 +7,19 @@ interface Transaction {
   time: string;
 }
 
-export function TransactionsTable({
-  transactions = [],
-}: {
-  transactions?: Transaction[];
-}) {
+interface TransactionsTableProps {
+  transactions: Transaction[];
+  onLoadMore: () => void;
+  hasMore?: boolean;
+  isLoading?: boolean;
+}
+
+export const TransactionsTable = ({
+  transactions,
+  onLoadMore,
+  hasMore,
+  isLoading,
+}: TransactionsTableProps) => {
   const { theme } = useTheme();
 
   if (transactions.length === 0) {
@@ -77,6 +85,17 @@ export function TransactionsTable({
           </tbody>
         </table>
       </div>
+      {hasMore && (
+        <div className="text-center mt-4">
+          <button
+            onClick={onLoadMore}
+            disabled={isLoading}
+            className="px-4 py-2 rounded bg-blue-500 text-white disabled:opacity-50"
+          >
+            {isLoading ? "Loading..." : "Load More"}
+          </button>
+        </div>
+      )}
     </div>
   );
-}
+};

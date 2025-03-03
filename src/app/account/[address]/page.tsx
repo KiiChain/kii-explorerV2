@@ -12,19 +12,14 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 import { useBalance, useAccount, useWalletClient } from "wagmi";
 import { useValidators } from "../../../services/queries/validators";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/constants/endpoints";
 
 import { toast } from "react-toastify";
 import {
   useRedelegateMutation,
   useUndelegateMutation,
 } from "@/services/mutations/staking";
-
-interface Transaction {
-  height: string;
-  hash: string;
-  messages: string;
-  time: string;
-}
 
 interface TxResponse {
   height: string;
@@ -247,6 +242,32 @@ const UndelegateModal = ({
   );
 };
 
+const fetchTransactions = async ({
+  kiiAddress,
+  pageParam = 1,
+  limit = 10,
+}: {
+  kiiAddress: string;
+  pageParam?: number;
+  limit?: number;
+}) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.LCD}/cosmos/tx/v1beta1/txs?events=message.sender='${kiiAddress}'&pagination.page=${pageParam}&pagination.limit=${limit}`
+  );
+  const data = await response.json();
+
+  return {
+    txs:
+      data.tx_responses?.map((tx: TxResponse) => ({
+        height: tx.height,
+        hash: tx.txhash,
+        messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
+        time: new Date(tx.timestamp).toLocaleString(),
+      })) || [],
+    nextPage: data.pagination?.next_key ? pageParam + 1 : undefined,
+  };
+};
+
 export default function AddressPage() {
   const { address } = useParams();
   const validAddress =
@@ -256,7 +277,21 @@ export default function AddressPage() {
   const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const {
+    data: transactionsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["transactions", validAddress],
+    queryFn: ({ pageParam }) =>
+      validAddress
+        ? fetchTransactions({ kiiAddress: validAddress, pageParam })
+        : Promise.reject("No valid address"),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    enabled: !!validAddress,
+  });
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState([]);
   const { data: validators = {} } = useValidators();
@@ -304,7 +339,7 @@ export default function AddressPage() {
 
         if (address.startsWith("0x")) {
           const kiiAddressResponse = await fetch(
-            `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/kiichain/evm/kii_address?evm_address=${address}`
+            `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${address}`
           );
           const kiiAddressData = await kiiAddressResponse.json();
           if (kiiAddressData.associated) {
@@ -315,10 +350,10 @@ export default function AddressPage() {
         if (kiiAddress) {
           const [stakingResponse, rewardsResponse] = await Promise.all([
             fetch(
-              `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${kiiAddress}`
+              `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
             ),
             fetch(
-              `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
+              `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
             ),
           ]);
 
@@ -382,25 +417,6 @@ export default function AddressPage() {
             );
             setDelegations(formattedDelegations);
           }
-
-          const txResponse = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.sender='${kiiAddress}'`
-          );
-
-          if (txResponse.ok) {
-            const txData = await txResponse.json();
-            if (txData && Array.isArray(txData.tx_responses)) {
-              const formattedTxs = txData.tx_responses.map(
-                (tx: TxResponse) => ({
-                  height: tx.height,
-                  hash: tx.txhash,
-                  messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
-                  time: new Date(tx.timestamp).toLocaleString(),
-                })
-              );
-              setTransactions(formattedTxs);
-            }
-          }
         }
       }
 
@@ -409,6 +425,18 @@ export default function AddressPage() {
       console.error("Error fetching account data:", error);
     }
   };
+
+  const transactions =
+    (
+      transactionsData?.pages as {
+        txs: Array<{
+          height: string;
+          hash: string;
+          messages: string;
+          time: string;
+        }>;
+      }[]
+    )?.flatMap((page) => page.txs) || [];
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
@@ -453,7 +481,12 @@ export default function AddressPage() {
         isRedelegateModalOpen={isRedelegateModalOpen}
         isUndelegateModalOpen={isUndelegateModalOpen}
       />
-      <TransactionsTable transactions={transactions} />
+      <TransactionsTable
+        transactions={transactions}
+        onLoadMore={() => fetchNextPage()}
+        hasMore={hasNextPage}
+        isLoading={isFetchingNextPage}
+      />
       <AccountInfo account={typeof address === "string" ? address : ""} />
 
       <RedelegateModal
