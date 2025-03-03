@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { Contract, ethers } from "ethers";
-import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
+
 import { toast } from "react-toastify";
 import { useRedelegations } from "../../services/queries/redelegations";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCosmosAddress } from "@/services/queries/cosmosAddress";
 
 import { useValidatorQueries } from "@/services/queries/validators";
 import { useValidatorRewardsQueries } from "@/services/queries/validatorRewards";
+import {
+  useRedelegateMutation,
+  useUndelegateMutation,
+} from "@/services/mutations/staking";
 
 interface Theme {
   boxColor: string;
@@ -264,6 +266,8 @@ export function StakesTable({
   const { data: redelegations } = useRedelegations(cosmosAddress);
   const validatorQueries = useValidatorQueries(delegations);
   const rewardsQueries = useValidatorRewardsQueries(cosmosAddress, delegations);
+  const redelegateMutation = useRedelegateMutation();
+  const undelegateMutation = useUndelegateMutation();
 
   console.log("Cosmos Address:", cosmosAddress);
   console.log("Redelegations:", redelegations);
@@ -283,101 +287,34 @@ export function StakesTable({
     return "Unknown";
   };
 
-  const queryClient = useQueryClient();
-
-  const redelegateMutation = useMutation({
-    mutationFn: async ({
-      validatorAddress,
-      destinationAddr,
-      amount,
-    }: {
-      validatorAddress: string;
-      destinationAddr: string;
-      amount: string;
-    }) => {
-      if (!address || !walletClient) {
-        throw new Error("Please connect your wallet first");
-      }
-
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const stakingContract = new Contract(
-        "0x0000000000000000000000000000000000001005",
-        STAKING_PRECOMPILE_ABI,
-        signer
-      );
-
-      const amountInWei = ethers.parseUnits(amount, 6);
-      const tx = await stakingContract.redelegate(
-        validatorAddress,
-        destinationAddr,
-        amountInWei
-      );
-      await tx.wait();
-    },
-    onSuccess: () => {
-      toast.success("Redelegation successful!");
-      setIsRedelegateModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["delegations", "validator"] });
-    },
-    onError: (error) => {
-      console.error("Redelegation error:", error);
-      toast.error(
-        "Failed to redelegate tokens. Please check the console for details."
-      );
-    },
-  });
-
   const handleRedelegate = async (
     validatorAddress: string,
     destinationAddr: string,
     amount: string
   ) => {
-    redelegateMutation.mutate({ validatorAddress, destinationAddr, amount });
+    if (!walletClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+    redelegateMutation.mutate(
+      { validatorAddress, destinationAddr, amount, walletClient },
+      {
+        onSuccess: () => setIsRedelegateModalOpen(false),
+      }
+    );
   };
 
-  const undelegateMutation = useMutation({
-    mutationFn: async ({
-      validatorAddress,
-      amount,
-    }: {
-      validatorAddress: string;
-      amount: string;
-    }) => {
-      if (!address || !walletClient) {
-        throw new Error("Please connect your wallet first");
-      }
-
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const stakingContract = new Contract(
-        "0x0000000000000000000000000000000000001005",
-        STAKING_PRECOMPILE_ABI,
-        signer
-      );
-
-      const amountInWei = ethers.parseUnits(amount, 6);
-      const tx = await stakingContract.undelegate(
-        validatorAddress,
-        amountInWei
-      );
-      await tx.wait();
-    },
-    onSuccess: () => {
-      toast.success("Undelegation successful!");
-      setIsUndelegateModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["delegations"] });
-    },
-    onError: (error) => {
-      console.error("Undelegation error:", error);
-      toast.error(
-        "Failed to undelegate tokens. Please check the console for details."
-      );
-    },
-  });
-
   const handleUndelegate = async (validatorAddress: string, amount: string) => {
-    undelegateMutation.mutate({ validatorAddress, amount });
+    if (!walletClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+    undelegateMutation.mutate(
+      { validatorAddress, amount, walletClient },
+      {
+        onSuccess: () => setIsUndelegateModalOpen(false),
+      }
+    );
   };
 
   const hasActiveRedelegation = (

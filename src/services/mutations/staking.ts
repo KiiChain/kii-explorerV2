@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ethers, Contract } from "ethers";
 import {
   STAKING_PRECOMPILE_ABI,
@@ -14,9 +14,11 @@ interface StakingMutationParams {
   amount: string;
 }
 
-interface RedelegateMutationParams extends StakingMutationParams {
+interface RedelegateMutationParams {
   validatorAddress: string;
-  destinationValidator: string;
+  destinationAddr: string;
+  amount: string;
+  walletClient: WalletClient;
 }
 
 interface UndelegateMutationParams extends StakingMutationParams {
@@ -73,12 +75,14 @@ const evmToCosmosAddress = (evmAddress: string): string => {
 };
 
 export const useRedelegateMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
-      walletClient,
-      amount,
       validatorAddress,
-      destinationValidator,
+      destinationAddr,
+      amount,
+      walletClient,
     }: RedelegateMutationParams) => {
       try {
         if (!walletClient?.account) {
@@ -99,7 +103,7 @@ export const useRedelegateMutation = () => {
           redelegationsData.redelegation_responses?.some(
             (r: RedelegationResponse) => {
               return (
-                r.redelegation.validator_dst_address === destinationValidator &&
+                r.redelegation.validator_dst_address === destinationAddr &&
                 r.entries.some((entry: RedelegationEntry) => {
                   const completionTime = new Date(
                     entry.redelegation_entry.completion_time
@@ -119,14 +123,14 @@ export const useRedelegateMutation = () => {
 
         console.log("Redelegation Details:", {
           sourceValidator: validatorAddress,
-          destinationValidator,
+          destinationValidator: destinationAddr,
           amount,
           amountInWei: amountInWei.toString(),
         });
 
         const tx = await stakingContract.redelegate(
           validatorAddress,
-          destinationValidator,
+          destinationAddr,
           amountInWei
         );
 
@@ -180,6 +184,7 @@ export const useRedelegateMutation = () => {
     },
     onSuccess: () => {
       toast.success("Redelegation successful!");
+      queryClient.invalidateQueries({ queryKey: ["delegations", "validator"] });
     },
   });
 };

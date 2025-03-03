@@ -91,7 +91,7 @@ const RedelegateModal = ({
         walletClient,
         amount,
         validatorAddress,
-        destinationValidator,
+        destinationAddr: destinationValidator,
       },
       {
         onSuccess: () => {
