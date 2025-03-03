@@ -30,6 +30,11 @@ interface DelegationResponse {
   };
 }
 
+interface ValidatorReward {
+  denom: string;
+  amount: string;
+}
+
 interface StakeProps {
   delegations: DelegationResponse[];
   validators: Record<string, string>;
@@ -469,6 +474,46 @@ export function StakesTable({
     };
   };
 
+  const fetchValidatorRewards = async (
+    delegatorAddress: string,
+    validatorAddress: string
+  ) => {
+    try {
+      const response = await fetch(
+        `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards/${validatorAddress}`
+      );
+      const data = await response.json();
+      return data.rewards || [];
+    } catch (error) {
+      console.error("Error fetching validator rewards:", error);
+      return [];
+    }
+  };
+
+  const formatAmount = (amount: string, decimals: number = 6) => {
+    const value = parseInt(amount);
+    if (isNaN(value)) return "0";
+    return (value / Math.pow(10, decimals)).toFixed(2);
+  };
+
+  const [rewardsMap, setRewardsMap] = useState<
+    Record<string, ValidatorReward[]>
+  >({});
+
+  useEffect(() => {
+    delegations.forEach((delegation) => {
+      const validatorAddress = delegation.delegation?.validator_address;
+      if (cosmosAddress && validatorAddress) {
+        fetchValidatorRewards(cosmosAddress, validatorAddress).then((rewards) =>
+          setRewardsMap((prev) => ({
+            ...prev,
+            [validatorAddress]: rewards,
+          }))
+        );
+      }
+    });
+  }, [cosmosAddress, delegations]);
+
   if (!delegations || delegations.length === 0) {
     return (
       <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
@@ -534,6 +579,12 @@ export function StakesTable({
                 validatorAddress || ""
               );
 
+              const validatorRewards = rewardsMap[validatorAddress] || [];
+              const formattedRewards = validatorRewards
+                .filter((reward) => reward.denom === "ukii")
+                .map((reward) => formatAmount(reward.amount))
+                .join(" ");
+
               console.log(
                 "Checking redelegation for:",
                 validatorAddress,
@@ -568,7 +619,18 @@ export function StakesTable({
                   <td
                     className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
                   >
-                    {`${delegation.balance.amount} ${delegation.balance.denom}`}
+                    <div>
+                      <div className={`text-[${theme.primaryTextColor}]`}>
+                        {delegation.balance.amount} {delegation.balance.denom}
+                      </div>
+                      {formattedRewards && (
+                        <div
+                          className={`text-xs text-[${theme.secondaryTextColor}]`}
+                        >
+                          Claimable: {formattedRewards} KII
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="p-4">
                     <button

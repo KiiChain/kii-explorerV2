@@ -12,7 +12,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 import { useBalance, useAccount, useWalletClient } from "wagmi";
 import { useValidators } from "../../../services/queries/validators";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 
 import { toast } from "react-toastify";
@@ -268,6 +268,34 @@ const fetchTransactions = async ({
   };
 };
 
+const fetchKiiAddress = async (evmAddress: string) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${evmAddress}`
+  );
+  return response.json();
+};
+
+const fetchDelegations = async (kiiAddress: string) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
+  );
+  return response.json();
+};
+
+const fetchRewards = async (kiiAddress: string) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
+  );
+  return response.json();
+};
+
+const fetchWithdrawals = async (kiiAddress: string) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/withdraw_address`
+  );
+  return response.json();
+};
+
 export default function AddressPage() {
   const { address } = useParams();
   const validAddress =
@@ -298,12 +326,45 @@ export default function AddressPage() {
   const [selectedValidator, setSelectedValidator] = useState("");
   const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
   const [isUndelegateModalOpen, setIsUndelegateModalOpen] = useState(false);
+  const [percentages, setPercentages] = useState({
+    balancePercentage: "0",
+    stakingPercentage: "0",
+    rewardsPercentage: "0",
+    withdrawalsPercentage: "0",
+  });
 
   const formatAmount = (amount: string, decimals: number = 6) => {
     const value = parseInt(amount);
     if (isNaN(value)) return "0";
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
+
+  const { data: kiiAddressData } = useQuery({
+    queryKey: ["kiiAddress", address],
+    queryFn: () => fetchKiiAddress(address as string),
+    enabled:
+      !!address && typeof address === "string" && address.startsWith("0x"),
+  });
+
+  const kiiAddress = kiiAddressData?.kii_address || address;
+
+  const { data: delegationsData } = useQuery({
+    queryKey: ["delegations", kiiAddress],
+    queryFn: () => fetchDelegations(kiiAddress),
+    enabled: !!kiiAddress,
+  });
+
+  const { data: rewardsData } = useQuery({
+    queryKey: ["rewards", kiiAddress],
+    queryFn: () => fetchRewards(kiiAddress),
+    enabled: !!kiiAddress,
+  });
+
+  const { data: withdrawalsData } = useQuery({
+    queryKey: ["withdrawals", kiiAddress],
+    queryFn: () => fetchWithdrawals(kiiAddress),
+    enabled: !!kiiAddress,
+  });
 
   useEffect(() => {
     if (!address) {
@@ -321,6 +382,12 @@ export default function AddressPage() {
 
     fetchData();
   }, [address, router, balance]);
+
+  useEffect(() => {
+    if (delegationsData && rewardsData && withdrawalsData) {
+      // Lógica para actualizar session y percentages
+    }
+  }, [delegationsData, rewardsData, withdrawalsData]);
 
   const fetchAccountData = async () => {
     let kiiAddress = "";
@@ -348,17 +415,22 @@ export default function AddressPage() {
         }
 
         if (kiiAddress) {
-          const [stakingResponse, rewardsResponse] = await Promise.all([
-            fetch(
-              `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
-            ),
-            fetch(
-              `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
-            ),
-          ]);
+          const [stakingResponse, rewardsResponse, withdrawResponse] =
+            await Promise.all([
+              fetch(
+                `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
+              ),
+              fetch(
+                `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
+              ),
+              fetch(
+                `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/withdraw_address`
+              ),
+            ]);
 
           const stakingData = await stakingResponse.json();
           const rewardsData = await rewardsResponse.json();
+          const withdrawData = await withdrawResponse.json();
 
           let totalStaking = 0;
           if (stakingData.delegation_responses) {
@@ -385,6 +457,26 @@ export default function AddressPage() {
           );
 
           const totalBalance = normalBalance + stakingBalance;
+
+          const rewardsPercentage = (
+            (totalRewards / Math.pow(10, 6) / totalBalance) *
+            100
+          ).toFixed(2);
+          const stakingPercentage = (
+            (stakingBalance / totalBalance) *
+            100
+          ).toFixed(2);
+          const balancePercentage = (
+            (normalBalance / totalBalance) *
+            100
+          ).toFixed(2);
+
+          setPercentages({
+            balancePercentage,
+            stakingPercentage,
+            rewardsPercentage,
+            withdrawalsPercentage: "0",
+          });
 
           walletData.balance = totalBalance.toFixed(4);
           walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
@@ -417,6 +509,53 @@ export default function AddressPage() {
             );
             setDelegations(formattedDelegations);
           }
+
+          if (withdrawData.withdraw_address) {
+            const withdrawHistoryResponse = await fetch(
+              `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards/${withdrawData.withdraw_address}`
+            );
+            const withdrawHistory = await withdrawHistoryResponse.json();
+
+            let totalWithdrawn = 0;
+            if (withdrawHistory.rewards) {
+              const ukiiWithdraws = withdrawHistory.rewards.find(
+                (reward: { denom: string }) => reward.denom === "ukii"
+              );
+              if (ukiiWithdraws) {
+                totalWithdrawn = parseInt(ukiiWithdraws.amount);
+              }
+            }
+
+            walletData.withdrawals = `${formatAmount(
+              totalWithdrawn.toString()
+            )} KII`;
+
+            const withdrawBalance = parseFloat(
+              formatAmount(totalWithdrawn.toString())
+            );
+            const totalWithWithdraws = totalBalance + withdrawBalance;
+
+            const withdrawalsPercentage = (
+              (withdrawBalance / totalWithWithdraws) *
+              100
+            ).toFixed(2);
+
+            setPercentages({
+              balancePercentage: (
+                (normalBalance / totalWithWithdraws) *
+                100
+              ).toFixed(2),
+              stakingPercentage: (
+                (stakingBalance / totalWithWithdraws) *
+                100
+              ).toFixed(2),
+              rewardsPercentage: (
+                (totalRewards / Math.pow(10, 6) / totalWithWithdraws) *
+                100
+              ).toFixed(2),
+              withdrawalsPercentage: withdrawalsPercentage,
+            });
+          }
         }
       }
 
@@ -447,25 +586,25 @@ export default function AddressPage() {
             name: "Balance",
             amount: session?.balance || "0.0000",
             value: `$${session?.balance || "0.0000"}`,
-            percentage: "99.86%",
+            percentage: `${percentages.balancePercentage}%`,
           },
           {
             name: "Stake",
             amount: session?.staking || "0.0000 KII",
             value: `$${session?.staking?.replace(" KII", "") || "0.0000"}`,
-            percentage: "0%",
+            percentage: `${percentages.stakingPercentage}%`,
           },
           {
             name: "Reward",
             amount: session?.reward || "0.0000 KII",
             value: `$${session?.reward?.replace(" KII", "") || "0.0000"}`,
-            percentage: "0.13%",
+            percentage: `${percentages.rewardsPercentage}%`,
           },
           {
             name: "Withdrawals",
             amount: session?.withdrawals || "0.0000 KII",
             value: `$${session?.withdrawals?.replace(" KII", "") || "0.0000"}`,
-            percentage: "0.01%",
+            percentage: `${percentages.withdrawalsPercentage}%`,
           },
         ]}
       />
