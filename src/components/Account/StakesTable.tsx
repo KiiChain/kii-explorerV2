@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { Contract, ethers } from "ethers";
 import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
 import { toast } from "react-toastify";
 import { useRedelegations } from "../../services/queries/redelegations";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQueries } from "@tanstack/react-query";
 import { useCosmosAddress } from "@/services/queries/cosmosAddress";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 
@@ -67,11 +67,6 @@ interface UndelegateModalProps {
   selectedValidator: string;
   onUndelegate: (validatorAddress: string, amount: string) => Promise<void>;
   validators: Record<string, string>;
-}
-
-interface ValidatorDetails {
-  moniker: string;
-  operator_address: string;
 }
 
 interface RedelegationEntry {
@@ -250,6 +245,20 @@ const UndelegateModal = ({
   );
 };
 
+const fetchValidatorDetails = async (operatorAddress: string) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${operatorAddress}`
+  );
+  const data = await response.json();
+  if (!data.validator) {
+    throw new Error("Validator not found");
+  }
+  return {
+    moniker: data.validator.description.moniker,
+    operator_address: data.validator.operator_address,
+  };
+};
+
 export function StakesTable({
   delegations,
   validators = {},
@@ -270,54 +279,29 @@ export function StakesTable({
   console.log("Cosmos Address:", cosmosAddress);
   console.log("Redelegations:", redelegations);
 
-  const [validatorDetails, setValidatorDetails] = useState<
-    Record<string, ValidatorDetails>
-  >({});
-
-  useEffect(() => {
-    const fetchValidatorDetails = async (operatorAddress: string) => {
-      try {
-        const response = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${operatorAddress}`
-        );
-        const data = await response.json();
-
-        if (data.validator) {
-          setValidatorDetails((prev) => ({
-            ...prev,
-            [operatorAddress]: {
-              moniker: data.validator.description.moniker,
-              operator_address: data.validator.operator_address,
-            },
-          }));
-        }
-      } catch (error) {
-        console.error(
-          `Error fetching validator details for ${operatorAddress}:`,
-          error
-        );
-      }
-    };
-
-    if (delegations) {
-      delegations.forEach((delegation) => {
-        const operatorAddress = delegation.delegation?.validator_address;
-        if (operatorAddress && !validatorDetails[operatorAddress]) {
-          fetchValidatorDetails(operatorAddress);
-        }
-      });
-    }
-  }, [delegations]);
+  const validatorQueries = useQueries({
+    queries: delegations.map((delegation) => ({
+      queryKey: ["validator", delegation.delegation?.validator_address],
+      queryFn: () =>
+        fetchValidatorDetails(delegation.delegation?.validator_address),
+      enabled: !!delegation.delegation?.validator_address,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
 
   const getValidatorMoniker = (operatorAddress: string): string => {
     if (!operatorAddress) return "Unknown";
 
-    const details = validatorDetails[operatorAddress];
-    if (details) {
-      return details.moniker;
-    }
+    const queryIndex = delegations.findIndex(
+      (d) => d.delegation?.validator_address === operatorAddress
+    );
+    const query = validatorQueries[queryIndex];
 
-    return "Loading...";
+    if (query?.isLoading) return "Loading...";
+    if (query?.isError) return "Error loading validator";
+    if (query?.data) return query.data.moniker;
+
+    return "Unknown";
   };
 
   const queryClient = useQueryClient();
@@ -345,14 +329,6 @@ export function StakesTable({
       );
 
       const amountInWei = ethers.parseUnits(amount, 6);
-
-      console.log("Redelegation Details:", {
-        sourceValidator: validatorAddress,
-        destinationValidator: destinationAddr,
-        amount: amount,
-        amountInWei: amountInWei.toString(),
-      });
-
       const tx = await stakingContract.redelegate(
         validatorAddress,
         destinationAddr,
@@ -363,7 +339,7 @@ export function StakesTable({
     onSuccess: () => {
       toast.success("Redelegation successful!");
       setIsRedelegateModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["delegations"] }); // Adjust query key as needed
+      queryClient.invalidateQueries({ queryKey: ["delegations", "validator"] });
     },
     onError: (error) => {
       console.error("Redelegation error:", error);
@@ -402,13 +378,6 @@ export function StakesTable({
       );
 
       const amountInWei = ethers.parseUnits(amount, 6);
-
-      console.log("Undelegation Details:", {
-        validator: validatorAddress,
-        amount: amount,
-        amountInWei: amountInWei.toString(),
-      });
-
       const tx = await stakingContract.undelegate(
         validatorAddress,
         amountInWei
@@ -478,16 +447,39 @@ export function StakesTable({
     delegatorAddress: string,
     validatorAddress: string
   ) => {
-    try {
-      const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards/${validatorAddress}`
-      );
-      const data = await response.json();
-      return data.rewards || [];
-    } catch (error) {
-      console.error("Error fetching validator rewards:", error);
-      return [];
+    const response = await fetch(
+      `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards/${validatorAddress}`
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error("Failed to fetch rewards");
     }
+    return data.rewards || [];
+  };
+
+  const rewardsQueries = useQueries({
+    queries: delegations.map((delegation) => ({
+      queryKey: [
+        "validator-rewards",
+        cosmosAddress,
+        delegation.delegation?.validator_address,
+      ],
+      queryFn: () =>
+        fetchValidatorRewards(
+          cosmosAddress!,
+          delegation.delegation?.validator_address
+        ),
+      enabled: !!cosmosAddress && !!delegation.delegation?.validator_address,
+      refetchInterval: 30000,
+    })),
+  });
+
+  const getValidatorRewards = (validatorAddress: string): ValidatorReward[] => {
+    const queryIndex = delegations.findIndex(
+      (d) => d.delegation?.validator_address === validatorAddress
+    );
+    const query = rewardsQueries[queryIndex];
+    return query?.data || [];
   };
 
   const formatAmount = (amount: string, decimals: number = 6) => {
@@ -495,24 +487,6 @@ export function StakesTable({
     if (isNaN(value)) return "0";
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
-
-  const [rewardsMap, setRewardsMap] = useState<
-    Record<string, ValidatorReward[]>
-  >({});
-
-  useEffect(() => {
-    delegations.forEach((delegation) => {
-      const validatorAddress = delegation.delegation?.validator_address;
-      if (cosmosAddress && validatorAddress) {
-        fetchValidatorRewards(cosmosAddress, validatorAddress).then((rewards) =>
-          setRewardsMap((prev) => ({
-            ...prev,
-            [validatorAddress]: rewards,
-          }))
-        );
-      }
-    });
-  }, [cosmosAddress, delegations]);
 
   if (!delegations || delegations.length === 0) {
     return (
@@ -579,7 +553,7 @@ export function StakesTable({
                 validatorAddress || ""
               );
 
-              const validatorRewards = rewardsMap[validatorAddress] || [];
+              const validatorRewards = getValidatorRewards(validatorAddress);
               const formattedRewards = validatorRewards
                 .filter((reward) => reward.denom === "ukii")
                 .map((reward) => formatAmount(reward.amount))

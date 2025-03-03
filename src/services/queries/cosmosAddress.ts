@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/constants/endpoints";
 
 const fetchCosmosAddress = async (evmAddress: string) => {
   const response = await fetch(
-    `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/kiichain/evm/kii_address?evm_address=${evmAddress}`
+    `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${evmAddress}`
   );
   const data = await response.json();
   return data.kii_address;

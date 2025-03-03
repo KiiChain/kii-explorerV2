@@ -50,6 +50,17 @@ interface RedelegateModalProps {
   validators: Record<string, string>;
 }
 
+interface DelegationResponse {
+  delegation: {
+    validator_address: string;
+    shares: string;
+  };
+  balance: {
+    amount: string;
+    denom: string;
+  };
+}
+
 const RedelegateModal = ({
   isOpen,
   onClose,
@@ -296,6 +307,16 @@ const fetchWithdrawals = async (kiiAddress: string) => {
   return response.json();
 };
 
+const fetchWithdrawHistory = async (
+  kiiAddress: string,
+  withdrawAddress: string
+) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards/${withdrawAddress}`
+  );
+  return response.json();
+};
+
 export default function AddressPage() {
   const { address } = useParams();
   const validAddress =
@@ -366,33 +387,29 @@ export default function AddressPage() {
     enabled: !!kiiAddress,
   });
 
+  const { data: withdrawHistoryData } = useQuery({
+    queryKey: [
+      "withdrawHistory",
+      kiiAddress,
+      withdrawalsData?.withdraw_address,
+    ],
+    queryFn: () =>
+      fetchWithdrawHistory(kiiAddress, withdrawalsData?.withdraw_address),
+    enabled: !!kiiAddress && !!withdrawalsData?.withdraw_address,
+  });
+
   useEffect(() => {
     if (!address) {
       router.push("/");
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        await fetchAccountData();
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
-  }, [address, router, balance]);
-
-  useEffect(() => {
-    if (delegationsData && rewardsData && withdrawalsData) {
-      // Lógica para actualizar session y percentages
-    }
-  }, [delegationsData, rewardsData, withdrawalsData]);
-
-  const fetchAccountData = async () => {
-    let kiiAddress = "";
-
-    try {
+    if (
+      delegationsData &&
+      rewardsData &&
+      withdrawalsData &&
+      withdrawHistoryData
+    ) {
       const walletData: WalletSession = {
         balance: balance?.formatted || "0",
         staking: "0 KII",
@@ -401,169 +418,96 @@ export default function AddressPage() {
         stakes: [],
       };
 
-      if (typeof address === "string") {
-        kiiAddress = address;
+      let totalStaking = 0;
+      if (delegationsData.delegation_responses) {
+        totalStaking = delegationsData.delegation_responses.reduce(
+          (sum: number, del: { balance: { amount: string } }) =>
+            sum + parseInt(del.balance.amount),
+          0
+        );
+      }
 
-        if (address.startsWith("0x")) {
-          const kiiAddressResponse = await fetch(
-            `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${address}`
-          );
-          const kiiAddressData = await kiiAddressResponse.json();
-          if (kiiAddressData.associated) {
-            kiiAddress = kiiAddressData.kii_address;
-          }
-        }
-
-        if (kiiAddress) {
-          const [stakingResponse, rewardsResponse, withdrawResponse] =
-            await Promise.all([
-              fetch(
-                `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
-              ),
-              fetch(
-                `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
-              ),
-              fetch(
-                `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/withdraw_address`
-              ),
-            ]);
-
-          const stakingData = await stakingResponse.json();
-          const rewardsData = await rewardsResponse.json();
-          const withdrawData = await withdrawResponse.json();
-
-          let totalStaking = 0;
-          if (stakingData.delegation_responses) {
-            totalStaking = stakingData.delegation_responses.reduce(
-              (sum: number, del: { balance: { amount: string } }) =>
-                sum + parseInt(del.balance.amount),
-              0
-            );
-          }
-
-          let totalRewards = 0;
-          if (rewardsData.total) {
-            const ukiiRewards = rewardsData.total.find(
-              (reward: { denom: string }) => reward.denom === "ukii"
-            );
-            if (ukiiRewards) {
-              totalRewards = parseInt(ukiiRewards.amount);
-            }
-          }
-
-          const normalBalance = parseFloat(balance?.formatted || "0");
-          const stakingBalance = parseFloat(
-            formatAmount(totalStaking.toString())
-          );
-
-          const totalBalance = normalBalance + stakingBalance;
-
-          const rewardsPercentage = (
-            (totalRewards / Math.pow(10, 6) / totalBalance) *
-            100
-          ).toFixed(2);
-          const stakingPercentage = (
-            (stakingBalance / totalBalance) *
-            100
-          ).toFixed(2);
-          const balancePercentage = (
-            (normalBalance / totalBalance) *
-            100
-          ).toFixed(2);
-
-          setPercentages({
-            balancePercentage,
-            stakingPercentage,
-            rewardsPercentage,
-            withdrawalsPercentage: "0",
-          });
-
-          walletData.balance = totalBalance.toFixed(4);
-          walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
-          walletData.reward = `${formatAmount(totalRewards.toString())} KII`;
-
-          if (stakingData.delegation_responses) {
-            const formattedDelegations = stakingData.delegation_responses.map(
-              (del: {
-                delegation: {
-                  validator_address: string;
-                  delegator_address: string;
-                  shares: string;
-                };
-                balance: {
-                  amount: string;
-                  denom: string;
-                };
-              }) => ({
-                delegation: {
-                  ...del.delegation,
-                  shares: formatAmount(del.delegation.shares),
-                  moniker:
-                    validators[del.delegation.validator_address] || "Unknown",
-                },
-                balance: {
-                  ...del.balance,
-                  amount: formatAmount(del.balance.amount),
-                },
-              })
-            );
-            setDelegations(formattedDelegations);
-          }
-
-          if (withdrawData.withdraw_address) {
-            const withdrawHistoryResponse = await fetch(
-              `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards/${withdrawData.withdraw_address}`
-            );
-            const withdrawHistory = await withdrawHistoryResponse.json();
-
-            let totalWithdrawn = 0;
-            if (withdrawHistory.rewards) {
-              const ukiiWithdraws = withdrawHistory.rewards.find(
-                (reward: { denom: string }) => reward.denom === "ukii"
-              );
-              if (ukiiWithdraws) {
-                totalWithdrawn = parseInt(ukiiWithdraws.amount);
-              }
-            }
-
-            walletData.withdrawals = `${formatAmount(
-              totalWithdrawn.toString()
-            )} KII`;
-
-            const withdrawBalance = parseFloat(
-              formatAmount(totalWithdrawn.toString())
-            );
-            const totalWithWithdraws = totalBalance + withdrawBalance;
-
-            const withdrawalsPercentage = (
-              (withdrawBalance / totalWithWithdraws) *
-              100
-            ).toFixed(2);
-
-            setPercentages({
-              balancePercentage: (
-                (normalBalance / totalWithWithdraws) *
-                100
-              ).toFixed(2),
-              stakingPercentage: (
-                (stakingBalance / totalWithWithdraws) *
-                100
-              ).toFixed(2),
-              rewardsPercentage: (
-                (totalRewards / Math.pow(10, 6) / totalWithWithdraws) *
-                100
-              ).toFixed(2),
-              withdrawalsPercentage: withdrawalsPercentage,
-            });
-          }
+      let totalRewards = 0;
+      if (rewardsData.total) {
+        const ukiiRewards = rewardsData.total.find(
+          (reward: { denom: string }) => reward.denom === "ukii"
+        );
+        if (ukiiRewards) {
+          totalRewards = parseInt(ukiiRewards.amount);
         }
       }
 
+      const normalBalance = parseFloat(balance?.formatted || "0");
+      const stakingBalance = parseFloat(formatAmount(totalStaking.toString()));
+      const totalBalance = normalBalance + stakingBalance;
+
+      let totalWithdrawn = 0;
+      if (withdrawHistoryData?.rewards) {
+        const ukiiWithdraws = withdrawHistoryData.rewards.find(
+          (reward: { denom: string }) => reward.denom === "ukii"
+        );
+        if (ukiiWithdraws) {
+          totalWithdrawn = parseInt(ukiiWithdraws.amount);
+        }
+      }
+
+      const withdrawBalance = parseFloat(
+        formatAmount(totalWithdrawn.toString())
+      );
+      const totalWithWithdraws = totalBalance + withdrawBalance;
+
+      setPercentages({
+        balancePercentage: ((normalBalance / totalWithWithdraws) * 100).toFixed(
+          2
+        ),
+        stakingPercentage: (
+          (stakingBalance / totalWithWithdraws) *
+          100
+        ).toFixed(2),
+        rewardsPercentage: (
+          (totalRewards / Math.pow(10, 6) / totalWithWithdraws) *
+          100
+        ).toFixed(2),
+        withdrawalsPercentage: (
+          (withdrawBalance / totalWithWithdraws) *
+          100
+        ).toFixed(2),
+      });
+
+      walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
+      walletData.reward = `${formatAmount(totalRewards.toString())} KII`;
+      walletData.withdrawals = `${formatAmount(totalWithdrawn.toString())} KII`;
+
+      if (delegationsData.delegation_responses) {
+        const formattedDelegations = delegationsData.delegation_responses.map(
+          (del: DelegationResponse) => ({
+            delegation: {
+              ...del.delegation,
+              shares: formatAmount(del.delegation.shares),
+              moniker:
+                validators[del.delegation.validator_address] || "Unknown",
+            },
+            balance: {
+              ...del.balance,
+              amount: formatAmount(del.balance.amount),
+            },
+          })
+        );
+        setDelegations(formattedDelegations);
+      }
+
       setSession(walletData);
-    } catch (error) {
-      console.error("Error fetching account data:", error);
     }
-  };
+  }, [
+    address,
+    router,
+    balance,
+    delegationsData,
+    rewardsData,
+    withdrawalsData,
+    withdrawHistoryData,
+    validators,
+  ]);
 
   const transactions =
     (
