@@ -11,9 +11,9 @@ import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 import { useBalance, useAccount, useWalletClient } from "wagmi";
-import { useValidators } from "../../services/queries/validators";
+import { useValidators } from "../../../services/queries/validators";
 
-import { useWithdrawHistoryQuery } from "../../services/queries/withdrawals";
+import { useWithdrawHistoryQuery } from "../../../services/queries/withdrawals";
 import { useTransactionsQuery } from "@/services/queries/transactions";
 import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
 import { useDelegationsQuery } from "@/services/queries/delegations";
@@ -46,6 +46,19 @@ interface DelegationResponse {
   delegation: {
     validator_address: string;
     shares: string;
+  };
+  balance: {
+    amount: string;
+    denom: string;
+  };
+}
+
+interface FormattedDelegation {
+  delegation: {
+    delegator_address: string;
+    validator_address: string;
+    shares: string;
+    moniker?: string;
   };
   balance: {
     amount: string;
@@ -255,7 +268,7 @@ export default function AddressPage() {
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
   const { theme } = useTheme();
-  const [delegations, setDelegations] = useState([]);
+  const [delegations, setDelegations] = useState<FormattedDelegation[]>([]);
   const { data: validators = {} } = useValidators();
   const [selectedValidator, setSelectedValidator] = useState("");
   const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
@@ -374,6 +387,7 @@ export default function AddressPage() {
           (del: DelegationResponse) => ({
             delegation: {
               ...del.delegation,
+              delegator_address: kiiAddress,
               shares: formatAmount(del.delegation.shares),
               moniker:
                 validators[del.delegation.validator_address] || "Unknown",
@@ -398,6 +412,7 @@ export default function AddressPage() {
     withdrawalsData,
     withdrawHistoryData,
     validators,
+    kiiAddress,
   ]);
 
   const transactions =

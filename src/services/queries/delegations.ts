@@ -24,8 +24,7 @@ export const useDelegationsQuery = (kiiAddress?: string) => {
       const response = await fetch(
         `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
       );
-      const data = (await response.json()) as DelegationsResponse;
-      return data.delegation_responses || [];
+      return response.json() as Promise<DelegationsResponse>;
     },
     enabled: !!kiiAddress,
   });

@@ -879,42 +879,44 @@ export default function ValidatorPage({
               </thead>
               <tbody>
                 {/* Delegaciones activas */}
-                {delegations?.map((delegation: Delegation, index: number) => (
-                  <tr key={`delegation-${index}`}>
-                    <td
-                      className="text-sm py-2"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      Delegation
-                    </td>
-                    <td
-                      className="text-sm py-2"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      {formatAmount(delegation.balance?.amount || "0")} KII
-                    </td>
-                    <td
-                      className="text-sm py-2"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      <span
-                        className="px-2 py-1 rounded-full"
-                        style={{
-                          backgroundColor: theme.accentColor,
-                          color: theme.boxColor,
-                        }}
+                {delegations?.delegation_responses?.map(
+                  (delegation: Delegation, index: number) => (
+                    <tr key={`delegation-${index}`}>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
                       >
-                        Active
-                      </span>
-                    </td>
-                    <td
-                      className="text-sm py-2"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      -
-                    </td>
-                  </tr>
-                ))}
+                        Delegation
+                      </td>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        {formatAmount(delegation.balance?.amount || "0")} KII
+                      </td>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        <span
+                          className="px-2 py-1 rounded-full"
+                          style={{
+                            backgroundColor: theme.accentColor,
+                            color: theme.boxColor,
+                          }}
+                        >
+                          Active
+                        </span>
+                      </td>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        -
+                      </td>
+                    </tr>
+                  )
+                )}
 
                 {/* Unbonding delegations */}
                 {unbondingDelegations?.map(

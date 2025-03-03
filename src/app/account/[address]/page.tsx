@@ -53,6 +53,19 @@ interface DelegationResponse {
   };
 }
 
+interface FormattedDelegation {
+  delegation: {
+    delegator_address: string;
+    validator_address: string;
+    shares: string;
+    moniker?: string;
+  };
+  balance: {
+    amount: string;
+    denom: string;
+  };
+}
+
 const RedelegateModal = ({
   isOpen,
   onClose,
@@ -255,7 +268,7 @@ export default function AddressPage() {
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
   const { theme } = useTheme();
-  const [delegations, setDelegations] = useState([]);
+  const [delegations, setDelegations] = useState<FormattedDelegation[]>([]);
   const { data: validators = {} } = useValidators();
   const [selectedValidator, setSelectedValidator] = useState("");
   const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
@@ -374,6 +387,7 @@ export default function AddressPage() {
           (del: DelegationResponse) => ({
             delegation: {
               ...del.delegation,
+              delegator_address: kiiAddress,
               shares: formatAmount(del.delegation.shares),
               moniker:
                 validators[del.delegation.validator_address] || "Unknown",
@@ -398,6 +412,7 @@ export default function AddressPage() {
     withdrawalsData,
     withdrawHistoryData,
     validators,
+    kiiAddress,
   ]);
 
   const transactions =
