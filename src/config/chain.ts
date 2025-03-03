@@ -23,7 +23,7 @@ export const TESTNET_ORO_EVM = defineChain({
     },
   },
   blockExplorers: {
-    default: { name: "KiiExplorer", url: "https://app.kiichain.io" },
+    default: { name: "KiiExplorer", url: "https://explorer.kiichain.io/testnet" },
   },
   contracts: {},
 });
