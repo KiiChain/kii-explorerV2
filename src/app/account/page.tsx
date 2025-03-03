@@ -11,9 +11,9 @@ import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 import { useBalance, useAccount, useWalletClient } from "wagmi";
-import { useValidators } from "../../../services/queries/validators";
+import { useValidators } from "@/services/queries/validators";
 
-import { useWithdrawHistoryQuery } from "../../../services/queries/withdrawals";
+import { useWithdrawHistoryQuery } from "@/services/queries/withdrawals";
 import { useTransactionsQuery } from "@/services/queries/transactions";
 import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
 import { useDelegationsQuery } from "@/services/queries/delegations";
