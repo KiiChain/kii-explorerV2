@@ -520,7 +520,7 @@ export default function ValidatorPage({
                   className="text-sm underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
-                  https://app.kiichain.io
+                  https://explorer.kiichain.io/testnet
                 </p>
               </a>
 
