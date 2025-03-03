@@ -4,43 +4,46 @@ import { API_ENDPOINTS } from "@/constants/endpoints";
 interface RedelegationEntry {
   redelegation_entry: {
     completion_time: string;
-    initial_balance: string;
   };
-  balance: string;
 }
 
 interface RedelegationResponse {
   redelegation: {
-    delegator_address: string;
-    validator_src_address: string;
     validator_dst_address: string;
+    validator_src_address: string;
   };
   entries: RedelegationEntry[];
 }
 
-interface RedelegationsData {
+interface RedelegationsResponse {
   redelegation_responses: RedelegationResponse[];
 }
 
-const fetchRedelegations = async (
-  cosmosAddress: string
-): Promise<RedelegationsData> => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${cosmosAddress}/redelegations`
-  );
-  return response.json();
-};
-
-export const useRedelegations = (cosmosAddress?: string) => {
+export const useRedelegations = (delegatorAddress?: string) => {
   return useQuery({
-    queryKey: ["redelegations", cosmosAddress],
-    queryFn: () => fetchRedelegations(cosmosAddress!),
-    enabled: !!cosmosAddress,
+    queryKey: ["redelegations", delegatorAddress],
+    queryFn: async (): Promise<RedelegationsResponse> => {
+      if (!delegatorAddress) {
+        throw new Error("Delegator address is required");
+      }
+
+      const response = await fetch(
+        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${delegatorAddress}/redelegations`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch redelegations");
+      }
+
+      return response.json();
+    },
+    enabled: !!delegatorAddress,
+    refetchInterval: 30000,
   });
 };
 
 export const hasActiveRedelegation = (
-  redelegations: RedelegationsData | undefined,
+  redelegations: RedelegationsResponse | undefined,
   validatorAddress: string
 ): { hasRedelegation: boolean; completionTime?: string } => {
   if (!redelegations) {

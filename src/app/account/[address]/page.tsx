@@ -12,27 +12,19 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 import { useBalance, useAccount, useWalletClient } from "wagmi";
 import { useValidators } from "../../../services/queries/validators";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
+
+import { useWithdrawHistoryQuery } from "../../../services/queries/withdrawals";
+import { useTransactionsQuery } from "@/services/queries/transactions";
+import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
+import { useDelegationsQuery } from "@/services/queries/delegations";
+import { useRewardsQuery } from "@/services/queries/rewards";
+import { useWithdrawalsQuery } from "@/services/queries/withdrawals";
 
 import { toast } from "react-toastify";
 import {
   useRedelegateMutation,
   useUndelegateMutation,
 } from "@/services/mutations/staking";
-
-interface TxResponse {
-  height: string;
-  txhash: string;
-  timestamp: string;
-  tx: {
-    body: {
-      messages: Array<{
-        "@type": string;
-      }>;
-    };
-  };
-}
 
 interface Theme {
   bgColor: string;
@@ -253,70 +245,6 @@ const UndelegateModal = ({
   );
 };
 
-const fetchTransactions = async ({
-  kiiAddress,
-  pageParam = 1,
-  limit = 10,
-}: {
-  kiiAddress: string;
-  pageParam?: number;
-  limit?: number;
-}) => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/tx/v1beta1/txs?events=message.sender='${kiiAddress}'&pagination.page=${pageParam}&pagination.limit=${limit}`
-  );
-  const data = await response.json();
-
-  return {
-    txs:
-      data.tx_responses?.map((tx: TxResponse) => ({
-        height: tx.height,
-        hash: tx.txhash,
-        messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
-        time: new Date(tx.timestamp).toLocaleString(),
-      })) || [],
-    nextPage: data.pagination?.next_key ? pageParam + 1 : undefined,
-  };
-};
-
-const fetchKiiAddress = async (evmAddress: string) => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${evmAddress}`
-  );
-  return response.json();
-};
-
-const fetchDelegations = async (kiiAddress: string) => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
-  );
-  return response.json();
-};
-
-const fetchRewards = async (kiiAddress: string) => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
-  );
-  return response.json();
-};
-
-const fetchWithdrawals = async (kiiAddress: string) => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/withdraw_address`
-  );
-  return response.json();
-};
-
-const fetchWithdrawHistory = async (
-  kiiAddress: string,
-  withdrawAddress: string
-) => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards/${withdrawAddress}`
-  );
-  return response.json();
-};
-
 export default function AddressPage() {
   const { address } = useParams();
   const validAddress =
@@ -326,21 +254,6 @@ export default function AddressPage() {
   const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
-  const {
-    data: transactionsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["transactions", validAddress],
-    queryFn: ({ pageParam }) =>
-      validAddress
-        ? fetchTransactions({ kiiAddress: validAddress, pageParam })
-        : Promise.reject("No valid address"),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: !!validAddress,
-  });
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState([]);
   const { data: validators = {} } = useValidators();
@@ -360,43 +273,24 @@ export default function AddressPage() {
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
 
-  const { data: kiiAddressData } = useQuery({
-    queryKey: ["kiiAddress", address],
-    queryFn: () => fetchKiiAddress(address as string),
-    enabled:
-      !!address && typeof address === "string" && address.startsWith("0x"),
-  });
-
+  const { data: kiiAddressData } = useKiiAddressQuery(address as string);
   const kiiAddress = kiiAddressData?.kii_address || address;
 
-  const { data: delegationsData } = useQuery({
-    queryKey: ["delegations", kiiAddress],
-    queryFn: () => fetchDelegations(kiiAddress),
-    enabled: !!kiiAddress,
-  });
+  const {
+    data: transactionsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTransactionsQuery(kiiAddress);
 
-  const { data: rewardsData } = useQuery({
-    queryKey: ["rewards", kiiAddress],
-    queryFn: () => fetchRewards(kiiAddress),
-    enabled: !!kiiAddress,
-  });
+  const { data: delegationsData } = useDelegationsQuery(kiiAddress);
+  const { data: rewardsData } = useRewardsQuery(kiiAddress);
+  const { data: withdrawalsData } = useWithdrawalsQuery(kiiAddress);
 
-  const { data: withdrawalsData } = useQuery({
-    queryKey: ["withdrawals", kiiAddress],
-    queryFn: () => fetchWithdrawals(kiiAddress),
-    enabled: !!kiiAddress,
-  });
-
-  const { data: withdrawHistoryData } = useQuery({
-    queryKey: [
-      "withdrawHistory",
-      kiiAddress,
-      withdrawalsData?.withdraw_address,
-    ],
-    queryFn: () =>
-      fetchWithdrawHistory(kiiAddress, withdrawalsData?.withdraw_address),
-    enabled: !!kiiAddress && !!withdrawalsData?.withdraw_address,
-  });
+  const { data: withdrawHistoryData } = useWithdrawHistoryQuery(
+    kiiAddress,
+    withdrawalsData?.withdraw_address
+  );
 
   useEffect(() => {
     if (!address) {
@@ -460,16 +354,13 @@ export default function AddressPage() {
         balancePercentage: ((normalBalance / totalWithWithdraws) * 100).toFixed(
           2
         ),
-        stakingPercentage: (
-          (stakingBalance / totalWithWithdraws) *
-          100
-        ).toFixed(2),
+        stakingPercentage: ((stakingBalance / totalWithdrawn) * 100).toFixed(2),
         rewardsPercentage: (
-          (totalRewards / Math.pow(10, 6) / totalWithWithdraws) *
+          (totalRewards / Math.pow(10, 6) / totalWithdrawn) *
           100
         ).toFixed(2),
         withdrawalsPercentage: (
-          (withdrawBalance / totalWithWithdraws) *
+          (withdrawBalance / totalWithdrawn) *
           100
         ).toFixed(2),
       });

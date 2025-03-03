@@ -4,9 +4,11 @@ import { Contract, ethers } from "ethers";
 import { STAKING_PRECOMPILE_ABI } from "@/lib/abi/staking";
 import { toast } from "react-toastify";
 import { useRedelegations } from "../../services/queries/redelegations";
-import { useMutation, useQueryClient, useQueries } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCosmosAddress } from "@/services/queries/cosmosAddress";
-import { API_ENDPOINTS } from "@/constants/endpoints";
+
+import { useValidatorQueries } from "@/services/queries/validators";
+import { useValidatorRewardsQueries } from "@/services/queries/validatorRewards";
 
 interface Theme {
   boxColor: string;
@@ -245,20 +247,6 @@ const UndelegateModal = ({
   );
 };
 
-const fetchValidatorDetails = async (operatorAddress: string) => {
-  const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${operatorAddress}`
-  );
-  const data = await response.json();
-  if (!data.validator) {
-    throw new Error("Validator not found");
-  }
-  return {
-    moniker: data.validator.description.moniker,
-    operator_address: data.validator.operator_address,
-  };
-};
-
 export function StakesTable({
   delegations,
   validators = {},
@@ -273,21 +261,12 @@ export function StakesTable({
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { data: cosmosAddress } = useCosmosAddress(address);
-
   const { data: redelegations } = useRedelegations(cosmosAddress);
+  const validatorQueries = useValidatorQueries(delegations);
+  const rewardsQueries = useValidatorRewardsQueries(cosmosAddress, delegations);
 
   console.log("Cosmos Address:", cosmosAddress);
   console.log("Redelegations:", redelegations);
-
-  const validatorQueries = useQueries({
-    queries: delegations.map((delegation) => ({
-      queryKey: ["validator", delegation.delegation?.validator_address],
-      queryFn: () =>
-        fetchValidatorDetails(delegation.delegation?.validator_address),
-      enabled: !!delegation.delegation?.validator_address,
-      staleTime: 5 * 60 * 1000,
-    })),
-  });
 
   const getValidatorMoniker = (operatorAddress: string): string => {
     if (!operatorAddress) return "Unknown";
@@ -442,37 +421,6 @@ export function StakesTable({
       completionTime: "",
     };
   };
-
-  const fetchValidatorRewards = async (
-    delegatorAddress: string,
-    validatorAddress: string
-  ) => {
-    const response = await fetch(
-      `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards/${validatorAddress}`
-    );
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error("Failed to fetch rewards");
-    }
-    return data.rewards || [];
-  };
-
-  const rewardsQueries = useQueries({
-    queries: delegations.map((delegation) => ({
-      queryKey: [
-        "validator-rewards",
-        cosmosAddress,
-        delegation.delegation?.validator_address,
-      ],
-      queryFn: () =>
-        fetchValidatorRewards(
-          cosmosAddress!,
-          delegation.delegation?.validator_address
-        ),
-      enabled: !!cosmosAddress && !!delegation.delegation?.validator_address,
-      refetchInterval: 30000,
-    })),
-  });
 
   const getValidatorRewards = (validatorAddress: string): ValidatorReward[] => {
     const queryIndex = delegations.findIndex(

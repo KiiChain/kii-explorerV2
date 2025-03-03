@@ -3,13 +3,14 @@
 import React, { useState, use } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
-import { useQuery } from "@tanstack/react-query";
-
 import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { toast } from "react-hot-toast";
 
 import { useDelegateMutation } from "@/services/mutations/staking";
-import { API_ENDPOINTS } from "@/constants/endpoints";
+
+import { useValidatorQuery } from "@/services/queries/validator";
+import { useUnbondingDelegationsQuery } from "@/services/queries/unbondingDelegations";
+import { useDelegationsQuery } from "@/services/queries/delegations";
 
 interface SignDoc {
   chain_id: string;
@@ -382,50 +383,17 @@ export default function ValidatorPage({
   const { theme } = useTheme();
   const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
 
-  // Queries
-  const { data: validator } = useQuery({
-    queryKey: ["validator", validatorId],
-    queryFn: async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${validatorId}`
-      );
-      const data = await response.json();
-      return data.validator;
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: unbondingDelegations = [] } = useQuery({
-    queryKey: ["unbonding-delegations", validatorId],
-    queryFn: async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${validatorId}/unbonding_delegations`
-      );
-      const data = await response.json();
-
-      return data.unbonding_responses || [];
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: delegations } = useQuery({
-    queryKey: ["delegations", validatorId],
-    queryFn: async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${validatorId}/delegations`
-      );
-      const data = await response.json();
-      return data.delegation_responses || [];
-    },
-    refetchInterval: 30000,
-  });
+  const { data: validator } = useValidatorQuery(validatorId);
+  const { data: unbondingDelegations = [] } =
+    useUnbondingDelegationsQuery(validatorId);
+  const { data: delegations } = useDelegationsQuery(validatorId);
 
   const formattedValidator: ValidatorProps | null = validator
     ? {
         moniker: validator.description.moniker,
         operatorAddress: validator.operator_address,
         tokens: validator.tokens,
-        selfBonded: validator.self_delegation || "0",
+        selfBonded: validator.self_bonded || "0",
         commission: validator.commission.commission_rates.rate,
       }
     : null;
@@ -720,14 +688,16 @@ export default function ValidatorPage({
                       className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {formatAmount(validator.selfBonded)} KII
+                      {formatAmount(validator.self_bonded || "0")} KII
                     </div>
                     <div
                       className="text-xs"
                       style={{ color: theme.secondaryTextColor }}
                     >
                       {(
-                        (parseFloat(formatAmount(validator.selfBonded)) /
+                        (parseFloat(
+                          formatAmount(validator.self_bonded || "0")
+                        ) /
                           parseFloat(formatAmount(validator.tokens))) *
                         100
                       ).toFixed(4)}

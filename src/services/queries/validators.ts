@@ -1,32 +1,64 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 
-interface Validator {
+interface ValidatorDetails {
+  moniker: string;
+  operator_address: string;
+}
+
+interface ValidatorResponse {
   operator_address: string;
   description: {
     moniker: string;
   };
 }
 
-interface ValidatorsResponse {
-  validators: Validator[];
-}
-
-const fetchValidators = async (): Promise<Record<string, string>> => {
+const fetchValidatorDetails = async (
+  operatorAddress: string
+): Promise<ValidatorDetails> => {
   const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators`
+    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${operatorAddress}`
   );
-  const data: ValidatorsResponse = await response.json();
+  const data = await response.json();
+  if (!data.validator) {
+    throw new Error("Validator not found");
+  }
+  return {
+    moniker: data.validator.description.moniker,
+    operator_address: data.validator.operator_address,
+  };
+};
 
-  return data.validators.reduce((acc: Record<string, string>, validator) => {
-    acc[validator.operator_address] = validator.description.moniker;
-    return acc;
-  }, {});
+export const useValidatorQueries = (
+  delegations: { delegation?: { validator_address: string } }[]
+) => {
+  return useQueries({
+    queries: delegations.map((delegation) => ({
+      queryKey: ["validator", delegation.delegation?.validator_address],
+      queryFn: () => {
+        const address = delegation.delegation?.validator_address;
+        if (!address) throw new Error("Validator address is required");
+        return fetchValidatorDetails(address);
+      },
+      enabled: !!delegation.delegation?.validator_address,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    })),
+  });
 };
 
 export const useValidators = () => {
   return useQuery({
     queryKey: ["validators"],
-    queryFn: fetchValidators,
+    queryFn: async () => {
+      const response = await fetch(
+        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators`
+      );
+      const data = await response.json();
+      const validators: Record<string, string> = {};
+      data.validators.forEach((validator: ValidatorResponse) => {
+        validators[validator.operator_address] = validator.description.moniker;
+      });
+      return validators;
+    },
   });
 };
