@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { WalletIcon } from "@/components/ui/icons";
 import { useTheme } from "@/context/ThemeContext";
+import { CAPTCHA_KEY, FAUCET_BACKEND } from "@/constants/captcha";
 
 export function FaucetDashboard() {
   const [walletAddress, setWalletAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const { theme } = useTheme();
 
   const handleClaimTokens = async () => {
@@ -22,15 +25,23 @@ export function FaucetDashboard() {
     setSuccess("");
 
     try {
+      const captchaToken = recaptchaRef.current?.getValue()
+      recaptchaRef.current?.reset()
+
+      // Send request to backend with CAPTCHA token
       const response = await fetch(
-        `https://faucet.kiivalidator.com/api/faucet?address=${walletAddress}`,
+        `${FAUCET_BACKEND}/api/faucet`,
         {
-          method: "GET",
+          method: "POST",
           mode: "cors",
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            address: walletAddress,
+            captcha: captchaToken,
+          }),
         }
       );
 
@@ -39,8 +50,7 @@ export function FaucetDashboard() {
         throw new Error(errorData || `HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.text();
-      setSuccess(data);
+      setSuccess("Successfully claimed the faucet");
       setWalletAddress("");
     } catch (err: Error | unknown) {
       setError(
@@ -140,6 +150,14 @@ export function FaucetDashboard() {
               >
                 {isLoading ? "Claiming..." : "Claim your tokens"}
               </button>
+
+              {/* Invisible reCAPTCHA */}
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={CAPTCHA_KEY}
+                size="normal"
+                style={{display: "flex", justifyContent: "center", alignItems: "center"}}
+              />
             </div>
           </div>
         </div>
