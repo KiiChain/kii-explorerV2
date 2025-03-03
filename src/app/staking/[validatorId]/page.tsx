@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, use } from "react";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter } from "next/navigation";
-import { useAccount, useBalance } from "wagmi";
-import { useStaking } from "@/lib/hooks/useStaking";
+
+import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { toast } from "react-hot-toast";
-import { use } from "react";
+
+import { useDelegateMutation } from "@/services/mutations/staking";
+
+import { useValidatorQuery } from "@/services/queries/validator";
+import { useUnbondingDelegationsQuery } from "@/services/queries/unbondingDelegations";
+import { useDelegationsQuery } from "@/services/queries/delegations";
 
 interface SignDoc {
   chain_id: string;
@@ -98,10 +102,9 @@ declare global {
   }
 }
 
-interface Validator {
+interface ValidatorProps {
   moniker: string;
   operatorAddress: string;
-  website: string;
   tokens: string;
   selfBonded: string;
   commission: string;
@@ -118,46 +121,73 @@ interface Theme {
 interface DelegateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  validator: Validator;
+  validator: ValidatorProps;
   theme: Theme;
 }
 
-function DelegateModal({
+interface UnbondingDelegation {
+  delegator_address: string;
+  validator_address: string;
+  entries: Array<{
+    creation_height: string;
+    completion_time: string;
+    initial_balance: string;
+    balance: string;
+  }>;
+}
+
+interface Delegation {
+  balance: {
+    amount: string;
+    denom: string;
+  };
+}
+
+const formatNumber = (value: string | number) => {
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "0";
+
+  if (Number.isInteger(num)) {
+    return num.toString();
+  }
+
+  return num.toFixed(4);
+};
+
+const formatAmount = (amount: string, decimals: number = 6) => {
+  const value = parseInt(amount);
+  if (isNaN(value)) return "0";
+  const converted = value / Math.pow(10, decimals);
+  return formatNumber(converted);
+};
+
+const DelegateModal = ({
   isOpen,
   onClose,
   validator,
   theme,
-}: DelegateModalProps) {
+}: DelegateModalProps) => {
   const { address, isConnected } = useAccount();
   const { data: balance } = useBalance({
     address: address,
   });
+  const { data: walletClient } = useWalletClient();
+
   const [amount, setAmount] = useState("");
   const [fees, setFees] = useState("2000");
   const [gas, setGas] = useState("200000");
   const [memo, setMemo] = useState("ping.pub");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const availableBalance = balance?.formatted || "0";
+  const delegateMutation = useDelegateMutation();
 
-  const { stake, isLoading, isSuccess, error } = useStaking(
-    validator.operatorAddress,
-    amount
+  const availableBalance = formatAmount(balance?.value?.toString() || "0", 18);
+  const formattedCommission = (parseFloat(validator.commission) * 100).toFixed(
+    4
   );
 
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success("Stake created successfully!");
-      onClose();
-    }
-    if (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error("Failed to create stake: " + errorMessage);
-    }
-  }, [isSuccess, error, onClose]);
-
-  const handleSubmit = async () => {
-    if (!isConnected || !address) {
+  const handleStake = async () => {
+    if (!isConnected || !address || !walletClient) {
       toast.error("Please connect your wallet first");
       return;
     }
@@ -165,13 +195,19 @@ function DelegateModal({
       toast.error("Please enter an amount");
       return;
     }
+
     try {
-      await stake();
+      setIsLoading(true);
+      await delegateMutation.mutateAsync({
+        walletClient,
+        amount,
+        validatorAddress: validator.operatorAddress,
+      });
+      onClose();
     } catch (error) {
-      console.error("Error creating stake:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error("Failed to create stake: " + errorMessage);
+      console.error("Error delegating:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -228,13 +264,9 @@ function DelegateModal({
             <select
               className="w-full p-3 rounded-lg"
               style={{ backgroundColor: theme.bgColor }}
-              defaultValue={`${validator.moniker} (${(
-                parseFloat(validator.commission) * 100
-              ).toFixed(2)}%)`}
+              defaultValue={`${validator.moniker} (${formattedCommission}%)`}
             >
-              <option>{`${validator.moniker} (${(
-                parseFloat(validator.commission) * 100
-              ).toFixed(2)}%)`}</option>
+              <option>{`${validator.moniker} (${formattedCommission}%)`}</option>
             </select>
           </div>
 
@@ -249,7 +281,7 @@ function DelegateModal({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={`Available: ${availableBalance}`}
+              placeholder={`Available: ${availableBalance} KII`}
               className="w-full p-3 rounded-lg mt-2"
               style={{
                 backgroundColor: theme.bgColor,
@@ -267,7 +299,7 @@ function DelegateModal({
             </label>
             <input
               type="text"
-              value={fees}
+              value={formatAmount(fees)}
               onChange={(e) => setFees(e.target.value)}
               className="w-full p-3 rounded-lg"
               style={{ backgroundColor: theme.bgColor }}
@@ -316,7 +348,7 @@ function DelegateModal({
           <button
             className="w-full p-3 rounded-lg mt-6 text-white"
             style={{ backgroundColor: theme.accentColor }}
-            onClick={handleSubmit}
+            onClick={handleStake}
             disabled={isLoading}
           >
             {isLoading ? "Processing..." : "Stake"}
@@ -325,7 +357,7 @@ function DelegateModal({
       </div>
     </div>
   );
-}
+};
 
 const handleCopyClick = (text: string, label: string) => {
   if (window.confirm(`¿Deseas copiar ${label}?`)) {
@@ -347,59 +379,27 @@ export default function ValidatorPage({
   params: Promise<{ validatorId: string }>;
 }) {
   const { validatorId } = use(params);
-  const router = useRouter();
+
   const { theme } = useTheme();
-  const [validator, setValidator] = useState<Validator | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchValidator() {
-      try {
-        const response = await fetch(
-          `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators/${validatorId}`
-        );
+  const { data: validator } = useValidatorQuery(validatorId);
+  const { data: unbondingDelegations = [] } =
+    useUnbondingDelegationsQuery(validatorId);
+  const { data: delegations } = useDelegationsQuery(validatorId);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (!data?.validator) {
-          throw new Error("No validator data found");
-        }
-
-        if (data.validator.status !== "BOND_STATUS_BONDED") {
-          router.push("/staking");
-          return;
-        }
-
-        setValidator({
-          moniker: data.validator.description.moniker,
-          operatorAddress: data.validator.operator_address,
-          website: data.validator.description.website,
-          tokens: data.validator.tokens,
-          selfBonded: data.validator.delegator_shares,
-          commission: data.validator.commission.commission_rates.rate,
-        });
-      } catch (error) {
-        console.error("Error fetching validator:", error);
-        router.push("/staking");
-      } finally {
-        setLoading(false);
+  const formattedValidator: ValidatorProps | null = validator
+    ? {
+        moniker: validator.description.moniker,
+        operatorAddress: validator.operator_address,
+        tokens: validator.tokens,
+        selfBonded: validator.self_bonded || "0",
+        commission: validator.commission.commission_rates.rate,
       }
-    }
-
-    fetchValidator();
-  }, [validatorId, router]);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+    : null;
 
   if (!validator) {
-    return null;
+    return <div>Validator not found</div>;
   }
 
   return (
@@ -438,15 +438,15 @@ export default function ValidatorPage({
                   className="text-base font-bold mb-1 md:truncate"
                   style={{ color: theme.primaryTextColor }}
                 >
-                  {validator.moniker.length > 15
-                    ? `${validator.moniker.substring(0, 15)}...`
-                    : validator.moniker}
+                  {validator.description.moniker.length > 15
+                    ? `${validator.description.moniker.substring(0, 15)}...`
+                    : validator.description.moniker}
                 </h2>
                 <p
                   className="text-xs font-bold mb-1 break-all"
                   style={{ color: theme.secondaryTextColor }}
                 >
-                  {validator.operatorAddress}
+                  {validator.operator_address}
                 </p>
                 <div className="pt-4">
                   <button
@@ -462,9 +462,9 @@ export default function ValidatorPage({
                 </div>
               </div>
             </div>
-            {validator.website && (
+            {validator.description.website && (
               <a
-                href={validator.website}
+                href={validator.description.website}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm hover:underline"
@@ -542,7 +542,7 @@ export default function ValidatorPage({
                       fill="#D2AAFA"
                     />
                     <path
-                      d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479 8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439 7.9995 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
+                      d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479 8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
                       fill="#D2AAFA"
                     />
                   </svg>
@@ -649,7 +649,7 @@ export default function ValidatorPage({
                       className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {validator.tokens} KII
+                      {formatAmount(validator.tokens)} KII
                     </div>
                   </div>
                 </div>
@@ -688,13 +688,20 @@ export default function ValidatorPage({
                       className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {validator.selfBonded || "100,000 KII"} (
+                      {formatAmount(validator.self_bonded || "0")} KII
+                    </div>
+                    <div
+                      className="text-xs"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
                       {(
-                        (parseFloat(validator.selfBonded || "100000") /
-                          parseFloat(validator.tokens.replace(/,/g, ""))) *
+                        (parseFloat(
+                          formatAmount(validator.self_bonded || "0")
+                        ) /
+                          parseFloat(formatAmount(validator.tokens))) *
                         100
-                      ).toFixed(1)}
-                      %)
+                      ).toFixed(4)}
+                      %
                     </div>
                   </div>
                 </div>
@@ -714,7 +721,7 @@ export default function ValidatorPage({
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 11.3333V11.7167C13.3354 12.3127 13.1221 12.8893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
+                        d="M11.8368 9.83334C12.2344 9.83369 12.6156 9.99188 12.8966 10.2731C13.1776 10.5544 13.3354 10.9357 13.3354 10.8333V11.2167C13.3354 11.8127 13.1221 12.3893 12.7354 12.842C11.6888 14.064 10.0974 14.6673 8.0001 14.6673C5.90277 14.6673 4.3121 14.064 3.2681 12.8407C2.88184 12.3882 2.66957 11.8129 2.66943 11.218V10.8327C2.66961 10.4351 2.82763 10.0538 3.10877 9.77268C3.38991 9.49154 3.77117 9.33351 4.16877 9.33334H11.8368ZM11.8368 10.3333H4.1681C4.03549 10.3333 3.90832 10.386 3.81455 10.4798C3.72078 11.0736 3.6681 11.2007 3.6681 11.3333V11.718C3.6681 12.0747 3.7961 12.42 4.0281 12.6913C4.86343 13.6707 6.17477 14.1673 7.99943 14.1673C9.82543 14.1673 11.1368 13.6707 11.9748 12.692C12.2072 12.4202 12.3349 12.0743 12.3348 11.7167V10.8327C12.3346 10.7004 12.282 10.5736 12.1886 10.48C12.0951 10.3864 11.969 10.3337 11.8368 10.3333ZM8.0001 1.83667C8.43784 1.83667 8.87129 1.92289 9.27571 2.0904C9.68013 2.25792 10.0476 2.50345 10.3571 2.81298C10.6667 3.12251 10.9122 3.48997 11.0797 3.89439C11.2472 4.29881 11.3334 4.73226 11.3334 5.17C11.3334 5.60774 11.2472 6.0412 11.0797 6.44561C10.9122 6.85003 10.6667 7.2175 10.3571 7.52703C10.0476 7.83655 9.68013 8.08209 9.27571 8.2496C8.87129 8.41712 8.43784 8.50334 8.0001 8.50334C7.11605 8.50334 6.2682 8.15215 5.64308 7.52703C5.01796 6.9019 4.66677 6.05406 4.66677 5.17C4.66677 4.28595 5.01796 3.4381 5.64308 2.81298C6.2682 2.18786 7.11605 1.83667 8.0001 1.83667ZM8.0001 2.83667C7.69368 2.83667 7.39027 2.89702 7.10717 3.01428C6.82408 3.13155 6.56685 3.30342 6.35018 3.52009C6.13351 3.73676 5.96164 3.99398 5.84438 4.27708C5.72712 4.56017 5.66677 4.86359 5.66677 5.17C5.66677 5.47642 5.72712 5.77984 5.84438 6.06293C5.96164 6.34602 6.13351 6.60325 6.35018 6.81992C6.56685 7.03659 6.82408 7.20846 7.10717 7.32572C7.39027 7.44298 7.69368 7.50334 8.0001 7.50334C8.61894 7.50334 9.21243 7.2575 9.65002 6.81992C10.0876 6.38233 10.3334 5.78884 10.3334 5.17C10.3334 4.55116 10.0876 3.95767 9.65002 3.52009C9.21243 3.0825 8.61894 2.83667 8.0001 2.83667Z"
                         fill="#D2AAFA"
                       />
                     </svg>
@@ -728,7 +735,7 @@ export default function ValidatorPage({
                       className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {validator.tokens} KII
+                      {formatAmount(validator.tokens)} KII
                     </div>
                     <div
                       className="text-xs"
@@ -771,7 +778,12 @@ export default function ValidatorPage({
                       className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {(parseFloat(validator.commission) * 100).toFixed(2)}%
+                      {(
+                        parseFloat(
+                          validator.commission?.commission_rates?.rate || "0"
+                        ) * 100
+                      ).toFixed(2)}
+                      %
                     </div>
                   </div>
                 </div>
@@ -807,7 +819,7 @@ export default function ValidatorPage({
                       className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {validator.tokens} KII
+                      {formatAmount(validator.tokens)} KII
                     </div>
                     <div
                       className="text-sm"
@@ -832,7 +844,7 @@ export default function ValidatorPage({
               className="text-sm font-medium"
               style={{ color: theme.primaryTextColor }}
             >
-              Transactions
+              Delegations & Unbondings
             </h3>
           </div>
           <div className="overflow-x-auto">
@@ -843,114 +855,122 @@ export default function ValidatorPage({
                     className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
-                    Height
+                    Type
                   </th>
                   <th
                     className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
-                    Hash
+                    Amount
                   </th>
                   <th
                     className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
-                    Messages
+                    Status
                   </th>
                   <th
                     className="text-left text-sm font-normal pb-4"
                     style={{ color: theme.primaryTextColor }}
                   >
-                    Time
+                    Completion Time
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td
-                    className="text-sm py-2"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    244322
-                  </td>
-                  <td
-                    className="text-sm py-2 max-w-[300px] truncate"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    0xc1fe48d...2b7b4b2b
-                  </td>
-                  <td className="py-2 flex items-center justify-between pr-12">
-                    <span
-                      className="text-xs"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      SEND
-                    </span>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M13.3334 4L6.00008 11.3333L2.66675 8"
-                        stroke="#4BB543"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </td>
-                  <td
-                    className="text-sm py-2"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    23 Days Ago
-                  </td>
-                </tr>
-                <tr>
-                  <td
-                    className="text-sm py-2"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    155156
-                  </td>
-                  <td
-                    className="text-sm py-2 max-w-[300px] truncate"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    0xf28666d...5b7a6c23
-                  </td>
-                  <td className="py-2 flex items-center justify-between pr-12">
-                    <span
-                      className="text-xs"
-                      style={{ color: theme.primaryTextColor }}
-                    >
-                      SEND
-                    </span>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M13.3334 4L6.00008 11.3333L2.66675 8"
-                        stroke="#4BB543"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </td>
-                  <td
-                    className="text-sm py-2"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    23 Days Ago
-                  </td>
-                </tr>
+                {/* Delegaciones activas */}
+                {delegations?.delegation_responses?.map(
+                  (delegation: Delegation, index: number) => (
+                    <tr key={`delegation-${index}`}>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        Delegation
+                      </td>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        {formatAmount(delegation.balance?.amount || "0")} KII
+                      </td>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        <span
+                          className="px-2 py-1 rounded-full"
+                          style={{
+                            backgroundColor: theme.accentColor,
+                            color: theme.boxColor,
+                          }}
+                        >
+                          Active
+                        </span>
+                      </td>
+                      <td
+                        className="text-sm py-2"
+                        style={{ color: theme.primaryTextColor }}
+                      >
+                        -
+                      </td>
+                    </tr>
+                  )
+                )}
+
+                {/* Unbonding delegations */}
+                {unbondingDelegations?.map(
+                  (unbonding: UnbondingDelegation, index: number) =>
+                    unbonding.entries.map((entry, entryIndex: number) => (
+                      <tr key={`unbonding-${index}-${entryIndex}`}>
+                        <td
+                          className="text-sm py-2"
+                          style={{ color: theme.primaryTextColor }}
+                        >
+                          Unbonding
+                        </td>
+                        <td
+                          className="text-sm py-2"
+                          style={{ color: theme.primaryTextColor }}
+                        >
+                          {formatAmount(entry.balance || "0")} KII
+                        </td>
+                        <td
+                          className="text-sm py-2"
+                          style={{ color: theme.primaryTextColor }}
+                        >
+                          <span
+                            className="px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor: theme.bgColor,
+                              color: theme.accentColor,
+                            }}
+                          >
+                            Unbonding
+                          </span>
+                        </td>
+                        <td
+                          className="text-sm py-2"
+                          style={{ color: theme.primaryTextColor }}
+                        >
+                          {new Date(entry.completion_time).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
-      <DelegateModal
-        isOpen={isDelegateModalOpen}
-        onClose={() => setIsDelegateModalOpen(false)}
-        validator={validator}
-        theme={theme}
-      />
+      {formattedValidator && (
+        <DelegateModal
+          isOpen={isDelegateModalOpen}
+          onClose={() => setIsDelegateModalOpen(false)}
+          validator={formattedValidator}
+          theme={theme}
+        />
+      )}
     </div>
   );
 }

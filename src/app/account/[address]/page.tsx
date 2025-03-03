@@ -10,27 +10,253 @@ import { TransactionsTable } from "@/components/Account/TransactionsTable";
 import { AccountInfo } from "@/components/Account/AccountInfo";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
-import { useBalance } from "wagmi";
+import { useBalance, useAccount, useWalletClient } from "wagmi";
+import { useValidators } from "../../../services/queries/validators";
 
-interface Transaction {
-  height: string;
-  hash: string;
-  messages: string;
-  time: string;
+import { useWithdrawHistoryQuery } from "../../../services/queries/withdrawals";
+import { useTransactionsQuery } from "@/services/queries/transactions";
+import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
+import { useDelegationsQuery } from "@/services/queries/delegations";
+import { useRewardsQuery } from "@/services/queries/rewards";
+import { useWithdrawalsQuery } from "@/services/queries/withdrawals";
+
+import { toast } from "react-toastify";
+import {
+  useRedelegateMutation,
+  useUndelegateMutation,
+} from "@/services/mutations/staking";
+
+interface Theme {
+  bgColor: string;
+  boxColor: string;
+  primaryTextColor: string;
+  secondaryTextColor: string;
+  accentColor: string;
 }
 
-interface TxResponse {
-  height: string;
-  txhash: string;
-  timestamp: string;
-  tx: {
-    body: {
-      messages: Array<{
-        "@type": string;
-      }>;
-    };
+interface RedelegateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  validatorAddress: string;
+  theme: Theme;
+  validators: Record<string, string>;
+}
+
+interface DelegationResponse {
+  delegation: {
+    validator_address: string;
+    shares: string;
+  };
+  balance: {
+    amount: string;
+    denom: string;
   };
 }
+
+interface FormattedDelegation {
+  delegation: {
+    delegator_address: string;
+    validator_address: string;
+    shares: string;
+    moniker?: string;
+  };
+  balance: {
+    amount: string;
+    denom: string;
+  };
+}
+
+const RedelegateModal = ({
+  isOpen,
+  onClose,
+  validatorAddress,
+  theme,
+  validators,
+}: RedelegateModalProps) => {
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const [amount, setAmount] = useState("");
+  const [destinationValidator, setDestinationValidator] = useState("");
+
+  const redelegateMutation = useRedelegateMutation();
+
+  const handleRedelegate = async () => {
+    if (!isConnected || !address || !walletClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    redelegateMutation.mutate(
+      {
+        walletClient,
+        amount,
+        validatorAddress,
+        destinationAddr: destinationValidator,
+      },
+      {
+        onSuccess: () => {
+          onClose();
+        },
+      }
+    );
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div
+        className="bg-white rounded-lg p-6 w-96"
+        style={{ backgroundColor: theme.boxColor }}
+      >
+        <h2 className="text-xl mb-4" style={{ color: theme.primaryTextColor }}>
+          Redelegate Tokens
+        </h2>
+        <input
+          type="text"
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full p-2 mb-4 rounded"
+          style={{
+            backgroundColor: theme.bgColor,
+            color: theme.primaryTextColor,
+          }}
+        />
+        <select
+          value={destinationValidator}
+          onChange={(e) => setDestinationValidator(e.target.value)}
+          className="w-full p-2 mb-4 rounded"
+          style={{
+            backgroundColor: theme.bgColor,
+            color: theme.primaryTextColor,
+          }}
+        >
+          <option value="">Select Destination Validator</option>
+          {Object.entries(validators).map(([address, moniker]) => (
+            <option key={address} value={address}>
+              {moniker}
+            </option>
+          ))}
+        </select>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.bgColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleRedelegate}
+            disabled={redelegateMutation.isPending}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.accentColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            {redelegateMutation.isPending ? "Processing..." : "Redelegate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface UndelegateModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  validatorAddress: string;
+  theme: Theme;
+}
+
+const UndelegateModal = ({
+  isOpen,
+  onClose,
+  validatorAddress,
+  theme,
+}: UndelegateModalProps) => {
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const [amount, setAmount] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const undelegateMutation = useUndelegateMutation();
+
+  const handleUndelegate = async () => {
+    if (!isConnected || !address || !walletClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await undelegateMutation.mutateAsync({
+        walletClient,
+        amount,
+        validatorAddress,
+      });
+      onClose();
+    } catch (error) {
+      console.error("Error undelegating:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div
+        className="bg-white rounded-lg p-6 w-96"
+        style={{ backgroundColor: theme.boxColor }}
+      >
+        <h2 className="text-xl mb-4" style={{ color: theme.primaryTextColor }}>
+          Undelegate Tokens
+        </h2>
+        <input
+          type="text"
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full p-2 mb-4 rounded"
+          style={{
+            backgroundColor: theme.bgColor,
+            color: theme.primaryTextColor,
+          }}
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.bgColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUndelegate}
+            disabled={isLoading}
+            className="px-4 py-2 rounded"
+            style={{
+              backgroundColor: theme.accentColor,
+              color: theme.primaryTextColor,
+            }}
+          >
+            {isLoading ? "Processing..." : "Undelegate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function AddressPage() {
   const { address } = useParams();
@@ -41,10 +267,43 @@ export default function AddressPage() {
   const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { theme } = useTheme();
-  const [delegations, setDelegations] = useState([]);
-  const [withdrawals, setWithdrawals] = useState([]);
+  const [delegations, setDelegations] = useState<FormattedDelegation[]>([]);
+  const { data: validators = {} } = useValidators();
+  const [selectedValidator, setSelectedValidator] = useState("");
+  const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
+  const [isUndelegateModalOpen, setIsUndelegateModalOpen] = useState(false);
+  const [percentages, setPercentages] = useState({
+    balancePercentage: "0",
+    stakingPercentage: "0",
+    rewardsPercentage: "0",
+    withdrawalsPercentage: "0",
+  });
+
+  const formatAmount = (amount: string, decimals: number = 6) => {
+    const value = parseInt(amount);
+    if (isNaN(value)) return "0";
+    return (value / Math.pow(10, decimals)).toFixed(2);
+  };
+
+  const { data: kiiAddressData } = useKiiAddressQuery(address as string);
+  const kiiAddress = kiiAddressData?.kii_address || address;
+
+  const {
+    data: transactionsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTransactionsQuery(kiiAddress);
+
+  const { data: delegationsData } = useDelegationsQuery(kiiAddress);
+  const { data: rewardsData } = useRewardsQuery(kiiAddress);
+  const { data: withdrawalsData } = useWithdrawalsQuery(kiiAddress);
+
+  const { data: withdrawHistoryData } = useWithdrawHistoryQuery(
+    kiiAddress,
+    withdrawalsData?.withdraw_address
+  );
 
   useEffect(() => {
     if (!address) {
@@ -52,120 +311,121 @@ export default function AddressPage() {
       return;
     }
 
-    const fetchAccountData = async () => {
-      try {
-        let walletData: WalletSession = {
-          balance: balance?.formatted || "0",
-          staking: "0 KII",
-          reward: "0 KII",
-          withdrawals: "0 KII",
-          stakes: [],
-        };
+    if (
+      delegationsData &&
+      rewardsData &&
+      withdrawalsData &&
+      withdrawHistoryData
+    ) {
+      const walletData: WalletSession = {
+        balance: balance?.formatted || "0",
+        staking: "0 KII",
+        reward: "0 KII",
+        withdrawals: "0 KII",
+        stakes: [],
+      };
 
-        // Fetch additional data for non-EVM addresses
-        if (typeof address === "string" && !address.startsWith("0x")) {
-          const [balanceResponse, stakingResponse, rewardsResponse] =
-            await Promise.all([
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/balances/${address}`
-              ),
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegations/${address}`
-              ),
-              fetch(
-                `https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/distribution/v1beta1/delegators/${address}/rewards`
-              ),
-            ]);
-
-          const balanceData = await balanceResponse.json();
-          const stakingData = await stakingResponse.json();
-          const rewardsData = await rewardsResponse.json();
-
-          const balance =
-            balanceData.balances.find(
-              (b: { denom: string }) => b.denom === "ukii"
-            )?.amount || "0";
-          const formattedBalance = (parseInt(balance) / 1_000_000).toFixed(4);
-
-          const totalStaked =
-            stakingData.delegation_responses?.reduce(
-              (sum: number, del: { balance: { amount: string } }) =>
-                sum + parseInt(del.balance.amount),
-              0
-            ) || 0;
-          const formattedStaking = (totalStaked / 1_000_000).toFixed(4);
-
-          const totalRewards =
-            rewardsData.total?.find(
-              (r: { denom: string }) => r.denom === "ukii"
-            )?.amount || "0";
-          const formattedRewards = (parseInt(totalRewards) / 1_000_000).toFixed(
-            4
-          );
-
-          walletData = {
-            ...walletData,
-            balance: formattedBalance,
-            staking: `${formattedStaking} KII`,
-            reward: `${formattedRewards} KII`,
-            stakes:
-              stakingData.delegation_responses?.map(
-                (del: {
-                  delegation: { validator_address: string };
-                  balance: { amount: string };
-                }) => ({
-                  validator: del.delegation.validator_address,
-                  amount:
-                    (parseInt(del.balance.amount) / 1_000_000).toFixed(4) +
-                    " KII",
-                  rewards: "0 KII",
-                })
-              ) || [],
-          };
-
-          setDelegations(stakingData.delegation_responses || []);
-          const withdrawalResponse = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/delegators/${address}/unbonding_delegations`
-          );
-          const withdrawalData = await withdrawalResponse.json();
-          setWithdrawals(withdrawalData.unbonding_responses || []);
-        }
-
-        setSession(walletData);
-
-        const txResponse = await fetch(
-          `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs?events=message.sender='${address}'`
+      let totalStaking = 0;
+      if (delegationsData.delegation_responses) {
+        totalStaking = delegationsData.delegation_responses.reduce(
+          (sum: number, del: { balance: { amount: string } }) =>
+            sum + parseInt(del.balance.amount),
+          0
         );
-
-        if (!txResponse.ok) {
-          console.error("Failed to fetch transactions:", txResponse.statusText);
-          setTransactions([]);
-          return;
-        }
-
-        const txData = await txResponse.json();
-
-        if (!txData || !Array.isArray(txData.tx_responses)) {
-          console.warn("No transactions found or invalid response format");
-          setTransactions([]);
-          return;
-        }
-
-        const formattedTxs = txData.tx_responses.map((tx: TxResponse) => ({
-          height: tx.height,
-          hash: tx.txhash,
-          messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
-          time: new Date(tx.timestamp).toLocaleString(),
-        }));
-
-        setTransactions(formattedTxs);
-      } catch (error) {
-        console.error("Error fetching account data:", error);
       }
-    };
 
-    fetchAccountData();
-  }, [address, router, balance]);
+      let totalRewards = 0;
+      if (rewardsData.total) {
+        const ukiiRewards = rewardsData.total.find(
+          (reward: { denom: string }) => reward.denom === "ukii"
+        );
+        if (ukiiRewards) {
+          totalRewards = parseInt(ukiiRewards.amount);
+        }
+      }
+
+      const normalBalance = parseFloat(balance?.formatted || "0");
+      const stakingBalance = parseFloat(formatAmount(totalStaking.toString()));
+      const totalBalance = normalBalance + stakingBalance;
+
+      let totalWithdrawn = 0;
+      if (withdrawHistoryData?.rewards) {
+        const ukiiWithdraws = withdrawHistoryData.rewards.find(
+          (reward: { denom: string }) => reward.denom === "ukii"
+        );
+        if (ukiiWithdraws) {
+          totalWithdrawn = parseInt(ukiiWithdraws.amount);
+        }
+      }
+
+      const withdrawBalance = parseFloat(
+        formatAmount(totalWithdrawn.toString())
+      );
+      const totalWithWithdraws = totalBalance + withdrawBalance;
+
+      setPercentages({
+        balancePercentage: ((normalBalance / totalWithWithdraws) * 100).toFixed(
+          2
+        ),
+        stakingPercentage: ((stakingBalance / totalWithdrawn) * 100).toFixed(2),
+        rewardsPercentage: (
+          (totalRewards / Math.pow(10, 6) / totalWithdrawn) *
+          100
+        ).toFixed(2),
+        withdrawalsPercentage: (
+          (withdrawBalance / totalWithdrawn) *
+          100
+        ).toFixed(2),
+      });
+
+      walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
+      walletData.reward = `${formatAmount(totalRewards.toString())} KII`;
+      walletData.withdrawals = `${formatAmount(totalWithdrawn.toString())} KII`;
+
+      if (delegationsData.delegation_responses) {
+        const formattedDelegations = delegationsData.delegation_responses.map(
+          (del: DelegationResponse) => ({
+            delegation: {
+              ...del.delegation,
+              delegator_address: kiiAddress,
+              shares: formatAmount(del.delegation.shares),
+              moniker:
+                validators[del.delegation.validator_address] || "Unknown",
+            },
+            balance: {
+              ...del.balance,
+              amount: formatAmount(del.balance.amount),
+            },
+          })
+        );
+        setDelegations(formattedDelegations);
+      }
+
+      setSession(walletData);
+    }
+  }, [
+    address,
+    router,
+    balance,
+    delegationsData,
+    rewardsData,
+    withdrawalsData,
+    withdrawHistoryData,
+    validators,
+    kiiAddress,
+  ]);
+
+  const transactions =
+    (
+      transactionsData?.pages as {
+        txs: Array<{
+          height: string;
+          hash: string;
+          messages: string;
+          time: string;
+        }>;
+      }[]
+    )?.flatMap((page) => page.txs) || [];
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
@@ -176,32 +436,61 @@ export default function AddressPage() {
             name: "Balance",
             amount: session?.balance || "0.0000",
             value: `$${session?.balance || "0.0000"}`,
-            percentage: "99.86%",
+            percentage: `${percentages.balancePercentage}%`,
           },
           {
             name: "Stake",
             amount: session?.staking || "0.0000 KII",
             value: `$${session?.staking?.replace(" KII", "") || "0.0000"}`,
-            percentage: "0%",
+            percentage: `${percentages.stakingPercentage}%`,
           },
           {
             name: "Reward",
             amount: session?.reward || "0.0000 KII",
             value: `$${session?.reward?.replace(" KII", "") || "0.0000"}`,
-            percentage: "0.13%",
+            percentage: `${percentages.rewardsPercentage}%`,
           },
           {
             name: "Withdrawals",
             amount: session?.withdrawals || "0.0000 KII",
             value: `$${session?.withdrawals?.replace(" KII", "") || "0.0000"}`,
-            percentage: "0.01%",
+            percentage: `${percentages.withdrawalsPercentage}%`,
           },
         ]}
       />
-      <WithdrawalsTable withdrawals={withdrawals} />
-      <StakesTable delegations={delegations} />
-      <TransactionsTable transactions={transactions} />
+      <WithdrawalsTable withdrawals={[]} />
+      <StakesTable
+        delegations={delegations}
+        validators={validators}
+        theme={theme}
+        selectedValidator={selectedValidator}
+        setSelectedValidator={setSelectedValidator}
+        setIsRedelegateModalOpen={setIsRedelegateModalOpen}
+        setIsUndelegateModalOpen={setIsUndelegateModalOpen}
+        isRedelegateModalOpen={isRedelegateModalOpen}
+        isUndelegateModalOpen={isUndelegateModalOpen}
+      />
+      <TransactionsTable
+        transactions={transactions}
+        onLoadMore={() => fetchNextPage()}
+        hasMore={hasNextPage}
+        isLoading={isFetchingNextPage}
+      />
       <AccountInfo account={typeof address === "string" ? address : ""} />
+
+      <RedelegateModal
+        isOpen={isRedelegateModalOpen}
+        onClose={() => setIsRedelegateModalOpen(false)}
+        validatorAddress={selectedValidator}
+        theme={theme}
+        validators={validators}
+      />
+      <UndelegateModal
+        isOpen={isUndelegateModalOpen}
+        onClose={() => setIsUndelegateModalOpen(false)}
+        validatorAddress={selectedValidator}
+        theme={theme}
+      />
     </div>
   );
 }
