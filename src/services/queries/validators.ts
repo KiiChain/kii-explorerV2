@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface ValidatorDetails {
@@ -61,4 +61,55 @@ export const useValidators = () => {
       return validators;
     },
   });
+};
+
+const useFailedDomains = () => {
+  return useQuery({
+    queryKey: ["failed-validator-icons"],
+    queryFn: () => new Set<string>(),
+    staleTime: Infinity,
+    initialData: new Set<string>(),
+  });
+};
+
+export const useValidatorIcons = () => {
+  const queryClient = useQueryClient();
+  const { data: failedDomains = new Set<string>() } = useFailedDomains();
+
+  const getValidatorIcon = (website: string | undefined) => {
+    if (!website) return "/favicon.ico";
+
+    try {
+      const url = website.startsWith("http") ? website : `https://${website}`;
+      const domain = new URL(url).hostname;
+
+      if (failedDomains.has(domain)) {
+        return "/favicon.ico";
+      }
+
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    } catch (e) {
+      console.error("Error parsing validator website:", e);
+      return "/favicon.ico";
+    }
+  };
+
+  const handleImageError = (website: string | undefined) => {
+    if (website) {
+      try {
+        const domain = new URL(
+          website.startsWith("http") ? website : `https://${website}`
+        ).hostname;
+
+        queryClient.setQueryData(
+          ["failed-validator-icons"],
+          (old: Set<string>) => new Set([...old, domain])
+        );
+      } catch (e) {
+        console.error("Error handling image failure:", e);
+      }
+    }
+  };
+
+  return { getValidatorIcon, handleImageError };
 };

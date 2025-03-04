@@ -3,6 +3,8 @@
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useValidatorIcons } from "@/services/queries/validators";
 
 interface Validator {
   operator_address: string;
@@ -69,6 +71,8 @@ export function StakingDashboard() {
     minCommissionRate: "5%",
     bondDenom: "ukii",
   });
+
+  const { getValidatorIcon, handleImageError } = useValidatorIcons();
 
   useEffect(() => {
     async function fetchValidators() {
@@ -426,15 +430,16 @@ export function StakingDashboard() {
                 </td>
                 <td className="p-4">
                   <div className="flex items-center gap-7">
-                    <div
-                      style={{
-                        backgroundColor: theme.accentColor,
-                        minWidth: "2.5rem",
-                        minHeight: "2.5rem",
-                        flexShrink: 0,
-                      }}
-                      className="w-10 h-10 rounded-full"
-                    ></div>
+                    <Image
+                      src={getValidatorIcon(validator.description.website)}
+                      alt={`${validator.description.moniker} icon`}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                      onError={() =>
+                        handleImageError(validator.description.website)
+                      }
+                    />
                     <div className="flex-1">
                       <div
                         className="font-medium text-base"

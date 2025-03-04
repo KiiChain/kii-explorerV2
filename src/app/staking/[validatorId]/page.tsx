@@ -2,6 +2,7 @@
 
 import React, { useState, use } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import Image from "next/image";
 
 import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { toast } from "react-hot-toast";
@@ -11,6 +12,7 @@ import { useDelegateMutation } from "@/services/mutations/staking";
 import { useValidatorQuery } from "@/services/queries/validator";
 import { useUnbondingDelegationsQuery } from "@/services/queries/unbondingDelegations";
 import { useDelegationsQuery } from "@/services/queries/delegations";
+import { useValidatorIcons } from "@/services/queries/validators";
 
 interface SignDoc {
   chain_id: string;
@@ -345,14 +347,19 @@ const DelegateModal = ({
             </label>
           </div>
 
-          <button
-            className="w-full p-3 rounded-lg mt-6 text-white"
-            style={{ backgroundColor: theme.accentColor }}
-            onClick={handleStake}
-            disabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Stake"}
-          </button>
+          <div className="pt-4">
+            <button
+              className="text-base font-semibold px-6 py-3 rounded-lg w-full md:w-auto hover:opacity-90 transition-opacity"
+              style={{
+                backgroundColor: theme.bgColor,
+                color: theme.accentColor,
+              }}
+              onClick={handleStake}
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : "Stake Now"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -387,6 +394,7 @@ export default function ValidatorPage({
   const { data: unbondingDelegations = [] } =
     useUnbondingDelegationsQuery(validatorId);
   const { data: delegations } = useDelegationsQuery(validatorId);
+  const { getValidatorIcon, handleImageError } = useValidatorIcons();
 
   const formattedValidator: ValidatorProps | null = validator
     ? {
@@ -413,44 +421,41 @@ export default function ValidatorPage({
             <div className="flex flex-col md:flex-row gap-4">
               <div className="w-full md:w-1/3">
                 <div className="relative w-28 h-28">
-                  <div
-                    style={{ backgroundColor: theme.primaryTextColor }}
-                    className="w-full h-full rounded-full"
-                  />
+                  <div className="w-full h-full rounded-full" />
                   <div className="pl-1 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <svg
-                      width="47"
-                      height="29"
-                      viewBox="0 0 47 29"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M2.94615 0H0V29H2.94615V0ZM28.716 11.7773C27.2653 10.3989 27.2697 8.1597 28.716 6.78561L33.3317 2.40041H40.9113L30.7694 12.036L32.5505 13.7324L47 0H21.1408L10.7356 9.88579V0H7.78944V29H10.7356V19.2584L20.9891 29H46.8348L28.716 11.7773ZM15.7887 15.6748C15.6503 15.8062 15.5208 15.9462 15.3959 16.0861C15.3601 16.1243 15.3334 16.1625 15.2977 16.2049C15.2039 16.3152 15.1191 16.4297 15.0343 16.5442C15.0075 16.5823 14.9807 16.6205 14.9539 16.6587C14.8602 16.7944 14.7754 16.9301 14.695 17.0743C14.6861 17.0913 14.6772 17.1082 14.6682 17.1209C14.3915 17.6214 14.1951 18.1557 14.079 18.7113C14.079 18.724 14.0746 18.741 14.0701 18.7537C14.0522 18.8343 14.0344 18.9106 14.021 18.9912L11.9944 17.0658C11.2936 16.4 10.9052 15.5136 10.9052 14.5679C10.9052 13.6221 11.2936 12.7357 11.9944 12.0699L22.1854 2.39617H29.765L15.7887 15.6748ZM22.0336 26.6038C22.0336 26.6038 17.3957 22.1889 17.3198 22.0956C17.3109 22.0829 17.3019 22.0744 17.293 22.0617C16.2931 20.87 16.2217 19.199 17.0877 17.9395C17.0877 17.9352 17.0966 17.9267 17.1011 17.9183C17.1591 17.8377 17.2216 17.7571 17.2841 17.6808C17.2975 17.6638 17.3109 17.6468 17.3242 17.6299C17.4001 17.5408 17.4805 17.456 17.5653 17.3754C17.5653 17.3754 17.5698 17.3669 17.5742 17.3669L19.6008 15.4415C19.6097 15.5009 19.6231 15.5603 19.6365 15.6196C19.6499 15.6832 19.6588 15.7469 19.6722 15.8105C19.699 15.9377 19.7347 16.0607 19.7704 16.1837C19.7838 16.2303 19.7972 16.2812 19.8106 16.3279C19.8642 16.4975 19.9267 16.6629 19.9981 16.8241C20.016 16.8622 20.0338 16.8962 20.0517 16.9343C20.1097 17.0616 20.1722 17.1846 20.2391 17.3075C20.2704 17.3627 20.3016 17.4136 20.3329 17.4687C20.3954 17.5705 20.4579 17.6723 20.5248 17.7741C20.5605 17.8292 20.6007 17.8843 20.6364 17.9352C20.7079 18.037 20.7882 18.1345 20.8686 18.2321C20.9043 18.2745 20.94 18.3211 20.9802 18.3636C21.1007 18.5035 21.2301 18.635 21.364 18.7665L29.6177 26.6081H22.0381L22.0336 26.6038ZM23.1451 17.0701C22.4443 16.4042 22.0559 15.5178 22.0559 14.5721C22.0559 13.6264 22.4443 12.74 23.1451 12.0741L25.1762 10.1445C25.3637 11.3617 25.9484 12.5322 26.9349 13.4694L40.7506 26.6038H33.1799L23.1451 17.0701Z"
-                        fill="#05000F"
-                      />
-                    </svg>
+                    <Image
+                      src={getValidatorIcon(validator?.description?.website)}
+                      alt={`${validator?.description?.moniker} icon`}
+                      width={94}
+                      height={58}
+                      className="rounded-lg"
+                      onError={() =>
+                        handleImageError(validator?.description?.website)
+                      }
+                    />
                   </div>
                 </div>
               </div>
               <div className="w-full md:w-2/3">
-                <h2
-                  className="text-base font-bold mb-1 md:truncate"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  {validator.description.moniker.length > 15
-                    ? `${validator.description.moniker.substring(0, 15)}...`
-                    : validator.description.moniker}
-                </h2>
-                <p
-                  className="text-xs font-bold mb-1 break-all"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  {validator.operator_address}
-                </p>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h1
+                      className="text-2xl font-bold"
+                      style={{ color: theme.primaryTextColor }}
+                    >
+                      {validator?.description?.moniker}
+                    </h1>
+                    <p
+                      className="text-xs font-bold mb-1 break-all"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
+                      {validator.operator_address}
+                    </p>
+                  </div>
+                </div>
                 <div className="pt-4">
                   <button
-                    className="text-xs p-2 rounded-lg w-full md:w-auto"
+                    className="text-base font-semibold px-6 py-3 rounded-lg w-full md:w-auto hover:opacity-90 transition-opacity"
                     style={{
                       backgroundColor: theme.bgColor,
                       color: theme.accentColor,
@@ -469,7 +474,9 @@ export default function ValidatorPage({
                 rel="noopener noreferrer"
                 className="text-sm hover:underline"
                 style={{ color: theme.accentColor }}
-              ></a>
+              >
+                {validator.description.website}
+              </a>
             )}
             <div className="flex flex-col gap-4 mt-4 w-full">
               <a
@@ -520,7 +527,7 @@ export default function ValidatorPage({
                   className="text-sm underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
-                  https://explorer.kiichain.io/testnet
+                  {validator.description.website || "No website provided"}
                 </p>
               </a>
 
