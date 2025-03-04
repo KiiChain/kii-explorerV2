@@ -13,6 +13,7 @@ import { useValidatorQuery } from "@/services/queries/validator";
 import { useUnbondingDelegationsQuery } from "@/services/queries/unbondingDelegations";
 import { useDelegationsQuery } from "@/services/queries/delegations";
 import { useValidatorIcons } from "@/services/queries/validators";
+import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 
 interface SignDoc {
   chain_id: string;
@@ -205,9 +206,17 @@ const DelegateModal = ({
         amount,
         validatorAddress: validator.operatorAddress,
       });
+
+      toast.success(
+        "Successfully staked tokens\nYour tokens have been staked with the validator"
+      );
+
       onClose();
     } catch (error) {
-      console.error("Error delegating:", error);
+      console.error("Staking error:", error);
+      toast.error(
+        "Failed to stake tokens\nPlease try again or check your wallet connection"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -340,13 +349,6 @@ const DelegateModal = ({
             />
           </div>
 
-          <div className="flex items-center gap-2 mt-4">
-            <input type="checkbox" id="advance" />
-            <label htmlFor="advance" style={{ color: theme.primaryTextColor }}>
-              Advance
-            </label>
-          </div>
-
           <div className="pt-4">
             <button
               className="text-base font-semibold px-6 py-3 rounded-lg w-full md:w-auto hover:opacity-90 transition-opacity"
@@ -395,6 +397,8 @@ export default function ValidatorPage({
     useUnbondingDelegationsQuery(validatorId);
   const { data: delegations } = useDelegationsQuery(validatorId);
   const { getValidatorIcon, handleImageError } = useValidatorIcons();
+
+  const { isConnected } = useAccount();
 
   const formattedValidator: ValidatorProps | null = validator
     ? {
@@ -453,17 +457,21 @@ export default function ValidatorPage({
                     </p>
                   </div>
                 </div>
-                <div className="pt-4">
-                  <button
-                    className="text-base font-semibold px-6 py-3 rounded-lg w-full md:w-auto hover:opacity-90 transition-opacity"
-                    style={{
-                      backgroundColor: theme.bgColor,
-                      color: theme.accentColor,
-                    }}
-                    onClick={() => setIsDelegateModalOpen(true)}
-                  >
-                    Create Stake
-                  </button>
+                <div className="flex  mt-4">
+                  {!isConnected ? (
+                    <WagmiConnectButton />
+                  ) : (
+                    <button
+                      onClick={() => setIsDelegateModalOpen(true)}
+                      className="px-4 py-2 rounded-lg text-white"
+                      style={{
+                        backgroundColor: theme.bgColor,
+                        color: theme.accentColor,
+                      }}
+                    >
+                      Create Stake
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

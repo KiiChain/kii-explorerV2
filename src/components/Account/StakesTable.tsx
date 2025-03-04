@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 
 import { toast } from "react-toastify";
@@ -11,6 +11,8 @@ import {
   useRedelegateMutation,
   useUndelegateMutation,
 } from "@/services/mutations/staking";
+import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
+import { useDelegationHistory } from "../../services/queries/delegationHistory";
 
 interface Theme {
   boxColor: string;
@@ -69,8 +71,6 @@ interface UndelegateModalProps {
   onClose: () => void;
   theme: Theme;
   selectedValidator: string;
-  onUndelegate: (validatorAddress: string, amount: string) => Promise<void>;
-  validators: Record<string, string>;
 }
 
 interface RedelegationEntry {
@@ -184,13 +184,34 @@ const UndelegateModal = ({
   onClose,
   theme,
   selectedValidator,
-  onUndelegate,
 }: UndelegateModalProps) => {
+  const { data: walletClient } = useWalletClient();
   const [amount, setAmount] = useState("");
+  const undelegateMutation = useUndelegateMutation();
 
-  const handleSubmit = async () => {
-    if (!amount) return;
-    await onUndelegate(selectedValidator, amount);
+  const handleUndelegate = async () => {
+    if (!walletClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      await undelegateMutation.mutateAsync({
+        validatorAddress: selectedValidator,
+        amount,
+        walletClient,
+      });
+
+      toast.success(
+        "Successfully undelegated tokens\nYour tokens will be available after the unbonding period of 21 days"
+      );
+      onClose();
+    } catch (error) {
+      console.error("Undelegation error:", error);
+      toast.error(
+        "Failed to undelegate tokens\nPlease try again or check your wallet connection"
+      );
+    }
   };
 
   if (!isOpen) return null;
@@ -232,16 +253,16 @@ const UndelegateModal = ({
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
-            disabled={!amount}
+            onClick={handleUndelegate}
+            disabled={undelegateMutation.isPending}
             className="px-4 py-2 rounded"
             style={{
               backgroundColor: theme.accentColor,
               color: theme.primaryTextColor,
-              opacity: !amount ? 0.5 : 1,
+              opacity: undelegateMutation.isPending ? 0.7 : 1,
             }}
           >
-            Undelegate
+            {undelegateMutation.isPending ? "In Process" : "Undelegate"}
           </button>
         </div>
       </div>
@@ -260,14 +281,21 @@ export function StakesTable({
   isRedelegateModalOpen,
   isUndelegateModalOpen,
 }: StakeProps) {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { data: cosmosAddress } = useCosmosAddress(address);
   const { data: redelegations } = useRedelegations(cosmosAddress);
   const validatorQueries = useValidatorQueries(delegations);
   const rewardsQueries = useValidatorRewardsQueries(cosmosAddress, delegations);
   const redelegateMutation = useRedelegateMutation();
-  const undelegateMutation = useUndelegateMutation();
+  const { data: delegationHistory } = useDelegationHistory(cosmosAddress);
+
+  const [relocateButtonStates, setRelocateButtonStates] = useState<{
+    [key: string]: string;
+  }>({});
+  const [withdrawButtonStates, setWithdrawButtonStates] = useState<{
+    [key: string]: string;
+  }>({});
 
   console.log("Cosmos Address:", cosmosAddress);
   console.log("Redelegations:", redelegations);
@@ -300,19 +328,6 @@ export function StakesTable({
       { validatorAddress, destinationAddr, amount, walletClient },
       {
         onSuccess: () => setIsRedelegateModalOpen(false),
-      }
-    );
-  };
-
-  const handleUndelegate = async (validatorAddress: string, amount: string) => {
-    if (!walletClient) {
-      toast.error("Please connect your wallet first");
-      return;
-    }
-    undelegateMutation.mutate(
-      { validatorAddress, amount, walletClient },
-      {
-        onSuccess: () => setIsUndelegateModalOpen(false),
       }
     );
   };
@@ -373,6 +388,33 @@ export function StakesTable({
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
 
+  const handleRedelegateClick = (validatorAddress: string) => {
+    setRelocateButtonStates((prev) => ({
+      ...prev,
+      [validatorAddress]: "Processing...",
+    }));
+    setSelectedValidator(validatorAddress);
+    setIsRedelegateModalOpen(true);
+  };
+
+  const handleUndelegateClick = (validatorAddress: string) => {
+    setWithdrawButtonStates((prev) => ({
+      ...prev,
+      [validatorAddress]: "In Process",
+    }));
+    setSelectedValidator(validatorAddress);
+    setIsUndelegateModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (!isUndelegateModalOpen && selectedValidator) {
+      setWithdrawButtonStates((prev) => ({
+        ...prev,
+        [selectedValidator]: "Withdraw",
+      }));
+    }
+  }, [isUndelegateModalOpen, selectedValidator]);
+
   if (!delegations || delegations.length === 0) {
     return (
       <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
@@ -425,6 +467,14 @@ export function StakesTable({
                   backgroundColor: theme.bgColor,
                 }}
               >
+                Delegation History
+              </th>
+              <th
+                className="p-4"
+                style={{
+                  backgroundColor: theme.bgColor,
+                }}
+              >
                 Action
               </th>
             </tr>
@@ -443,6 +493,12 @@ export function StakesTable({
                 .filter((reward) => reward.denom === "ukii")
                 .map((reward) => formatAmount(reward.amount))
                 .join(" ");
+
+              const validatorHistory = delegationHistory?.find(
+                (hist) =>
+                  hist.validator_address ===
+                  delegation.delegation.validator_address
+              );
 
               console.log(
                 "Checking redelegation for:",
@@ -491,39 +547,100 @@ export function StakesTable({
                       )}
                     </div>
                   </td>
+                  <td
+                    className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
+                  >
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm font-medium">
+                          Total Delegated:
+                        </span>
+                        <span className="ml-2">
+                          {formatAmount(
+                            validatorHistory?.total_delegated || "0"
+                          )}{" "}
+                          KII
+                        </span>
+                      </div>
+
+                      {(validatorHistory?.redelegations ?? []).length > 0 && (
+                        <div className="text-sm">
+                          <span className="font-medium">Redelegations:</span>
+                          {(validatorHistory?.redelegations ?? []).map(
+                            (redel, idx) => (
+                              <div key={idx} className="ml-2">
+                                {formatAmount(redel.amount)} KII
+                                <span className="text-xs ml-2">
+                                  (completes{" "}
+                                  {new Date(
+                                    redel.completion_time
+                                  ).toLocaleDateString()}
+                                  )
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {(validatorHistory?.unbondings ?? []).length > 0 && (
+                        <div className="text-sm">
+                          <span className="font-medium">Unbondings:</span>
+                          {(validatorHistory?.unbondings ?? []).map(
+                            (unbond, idx) => (
+                              <div key={idx} className="ml-2">
+                                {formatAmount(unbond.amount)} KII
+                                <span className="text-xs ml-2">
+                                  (completes{" "}
+                                  {new Date(
+                                    unbond.completion_time
+                                  ).toLocaleDateString()}
+                                  )
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-4">
-                    <button
-                      className={`px-4 py-2 rounded-lg ${
-                        hasRedelegation
-                          ? "bg-gray-400 cursor-not-allowed opacity-50"
-                          : `bg-[${theme.boxColor}] hover:opacity-80`
-                      }`}
-                      onClick={() => {
-                        if (!hasRedelegation) {
-                          setSelectedValidator(validatorAddress || "");
-                          setIsRedelegateModalOpen(true);
-                        }
-                      }}
-                      disabled={hasRedelegation}
-                      title={
-                        hasRedelegation
-                          ? `Redelegation in progress until ${completionTime}`
-                          : "Relocate stake"
-                      }
-                    >
-                      {hasRedelegation ? "In Progress" : "Relocate"}
-                    </button>
-                    <button
-                      className={`ml-2 px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
-                      onClick={() => {
-                        setSelectedValidator(
-                          delegation.delegation.validator_address
-                        );
-                        setIsUndelegateModalOpen(true);
-                      }}
-                    >
-                      Withdraw
-                    </button>
+                    {!isConnected ? (
+                      <div className="flex gap-2 justify-center">
+                        <WagmiConnectButton />
+                        <WagmiConnectButton />
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          className={`px-4 py-2 rounded-lg ${
+                            hasRedelegation
+                              ? "bg-gray-400 cursor-not-allowed opacity-50"
+                              : `bg-[${theme.boxColor}] hover:opacity-80`
+                          }`}
+                          onClick={() =>
+                            handleRedelegateClick(validatorAddress)
+                          }
+                          disabled={hasRedelegation}
+                          title={
+                            hasRedelegation
+                              ? `Redelegation in progress until ${completionTime}`
+                              : "Relocate stake"
+                          }
+                        >
+                          {relocateButtonStates[validatorAddress] ||
+                            (hasRedelegation ? "In Progress" : "Relocate")}
+                        </button>
+                        <button
+                          className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
+                          onClick={() =>
+                            handleUndelegateClick(validatorAddress)
+                          }
+                        >
+                          {withdrawButtonStates[validatorAddress] || "Withdraw"}
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               );
@@ -544,8 +661,6 @@ export function StakesTable({
         onClose={() => setIsUndelegateModalOpen(false)}
         theme={theme}
         selectedValidator={selectedValidator}
-        onUndelegate={handleUndelegate}
-        validators={validators}
       />
     </div>
   );

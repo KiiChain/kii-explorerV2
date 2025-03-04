@@ -183,7 +183,7 @@ const UndelegateModal = ({
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const [amount, setAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [buttonText, setButtonText] = useState("Undelegate");
 
   const undelegateMutation = useUndelegateMutation();
 
@@ -193,18 +193,24 @@ const UndelegateModal = ({
       return;
     }
 
+    setButtonText("Processing...");
+
     try {
-      setIsLoading(true);
       await undelegateMutation.mutateAsync({
         walletClient,
         amount,
         validatorAddress,
       });
+      toast.success(
+        "Successfully undelegated tokens\nYour tokens will be available after the unbonding period of 21 days"
+      );
       onClose();
     } catch (error) {
       console.error("Error undelegating:", error);
-    } finally {
-      setIsLoading(false);
+      toast.error(
+        "Failed to undelegate tokens\nPlease try again or check your wallet connection"
+      );
+      setButtonText("Undelegate");
     }
   };
 
@@ -243,14 +249,16 @@ const UndelegateModal = ({
           </button>
           <button
             onClick={handleUndelegate}
-            disabled={isLoading}
+            disabled={undelegateMutation.isPending}
             className="px-4 py-2 rounded"
             style={{
               backgroundColor: theme.accentColor,
               color: theme.primaryTextColor,
+              opacity: undelegateMutation.isPending ? 0.7 : 1,
+              cursor: undelegateMutation.isPending ? "not-allowed" : "pointer",
             }}
           >
-            {isLoading ? "Processing..." : "Undelegate"}
+            {buttonText}
           </button>
         </div>
       </div>
