@@ -5,7 +5,13 @@ import { useState, useRef, useEffect } from "react";
 import { TESTNET_ORO_EVM } from "@/config/chain";
 import { GoArrowUpRight } from "react-icons/go";
 
-export const WagmiConnectButton = () => {
+interface WagmiConnectButtonProps {
+  customStyle?: React.CSSProperties;
+}
+
+export const WagmiConnectButton = ({
+  customStyle,
+}: WagmiConnectButtonProps) => {
   const { theme } = useTheme();
   const { open } = useAppKit();
   const { address, isConnected } = useAccount();
@@ -106,6 +112,7 @@ export const WagmiConnectButton = () => {
         style={{
           backgroundColor: theme.boxColor,
           color: theme.primaryTextColor,
+          ...customStyle,
         }}
         onClick={handleConnect}
       >

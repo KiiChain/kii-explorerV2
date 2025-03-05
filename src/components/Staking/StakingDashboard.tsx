@@ -168,25 +168,33 @@ export function StakingDashboard() {
     fetchStakingParams();
   }, []);
 
-  const filteredValidators = useMemo(() => {
-    let validators: Validator[] = [];
+  const sortedValidators = useMemo(() => {
+    const sortByVotingPower = (validators: Validator[]) => {
+      return [...validators].sort((a, b) => {
+        const aTokens = BigInt(a.tokens || "0");
+        const bTokens = BigInt(b.tokens || "0");
+        return bTokens > aTokens ? 1 : bTokens < aTokens ? -1 : 0;
+      });
+    };
 
+    return {
+      active: sortByVotingPower(activeValidators),
+      inactive: sortByVotingPower(inactiveValidators),
+    };
+  }, [activeValidators, inactiveValidators]);
+
+  const filteredValidators = useMemo(() => {
     switch (activeButton) {
       case "active":
-        validators = activeValidators;
-        break;
+        return sortedValidators.active;
       case "inactive":
-        validators = inactiveValidators;
-        break;
+        return sortedValidators.inactive;
       case "popular":
-        validators = [...activeValidators, ...inactiveValidators].sort(
-          (a, b) => parseInt(b.tokens) - parseInt(a.tokens)
-        );
-        break;
+        return sortedValidators.active.slice(0, 10);
+      default:
+        return [];
     }
-
-    return validators;
-  }, [activeButton, activeValidators, inactiveValidators]);
+  }, [activeButton, sortedValidators]);
 
   const indexOfLastValidator = currentPage * validatorsPerPage;
   const indexOfFirstValidator = indexOfLastValidator - validatorsPerPage;
