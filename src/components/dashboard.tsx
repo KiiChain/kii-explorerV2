@@ -239,7 +239,11 @@ export default function Dashboard() {
 
   const renderWalletSection = () => {
     if (!isConnected) {
-      return <WagmiConnectButton />;
+      return (
+        <div className="mt-6 p-6">
+          <WagmiConnectButton />
+        </div>
+      );
     }
 
     return (

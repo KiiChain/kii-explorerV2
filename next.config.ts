@@ -6,6 +6,20 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.kiichain.io",
+      },
+      {
+        protocol: "https",
+        hostname: "**.kiprotocol.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.google.com",
+      },
+    ],
   },
   webpack(config: Configuration) {
     config.module = config.module || {};

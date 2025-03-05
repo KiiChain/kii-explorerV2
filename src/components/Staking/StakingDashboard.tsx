@@ -1,56 +1,27 @@
 "use client";
 
 import { useTheme } from "@/context/ThemeContext";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import {
+  useValidators,
+  useValidatorIcons,
+} from "@/services/queries/validators";
+import { Table } from "@/components/ui/Table/Table";
+import { useAccount } from "wagmi";
+import { useDelegationsQuery } from "@/services/queries/delegations";
+import { useCosmosAddress } from "@/services/queries/cosmosAddress";
 
-interface Validator {
-  operator_address: string;
+interface ValidatorTableItem {
+  rank: number;
+  moniker: string;
+  website: string;
+  details?: string;
   tokens: string;
-  description: {
-    moniker: string;
-    website: string;
-    identity: string;
-    details: string;
-  };
-  commission: {
-    commission_rates: {
-      rate: string;
-    };
-  };
+  commission: string;
   status: string;
-  jailed: boolean;
-}
-
-interface ValidatorResponse {
-  status: string;
-  operator_address: string;
-  description: {
-    moniker: string;
-    website: string;
-    identity: string;
-    details: string;
-  };
-  commission: {
-    commission_rates: {
-      rate: string;
-    };
-  };
-  tokens: string;
-  jailed: boolean;
-}
-
-interface StakingParams {
-  params: {
-    unbonding_time: string;
-    max_validators: number;
-    max_entries: number;
-    historical_entries: number;
-    bond_denom: string;
-    min_commission_rate: string;
-    max_voting_power_ratio: string;
-    max_voting_power_enforcement_threshold: string;
-  };
+  operatorAddress: string;
 }
 
 export function StakingDashboard() {
@@ -59,144 +30,193 @@ export function StakingDashboard() {
   const [activeButton, setActiveButton] = useState<
     "popular" | "active" | "inactive"
   >("active");
-  const [activeValidators, setActiveValidators] = useState<Validator[]>([]);
-  const [inactiveValidators, setInactiveValidators] = useState<Validator[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const validatorsPerPage = 10;
-  const [stakingParams, setStakingParams] = useState({
-    unbondingTime: "21 Days",
-    maxValidators: 25,
-    minCommissionRate: "5%",
-    bondDenom: "ukii",
-  });
 
-  useEffect(() => {
-    async function fetchValidators() {
-      try {
-        const response = await fetch(
-          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
-        );
-        const data = await response.json();
-
-        console.log("API Response:", data);
-
-        if (!data?.validators || !Array.isArray(data.validators)) {
-          console.error("Invalid validators data:", data);
-          setActiveValidators([]);
-          setInactiveValidators([]);
-          return;
-        }
-
-        const validValidators = data.validators.map(
-          (validator: ValidatorResponse) => ({
-            operator_address: validator.operator_address,
-            tokens: validator.tokens,
-            description: {
-              moniker: validator.description.moniker,
-              website: validator.description.website,
-              identity: validator.description.identity,
-              details: validator.description.details,
-            },
-            commission: {
-              commission_rates: {
-                rate: validator.commission.commission_rates.rate,
-              },
-            },
-            status: validator.status,
-            jailed: validator.jailed,
-          })
-        );
-
-        const active = validValidators.filter(
-          (validator: Validator) =>
-            validator.status === "BOND_STATUS_BONDED" && !validator.jailed
-        );
-
-        const inactive = validValidators.filter(
-          (validator: Validator) =>
-            validator.status !== "BOND_STATUS_BONDED" || validator.jailed
-        );
-
-        console.log("Active validators:", active.length);
-        console.log("Inactive validators:", inactive.length);
-
-        setActiveValidators(active);
-        setInactiveValidators(inactive);
-      } catch (error) {
-        console.error("Error fetching validators:", error);
-        setActiveValidators([]);
-        setInactiveValidators([]);
-      }
-    }
-
-    fetchValidators();
-  }, []);
-
-  useEffect(() => {
-    async function fetchStakingParams() {
-      try {
-        const response = await fetch(
-          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/params"
-        );
-        const data: StakingParams = await response.json();
-
-        const unbondingDays = Math.floor(
-          parseInt(data.params.unbonding_time.replace("s", "")) / (24 * 60 * 60)
-        );
-
-        const minCommissionPercent = (
-          parseFloat(data.params.min_commission_rate) * 100
-        ).toFixed(0);
-
-        setStakingParams({
-          unbondingTime: `${unbondingDays} Days`,
-          maxValidators: data.params.max_validators,
-          minCommissionRate: `${minCommissionPercent}%`,
-          bondDenom: data.params.bond_denom,
-        });
-
-        console.log("Staking params:", data.params);
-      } catch (error) {
-        console.error("Error fetching staking params:", error);
-      }
-    }
-
-    fetchStakingParams();
-  }, []);
+  const { data: validatorsData, isLoading } = useValidators();
+  const { getValidatorIcon, handleImageError } = useValidatorIcons();
+  const { address } = useAccount();
+  const { data: cosmosAddress } = useCosmosAddress(address);
+  const { data: delegationsData } = useDelegationsQuery(cosmosAddress);
 
   const filteredValidators = useMemo(() => {
-    let validators: Validator[] = [];
+    if (!validatorsData) return [];
 
     switch (activeButton) {
       case "active":
-        validators = activeValidators;
-        break;
+        return validatorsData.active;
       case "inactive":
-        validators = inactiveValidators;
-        break;
+        return validatorsData.inactive;
       case "popular":
-        validators = [...activeValidators, ...inactiveValidators].sort(
-          (a, b) => parseInt(b.tokens) - parseInt(a.tokens)
-        );
-        break;
+        return validatorsData.active.slice(0, 10);
+      default:
+        return [];
     }
+  }, [activeButton, validatorsData]);
 
-    return validators;
-  }, [activeButton, activeValidators, inactiveValidators]);
-
-  const indexOfLastValidator = currentPage * validatorsPerPage;
-  const indexOfFirstValidator = indexOfLastValidator - validatorsPerPage;
-  const currentValidators = filteredValidators.slice(
-    indexOfFirstValidator,
-    indexOfLastValidator
-  );
   const totalPages = Math.ceil(filteredValidators.length / validatorsPerPage);
+  const currentValidators = filteredValidators.slice(
+    (currentPage - 1) * validatorsPerPage,
+    currentPage * validatorsPerPage
+  );
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeButton]);
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
 
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const formatDenom = (denom: string) => (denom === "ukii" ? "kii" : denom);
+
+  const validatorColumns = useMemo(
+    () => [
+      {
+        header: "Rank",
+        key: "rank",
+        render: (item: ValidatorTableItem) => (
+          <div
+            style={{ color: theme.accentColor }}
+            className="font-bold text-4xl text-center"
+          >
+            {item.rank}
+          </div>
+        ),
+      },
+      {
+        header: "Validator",
+        key: "validator",
+        render: (item: ValidatorTableItem) => (
+          <div className="flex items-center gap-7">
+            <Image
+              src={getValidatorIcon(item.website)}
+              alt={`${item.moniker} icon`}
+              width={40}
+              height={40}
+              className="rounded-full"
+              onError={() => handleImageError(item.website)}
+            />
+            <div className="flex-1">
+              <div
+                className="font-medium text-base"
+                style={{ color: theme.primaryTextColor }}
+              >
+                {item.moniker}
+              </div>
+              <div
+                className="text-base pt-1"
+                style={{ color: theme.primaryTextColor }}
+              >
+                {item.website || "No website provided"}
+              </div>
+              {item.details && (
+                <div
+                  className="text-base mt-1"
+                  style={{ color: theme.secondaryTextColor }}
+                >
+                  {item.details}
+                </div>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        header: "Your Stake",
+        key: "yourStake",
+        render: (item: ValidatorTableItem) => {
+          const delegation = delegationsData?.delegation_responses?.find(
+            (del) => del.delegation.validator_address === item.operatorAddress
+          );
+
+          const amount = delegation?.balance?.amount || "0";
+          const formattedAmount = (parseInt(amount) / 1000000).toLocaleString();
+
+          return (
+            <div
+              className="text-base"
+              style={{ color: theme.primaryTextColor }}
+            >
+              {formattedAmount}{" "}
+              {formatDenom(validatorsData?.params.bondDenom || "ukii")}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Voting Power",
+        key: "votingPower",
+        render: (item: ValidatorTableItem) => (
+          <div className="text-base" style={{ color: theme.primaryTextColor }}>
+            {(parseInt(item.tokens) / 1000000).toLocaleString()}{" "}
+            {formatDenom(validatorsData?.params.bondDenom || "ukii")}
+          </div>
+        ),
+      },
+      {
+        header: "Commission",
+        key: "commission",
+        render: (item: ValidatorTableItem) => (
+          <div style={{ color: theme.primaryTextColor }}>
+            {(parseFloat(item.commission) * 100).toFixed(1)}%
+          </div>
+        ),
+      },
+      {
+        header: "Actions",
+        key: "actions",
+        render: (item: ValidatorTableItem) => {
+          const showActions = address && cosmosAddress;
+
+          return showActions ? (
+            <button
+              className="px-4 py-2 rounded-lg text-base"
+              style={{
+                backgroundColor: theme.boxColor,
+                color: theme.accentColor,
+                boxShadow:
+                  "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                opacity: item.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
+                cursor:
+                  item.status !== "BOND_STATUS_BONDED"
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+              onClick={() => {
+                if (item.status === "BOND_STATUS_BONDED") {
+                  router.push(`/staking/${item.operatorAddress}`);
+                }
+              }}
+            >
+              Manage validator
+            </button>
+          ) : null;
+        },
+      },
+    ],
+    [
+      theme,
+      router,
+      address,
+      cosmosAddress,
+      validatorsData,
+      delegationsData,
+      getValidatorIcon,
+      handleImageError,
+    ]
+  );
+
+  const tableData = currentValidators.map((validator, index) => ({
+    rank: (currentPage - 1) * validatorsPerPage + index + 1,
+    moniker: validator.description.moniker,
+    website: validator.description.website,
+    details: validator.description.details,
+    tokens: validator.tokens,
+    commission: validator.commission.commission_rates.rate,
+    status: validator.status,
+    operatorAddress: validator.operator_address,
+  }));
+
+  if (isLoading) {
+    return <div>Loading validators...</div>;
+  }
 
   return (
     <div
@@ -230,7 +250,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.unbondingTime}
+                {validatorsData?.params.unbondingTime}
               </div>
               <div
                 className="text-base pt-2"
@@ -259,7 +279,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.minCommissionRate}
+                {validatorsData?.params.minCommissionRate}
               </div>
               <div
                 className="text-base pt-2"
@@ -291,7 +311,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.bondDenom}
+                {validatorsData?.params.bondDenom}
               </div>
               <div
                 className="text-base pt-2"
@@ -320,7 +340,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.maxValidators}
+                {validatorsData?.params.maxValidators}
               </div>
               <div
                 className="text-base pt-2"
@@ -398,116 +418,21 @@ export function StakingDashboard() {
         }}
         className="rounded-xl p-8"
       >
-        <table className="w-full">
-          <thead>
-            <tr
-              className="text-left text-base"
-              style={{ color: theme.primaryTextColor }}
-            >
-              <th className="p-4">Rank</th>
-              <th className="p-4">Validator</th>
-              <th className="p-4">Voting Power</th>
-              <th className="p-4">Commission</th>
-              <th className="p-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentValidators.map((validator, index) => (
-              <tr
-                key={validator.operator_address}
-                style={{ backgroundColor: theme.bgColor }}
-                className="border-t p-4 m-4 mb-4"
-              >
-                <td
-                  style={{ color: theme.accentColor }}
-                  className="p-4 font-bold text-center text-4xl"
-                >
-                  {(currentPage - 1) * validatorsPerPage + index + 1}
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-7">
-                    <div
-                      style={{
-                        backgroundColor: theme.accentColor,
-                        minWidth: "2.5rem",
-                        minHeight: "2.5rem",
-                        flexShrink: 0,
-                      }}
-                      className="w-10 h-10 rounded-full"
-                    ></div>
-                    <div className="flex-1">
-                      <div
-                        className="font-medium text-base"
-                        style={{ color: theme.primaryTextColor }}
-                      >
-                        {validator.description.moniker}
-                      </div>
-                      <div
-                        style={{ color: theme.primaryTextColor }}
-                        className="text-base pt-1"
-                      >
-                        {validator.description.website || "No website provided"}
-                      </div>
-                      {validator.description.details && (
-                        <div
-                          style={{ color: theme.secondaryTextColor }}
-                          className="text-base mt-1"
-                        >
-                          {validator.description.details}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div
-                    className="text-base"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    {(parseInt(validator.tokens) / 1000000).toLocaleString()}{" "}
-                    {stakingParams.bondDenom}
-                  </div>
-                </td>
-                <td className="p-4" style={{ color: theme.primaryTextColor }}>
-                  {(
-                    parseFloat(validator.commission.commission_rates.rate) * 100
-                  ).toFixed(1)}
-                  %
-                </td>
-                <td className="p-4">
-                  <button
-                    className="px-4 py-2 rounded-lg text-base"
-                    style={{
-                      backgroundColor: theme.boxColor,
-                      color: theme.accentColor,
-                      boxShadow:
-                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                      opacity:
-                        validator.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
-                      cursor:
-                        validator.status !== "BOND_STATUS_BONDED"
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                    onClick={() => {
-                      if (validator.status === "BOND_STATUS_BONDED") {
-                        router.push(`/staking/${validator.operator_address}`);
-                      }
-                    }}
-                  >
-                    Create Stake
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table
+          columns={validatorColumns}
+          data={tableData}
+          theme={theme}
+          emptyMessage="No validators found"
+        />
 
         <div className="flex justify-between items-center mt-6 px-4">
           <div style={{ color: theme.secondaryTextColor }} className="text-sm">
-            Showing {indexOfFirstValidator + 1} to{" "}
-            {Math.min(indexOfLastValidator, filteredValidators.length)} of{" "}
-            {filteredValidators.length} validators
+            Showing {(currentPage - 1) * validatorsPerPage + 1} to{" "}
+            {Math.min(
+              currentPage * validatorsPerPage,
+              filteredValidators.length
+            )}{" "}
+            of {filteredValidators.length} validators
           </div>
           <div className="flex gap-2">
             <button

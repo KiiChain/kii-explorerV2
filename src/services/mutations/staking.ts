@@ -4,7 +4,7 @@ import {
   STAKING_PRECOMPILE_ABI,
   STAKING_PRECOMPILE_ADDRESS,
 } from "@/lib/abi/staking";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { type WalletClient } from "viem";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 import { bech32 } from "bech32";
@@ -160,41 +160,30 @@ export const useRedelegateMutation = () => {
         throw error;
       }
     },
-    onError: (error: unknown) => {
-      console.error("Redelegation error:", error);
-      if (error instanceof Error) {
-        if (error.message.includes("active redelegation exists")) {
-          toast.error(
-            "Cannot redelegate: There is an active redelegation to this validator"
-          );
-        } else if (
-          error.message.includes(
-            "redelegation to this validator already in progress"
-          )
-        ) {
-          toast.error(
-            "Cannot redelegate: A redelegation is already in progress"
-          );
-        } else {
-          toast.error("Failed to redelegate tokens. Please try again later.");
-        }
-      } else {
-        toast.error("Failed to redelegate tokens. Please try again later.");
-      }
-    },
     onSuccess: () => {
-      toast.success("Redelegation successful!");
+      toast.success("Successfully relocated your stake", {
+        description: "Your tokens have been relocated to the new validator",
+      });
       queryClient.invalidateQueries({ queryKey: ["delegations", "validator"] });
+    },
+    onError: (error) => {
+      console.error("Redelegation error:", error);
+      toast.error("Failed to relocate stake", {
+        description:
+          "Please try again or contact support if the problem persists",
+      });
     },
   });
 };
 
 export const useUndelegateMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({
-      walletClient,
-      amount,
       validatorAddress,
+      amount,
+      walletClient,
     }: UndelegateMutationParams) => {
       const stakingContract = await getStakingContract(walletClient);
       const amountInWei = ethers.parseUnits(amount, 6);
@@ -206,12 +195,18 @@ export const useUndelegateMutation = () => {
 
       return await tx.wait();
     },
-    onError: (error: unknown) => {
-      console.error("Undelegation error:", error);
-      toast.error("Failed to undelegate tokens. Please try again later.");
-    },
     onSuccess: () => {
-      toast.success("Undelegation successful!");
+      toast.success("Successfully withdrawn your stake", {
+        description: "Your tokens will be available after the unbonding period",
+      });
+      queryClient.invalidateQueries({ queryKey: ["delegations"] });
+    },
+    onError: (error) => {
+      console.error("Undelegation error:", error);
+      toast.error("Failed to withdraw stake", {
+        description:
+          "Please try again or contact support if the problem persists",
+      });
     },
   });
 };

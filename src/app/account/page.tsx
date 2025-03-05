@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { WalletSession } from "@/components/dashboard";
 import { AddressCard } from "@/components/Account/AddressCard";
 import { BalanceAndAssets } from "@/components/Account/BalanceAndAssets";
@@ -183,7 +183,7 @@ const UndelegateModal = ({
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const [amount, setAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [buttonText, setButtonText] = useState("Undelegate");
 
   const undelegateMutation = useUndelegateMutation();
 
@@ -193,18 +193,24 @@ const UndelegateModal = ({
       return;
     }
 
+    setButtonText("Processing...");
+
     try {
-      setIsLoading(true);
       await undelegateMutation.mutateAsync({
         walletClient,
         amount,
         validatorAddress,
       });
+      toast.success(
+        "Successfully undelegated tokens\nYour tokens will be available after the unbonding period of 21 days"
+      );
       onClose();
     } catch (error) {
       console.error("Error undelegating:", error);
-    } finally {
-      setIsLoading(false);
+      toast.error(
+        "Failed to undelegate tokens\nPlease try again or check your wallet connection"
+      );
+      setButtonText("Undelegate");
     }
   };
 
@@ -243,14 +249,16 @@ const UndelegateModal = ({
           </button>
           <button
             onClick={handleUndelegate}
-            disabled={isLoading}
+            disabled={undelegateMutation.isPending}
             className="px-4 py-2 rounded"
             style={{
               backgroundColor: theme.accentColor,
               color: theme.primaryTextColor,
+              opacity: undelegateMutation.isPending ? 0.7 : 1,
+              cursor: undelegateMutation.isPending ? "not-allowed" : "pointer",
             }}
           >
-            {isLoading ? "Processing..." : "Undelegate"}
+            {buttonText}
           </button>
         </div>
       </div>
@@ -259,17 +267,22 @@ const UndelegateModal = ({
 };
 
 export default function AddressPage() {
-  const { address } = useParams();
+  const { address: paramAddress } = useParams();
+  const { address: connectedAddress } = useAccount();
   const validAddress =
-    typeof address === "string" && address.startsWith("0x")
-      ? (address as `0x${string}`)
+    typeof paramAddress === "string" && paramAddress.startsWith("0x")
+      ? (paramAddress as `0x${string}`)
       : undefined;
   const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
   const [session, setSession] = useState<WalletSession | null>(null);
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState<FormattedDelegation[]>([]);
-  const { data: validators = {} } = useValidators();
+  const { data: validators } = useValidators();
+  const validatorMap = useMemo(
+    () => validators?.validatorMap || ({} as Record<string, string>),
+    [validators?.validatorMap]
+  );
   const [selectedValidator, setSelectedValidator] = useState("");
   const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
   const [isUndelegateModalOpen, setIsUndelegateModalOpen] = useState(false);
@@ -286,8 +299,8 @@ export default function AddressPage() {
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
 
-  const { data: kiiAddressData } = useKiiAddressQuery(address as string);
-  const kiiAddress = kiiAddressData?.kii_address || address;
+  const { data: kiiAddressData } = useKiiAddressQuery(paramAddress as string);
+  const kiiAddress = kiiAddressData?.kii_address || paramAddress;
 
   const {
     data: transactionsData,
@@ -305,8 +318,11 @@ export default function AddressPage() {
     withdrawalsData?.withdraw_address
   );
 
+  const isOwner =
+    connectedAddress?.toLowerCase() === validAddress?.toLowerCase();
+
   useEffect(() => {
-    if (!address) {
+    if (!paramAddress) {
       router.push("/");
       return;
     }
@@ -390,7 +406,7 @@ export default function AddressPage() {
               delegator_address: kiiAddress,
               shares: formatAmount(del.delegation.shares),
               moniker:
-                validators[del.delegation.validator_address] || "Unknown",
+                validatorMap[del.delegation.validator_address] || "Unknown",
             },
             balance: {
               ...del.balance,
@@ -404,14 +420,14 @@ export default function AddressPage() {
       setSession(walletData);
     }
   }, [
-    address,
+    paramAddress,
     router,
     balance,
     delegationsData,
     rewardsData,
     withdrawalsData,
     withdrawHistoryData,
-    validators,
+    validatorMap,
     kiiAddress,
   ]);
 
@@ -429,7 +445,9 @@ export default function AddressPage() {
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
-      <AddressCard account={typeof address === "string" ? address : ""} />
+      <AddressCard
+        account={typeof paramAddress === "string" ? paramAddress : ""}
+      />
       <BalanceAndAssets
         assets={[
           {
@@ -461,7 +479,7 @@ export default function AddressPage() {
       <WithdrawalsTable withdrawals={[]} />
       <StakesTable
         delegations={delegations}
-        validators={validators}
+        validators={validatorMap}
         theme={theme}
         selectedValidator={selectedValidator}
         setSelectedValidator={setSelectedValidator}
@@ -469,6 +487,7 @@ export default function AddressPage() {
         setIsUndelegateModalOpen={setIsUndelegateModalOpen}
         isRedelegateModalOpen={isRedelegateModalOpen}
         isUndelegateModalOpen={isUndelegateModalOpen}
+        isOwner={isOwner}
       />
       <TransactionsTable
         transactions={transactions}
@@ -476,14 +495,16 @@ export default function AddressPage() {
         hasMore={hasNextPage}
         isLoading={isFetchingNextPage}
       />
-      <AccountInfo account={typeof address === "string" ? address : ""} />
+      <AccountInfo
+        account={typeof paramAddress === "string" ? paramAddress : ""}
+      />
 
       <RedelegateModal
         isOpen={isRedelegateModalOpen}
         onClose={() => setIsRedelegateModalOpen(false)}
         validatorAddress={selectedValidator}
         theme={theme}
-        validators={validators}
+        validators={validatorMap}
       />
       <UndelegateModal
         isOpen={isUndelegateModalOpen}

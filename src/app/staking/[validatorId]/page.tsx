@@ -2,6 +2,8 @@
 
 import React, { useState, use } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { toast } from "react-hot-toast";
@@ -10,7 +12,11 @@ import { useDelegateMutation } from "@/services/mutations/staking";
 
 import { useValidatorQuery } from "@/services/queries/validator";
 import { useUnbondingDelegationsQuery } from "@/services/queries/unbondingDelegations";
-import { useDelegationsQuery } from "@/services/queries/delegations";
+
+import { useValidatorIcons } from "@/services/queries/validators";
+import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
+import { useValidatorHistory } from "@/services/queries/validatorHistory";
+import { Table } from "@/components/ui/Table/Table";
 
 interface SignDoc {
   chain_id: string;
@@ -125,22 +131,18 @@ interface DelegateModalProps {
   theme: Theme;
 }
 
-interface UnbondingDelegation {
-  delegator_address: string;
-  validator_address: string;
-  entries: Array<{
-    creation_height: string;
-    completion_time: string;
-    initial_balance: string;
-    balance: string;
-  }>;
+interface DelegationItem {
+  type: string;
+  amount: string;
+  status: string;
+  completionTime: string;
 }
 
-interface Delegation {
-  balance: {
-    amount: string;
-    denom: string;
-  };
+interface TransactionItem {
+  type: string;
+  amount: string;
+  time: string;
+  status: string;
 }
 
 const formatNumber = (value: string | number) => {
@@ -203,9 +205,17 @@ const DelegateModal = ({
         amount,
         validatorAddress: validator.operatorAddress,
       });
+
+      toast.success(
+        "Successfully staked tokens\nYour tokens have been staked with the validator"
+      );
+
       onClose();
     } catch (error) {
-      console.error("Error delegating:", error);
+      console.error("Staking error:", error);
+      toast.error(
+        "Failed to stake tokens\nPlease try again or check your wallet connection"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -338,21 +348,19 @@ const DelegateModal = ({
             />
           </div>
 
-          <div className="flex items-center gap-2 mt-4">
-            <input type="checkbox" id="advance" />
-            <label htmlFor="advance" style={{ color: theme.primaryTextColor }}>
-              Advance
-            </label>
+          <div className="pt-4">
+            <button
+              className="text-base font-semibold px-6 py-3 rounded-lg w-full md:w-auto hover:opacity-90 transition-opacity"
+              style={{
+                backgroundColor: theme.bgColor,
+                color: theme.accentColor,
+              }}
+              onClick={handleStake}
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : "Stake Now"}
+            </button>
           </div>
-
-          <button
-            className="w-full p-3 rounded-lg mt-6 text-white"
-            style={{ backgroundColor: theme.accentColor }}
-            onClick={handleStake}
-            disabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Stake"}
-          </button>
         </div>
       </div>
     </div>
@@ -379,14 +387,18 @@ export default function ValidatorPage({
   params: Promise<{ validatorId: string }>;
 }) {
   const { validatorId } = use(params);
-
+  const { isConnected, address } = useAccount();
   const { theme } = useTheme();
   const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
+  const router = useRouter();
 
   const { data: validator } = useValidatorQuery(validatorId);
-  const { data: unbondingDelegations = [] } =
-    useUnbondingDelegationsQuery(validatorId);
-  const { data: delegations } = useDelegationsQuery(validatorId);
+  const { data: validatorHistory, isLoading: historyLoading } =
+    useValidatorHistory(address, validatorId);
+
+  useUnbondingDelegationsQuery(validatorId);
+
+  const { getValidatorIcon, handleImageError } = useValidatorIcons();
 
   const formattedValidator: ValidatorProps | null = validator
     ? {
@@ -397,6 +409,72 @@ export default function ValidatorPage({
         commission: validator.commission.commission_rates.rate,
       }
     : null;
+
+  const delegationColumns = [
+    {
+      header: "Type",
+      key: "type",
+    },
+    {
+      header: "Amount",
+      key: "amount",
+      render: (item: DelegationItem) => `${item.amount} KII`,
+    },
+    {
+      header: "Status",
+      key: "status",
+      render: (item: DelegationItem) => (
+        <span
+          className="px-2 py-1 rounded-full"
+          style={{
+            backgroundColor:
+              item.status === "Active" ? theme.accentColor : theme.bgColor,
+            color:
+              item.status === "Active" ? theme.boxColor : theme.accentColor,
+          }}
+        >
+          {item.status}
+        </span>
+      ),
+    },
+    {
+      header: "Completion Time",
+      key: "completionTime",
+    },
+  ];
+
+  const transactionColumns = [
+    {
+      header: "Transaction Type",
+      key: "type",
+    },
+    {
+      header: "Amount",
+      key: "amount",
+      render: (item: TransactionItem) => `${item.amount} KII`,
+    },
+    {
+      header: "Time",
+      key: "time",
+    },
+    {
+      header: "Status",
+      key: "status",
+      render: (item: TransactionItem) => (
+        <span
+          className="px-2 py-1 rounded-full"
+          style={{
+            backgroundColor:
+              item.status === "Completed" ? theme.accentColor : theme.bgColor,
+            color:
+              item.status === "Completed" ? theme.boxColor : theme.accentColor,
+          }}
+        >
+          {item.status}
+        </span>
+      ),
+    },
+  ];
 
   if (!validator) {
     return <div>Validator not found</div>;
@@ -413,52 +491,78 @@ export default function ValidatorPage({
             <div className="flex flex-col md:flex-row gap-4">
               <div className="w-full md:w-1/3">
                 <div className="relative w-28 h-28">
-                  <div
-                    style={{ backgroundColor: theme.primaryTextColor }}
-                    className="w-full h-full rounded-full"
-                  />
+                  <div className="w-full h-full rounded-full" />
                   <div className="pl-1 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <svg
-                      width="47"
-                      height="29"
-                      viewBox="0 0 47 29"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M2.94615 0H0V29H2.94615V0ZM28.716 11.7773C27.2653 10.3989 27.2697 8.1597 28.716 6.78561L33.3317 2.40041H40.9113L30.7694 12.036L32.5505 13.7324L47 0H21.1408L10.7356 9.88579V0H7.78944V29H10.7356V19.2584L20.9891 29H46.8348L28.716 11.7773ZM15.7887 15.6748C15.6503 15.8062 15.5208 15.9462 15.3959 16.0861C15.3601 16.1243 15.3334 16.1625 15.2977 16.2049C15.2039 16.3152 15.1191 16.4297 15.0343 16.5442C15.0075 16.5823 14.9807 16.6205 14.9539 16.6587C14.8602 16.7944 14.7754 16.9301 14.695 17.0743C14.6861 17.0913 14.6772 17.1082 14.6682 17.1209C14.3915 17.6214 14.1951 18.1557 14.079 18.7113C14.079 18.724 14.0746 18.741 14.0701 18.7537C14.0522 18.8343 14.0344 18.9106 14.021 18.9912L11.9944 17.0658C11.2936 16.4 10.9052 15.5136 10.9052 14.5679C10.9052 13.6221 11.2936 12.7357 11.9944 12.0699L22.1854 2.39617H29.765L15.7887 15.6748ZM22.0336 26.6038C22.0336 26.6038 17.3957 22.1889 17.3198 22.0956C17.3109 22.0829 17.3019 22.0744 17.293 22.0617C16.2931 20.87 16.2217 19.199 17.0877 17.9395C17.0877 17.9352 17.0966 17.9267 17.1011 17.9183C17.1591 17.8377 17.2216 17.7571 17.2841 17.6808C17.2975 17.6638 17.3109 17.6468 17.3242 17.6299C17.4001 17.5408 17.4805 17.456 17.5653 17.3754C17.5653 17.3754 17.5698 17.3669 17.5742 17.3669L19.6008 15.4415C19.6097 15.5009 19.6231 15.5603 19.6365 15.6196C19.6499 15.6832 19.6588 15.7469 19.6722 15.8105C19.699 15.9377 19.7347 16.0607 19.7704 16.1837C19.7838 16.2303 19.7972 16.2812 19.8106 16.3279C19.8642 16.4975 19.9267 16.6629 19.9981 16.8241C20.016 16.8622 20.0338 16.8962 20.0517 16.9343C20.1097 17.0616 20.1722 17.1846 20.2391 17.3075C20.2704 17.3627 20.3016 17.4136 20.3329 17.4687C20.3954 17.5705 20.4579 17.6723 20.5248 17.7741C20.5605 17.8292 20.6007 17.8843 20.6364 17.9352C20.7079 18.037 20.7882 18.1345 20.8686 18.2321C20.9043 18.2745 20.94 18.3211 20.9802 18.3636C21.1007 18.5035 21.2301 18.635 21.364 18.7665L29.6177 26.6081H22.0381L22.0336 26.6038ZM23.1451 17.0701C22.4443 16.4042 22.0559 15.5178 22.0559 14.5721C22.0559 13.6264 22.4443 12.74 23.1451 12.0741L25.1762 10.1445C25.3637 11.3617 25.9484 12.5322 26.9349 13.4694L40.7506 26.6038H33.1799L23.1451 17.0701Z"
-                        fill="#05000F"
-                      />
-                    </svg>
+                    <Image
+                      src={getValidatorIcon(validator?.description?.website)}
+                      alt={`${validator?.description?.moniker} icon`}
+                      width={94}
+                      height={58}
+                      className="rounded-lg"
+                      onError={() =>
+                        handleImageError(validator?.description?.website)
+                      }
+                    />
                   </div>
                 </div>
               </div>
               <div className="w-full md:w-2/3">
-                <h2
-                  className="text-base font-bold mb-1 md:truncate"
-                  style={{ color: theme.primaryTextColor }}
-                >
-                  {validator.description.moniker.length > 15
-                    ? `${validator.description.moniker.substring(0, 15)}...`
-                    : validator.description.moniker}
-                </h2>
-                <p
-                  className="text-xs font-bold mb-1 break-all"
-                  style={{ color: theme.secondaryTextColor }}
-                >
-                  {validator.operator_address}
-                </p>
-                <div className="pt-4">
-                  <button
-                    className="text-xs p-2 rounded-lg w-full md:w-auto"
-                    style={{
-                      backgroundColor: theme.bgColor,
-                      color: theme.accentColor,
-                    }}
-                    onClick={() => setIsDelegateModalOpen(true)}
-                  >
-                    Create Stake
-                  </button>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h1
+                      className="text-2xl font-bold pb-4"
+                      style={{ color: theme.primaryTextColor }}
+                    >
+                      {validator?.description?.moniker}
+                    </h1>
+                    <p
+                      className="text-xs font-bold mb-1 break-all"
+                      style={{ color: theme.secondaryTextColor }}
+                    >
+                      {validator.operator_address}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div>
+                    {!isConnected ? (
+                      <WagmiConnectButton
+                        customStyle={{
+                          backgroundColor: theme.bgColor,
+                          color: theme.accentColor,
+                        }}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setIsDelegateModalOpen(true)}
+                        className="px-4 py-2 rounded-lg text-white"
+                        style={{
+                          backgroundColor: theme.bgColor,
+                          color: theme.accentColor,
+                        }}
+                      >
+                        Create Stake
+                      </button>
+                    )}
+                  </div>
+                  {isConnected && (
+                    <div>
+                      <button
+                        onClick={() => {
+                          if (address) {
+                            router.push(`/account/${address}`);
+                          }
+                        }}
+                        className="px-4 py-2 rounded-lg text-white"
+                        style={{
+                          backgroundColor: theme.bgColor,
+                          color: theme.accentColor,
+                        }}
+                      >
+                        My delegations
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -469,7 +573,9 @@ export default function ValidatorPage({
                 rel="noopener noreferrer"
                 className="text-sm hover:underline"
                 style={{ color: theme.accentColor }}
-              ></a>
+              >
+                {validator.description.website}
+              </a>
             )}
             <div className="flex flex-col gap-4 mt-4 w-full">
               <a
@@ -520,7 +626,7 @@ export default function ValidatorPage({
                   className="text-sm underline break-all"
                   style={{ color: theme.primaryTextColor }}
                 >
-                  https://explorer.kiichain.io/testnet
+                  {validator.description.website || "No website provided"}
                 </p>
               </a>
 
@@ -542,7 +648,7 @@ export default function ValidatorPage({
                       fill="#D2AAFA"
                     />
                     <path
-                      d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479 8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
+                      d="M14.125 3.5L10.258 7.92C9.97642 8.24189 9.62927 8.49986 9.23984 8.67661C8.8504 8.85336 8.42767 8.94479C8 8.94479C7.57233 8.94479 7.1496 8.85336 6.76016 8.67661C6.37073 8.49986 6.02358 8.24189 5.742 7.92L1.875 3.5H14.125ZM3.204 3.5L6.494 7.261C6.68172 7.47565 6.91317 7.64768 7.17283 7.76554C7.43248 7.88341 7.71434 7.94439C8.28466 7.94439 8.56651 7.88341 8.82617 7.76554C9.08583 7.64768 9.31728 7.47565 9.505 7.261L12.796 3.5H3.204Z"
                       fill="#D2AAFA"
                     />
                   </svg>
@@ -669,7 +775,7 @@ export default function ValidatorPage({
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M12.6666 3.83331L3.33325 13.1666M11.3333 13.1666C10.9796 13.1666 10.6405 13.0262 10.3904 12.7761C10.1404 12.5261 9.99992 12.1869 9.99992 11.8333C9.99992 11.4797 10.1404 11.1406 10.3904 10.8905C10.6405 10.6405 10.9796 10.5 11.3333 10.5C11.6869 10.5 12.026 10.6405 12.2761 10.8905C12.5261 11.1406 12.6666 11.4797 12.6666 11.8333C12.6666 12.1869 12.5261 12.5261 12.2761 12.7761C12.026 13.0262 11.6869 13.1666 11.3333 13.1666ZM4.66659 6.49998C4.31296 6.49998 3.97382 6.3595 3.72378 6.10946C3.47373 5.85941 3.33325 5.52027 3.33325 5.16665C3.33325 4.81302 3.47373 4.47389 3.72378 4.22384C3.97382 3.97379 4.31296 3.83331 4.66659 3.83331C5.02021 3.83331 5.35935 3.97379 5.60939 4.22384C5.85944 4.47389 5.99992 4.81302 5.99992 5.16665C5.99992 5.52027 5.85944 5.85941 5.60939 6.10946C5.35935 6.3595 5.02021 6.49998 4.66659 6.49998Z"
+                        d="M12.6666 3.83331L3.33325 13.1666M11.3333 13.1666C10.9796 13.1666 10.6405 13.0262 10.3904 12.7761C10.1404 12.5261 9.99992 12.1869 9.99992 11.8333C9.99992 11.4797 10.1404 11.1406 10.3904 10.8905C10.6405 10.6405 10.9796 10.5 11.3333 10.5C11.6869 10.5 12.026 10.6405 12.2761 10.8905C12.5261 11.1406 12.6666 11.4797 12.6666 11.8333C12.6666 12.1869 12.5261 12.5261 12.2761 12.7761C12.026 13.0262 11.6869 13.1666 11.3333 13.1666ZM4.66659 6.49998C4.31296 6.49998 3.97382 6.3595 3.72378 6.10946C3.47373 5.85941 3.33325 5.52027 3.33325 5.16665C3.33325 4.81302 3.47378 4.47389 3.72378 4.22384C3.97382 3.97379 4.31296 3.83331 4.66659 3.83331C5.02021 3.83331 5.35935 3.97379 5.60939 4.22384C5.85944 4.47389 5.99992 4.81302 5.99992 5.16665C5.99992 5.52027 5.85944 5.85941 5.60939 6.10946C5.35935 6.3595 5.02021 6.49998 4.66659 6.49998Z"
                         stroke="#E0B1FF"
                         strokeWidth="1.5"
                         strokeLinecap="round"
@@ -847,120 +953,85 @@ export default function ValidatorPage({
               Delegations & Unbondings
             </h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th
-                    className="text-left text-sm font-normal pb-4"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    Type
-                  </th>
-                  <th
-                    className="text-left text-sm font-normal pb-4"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    Amount
-                  </th>
-                  <th
-                    className="text-left text-sm font-normal pb-4"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    Status
-                  </th>
-                  <th
-                    className="text-left text-sm font-normal pb-4"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    Completion Time
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Delegaciones activas */}
-                {delegations?.delegation_responses?.map(
-                  (delegation: Delegation, index: number) => (
-                    <tr key={`delegation-${index}`}>
-                      <td
-                        className="text-sm py-2"
-                        style={{ color: theme.primaryTextColor }}
-                      >
-                        Delegation
-                      </td>
-                      <td
-                        className="text-sm py-2"
-                        style={{ color: theme.primaryTextColor }}
-                      >
-                        {formatAmount(delegation.balance?.amount || "0")} KII
-                      </td>
-                      <td
-                        className="text-sm py-2"
-                        style={{ color: theme.primaryTextColor }}
-                      >
-                        <span
-                          className="px-2 py-1 rounded-full"
-                          style={{
-                            backgroundColor: theme.accentColor,
-                            color: theme.boxColor,
-                          }}
-                        >
-                          Active
-                        </span>
-                      </td>
-                      <td
-                        className="text-sm py-2"
-                        style={{ color: theme.primaryTextColor }}
-                      >
-                        -
-                      </td>
-                    </tr>
-                  )
-                )}
-
-                {/* Unbonding delegations */}
-                {unbondingDelegations?.map(
-                  (unbonding: UnbondingDelegation, index: number) =>
-                    unbonding.entries.map((entry, entryIndex: number) => (
-                      <tr key={`unbonding-${index}-${entryIndex}`}>
-                        <td
-                          className="text-sm py-2"
-                          style={{ color: theme.primaryTextColor }}
-                        >
-                          Unbonding
-                        </td>
-                        <td
-                          className="text-sm py-2"
-                          style={{ color: theme.primaryTextColor }}
-                        >
-                          {formatAmount(entry.balance || "0")} KII
-                        </td>
-                        <td
-                          className="text-sm py-2"
-                          style={{ color: theme.primaryTextColor }}
-                        >
-                          <span
-                            className="px-2 py-1 rounded-full"
-                            style={{
-                              backgroundColor: theme.bgColor,
-                              color: theme.accentColor,
-                            }}
-                          >
-                            Unbonding
-                          </span>
-                        </td>
-                        <td
-                          className="text-sm py-2"
-                          style={{ color: theme.primaryTextColor }}
-                        >
-                          {new Date(entry.completion_time).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
+          {!address ? (
+            <div>Please connect your wallet to view delegation history</div>
+          ) : historyLoading ? (
+            <div>Loading delegation history...</div>
+          ) : !validatorHistory || !validatorHistory[0]?.delegations ? (
+            <div>No delegation history available for this validator</div>
+          ) : (
+            <Table
+              columns={delegationColumns}
+              data={[
+                ...(validatorHistory[0]?.delegations?.map((delegation) => ({
+                  type: "Delegation",
+                  amount: formatAmount(delegation?.balance?.amount || "0"),
+                  status: "Active",
+                  completionTime: "-",
+                })) || []),
+                ...(validatorHistory[0]?.unbondings?.map((unbonding) => ({
+                  type: "Unbonding",
+                  amount: formatAmount(unbonding.amount || "0"),
+                  status: "Unbonding",
+                  completionTime: new Date(
+                    unbonding.completion_time
+                  ).toLocaleString(),
+                })) || []),
+                ...(validatorHistory[0]?.redelegations?.map((redelegation) => ({
+                  type: "Redelegation",
+                  amount: formatAmount(redelegation.amount || "0"),
+                  status: "Redelegating",
+                  completionTime: new Date(
+                    redelegation.completion_time
+                  ).toLocaleString(),
+                })) || []),
+              ]}
+              theme={theme}
+              emptyMessage="No delegation history available"
+            />
+          )}
+        </div>
+      </div>
+      <div className="mt-6 px-6">
+        <div
+          className="rounded-xl p-6"
+          style={{ backgroundColor: theme.boxColor }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3
+              className="text-sm font-medium"
+              style={{ color: theme.primaryTextColor }}
+            >
+              Transaction History
+            </h3>
           </div>
+          <Table
+            columns={transactionColumns}
+            data={[
+              ...(validatorHistory?.[0]?.delegations?.map((d) => ({
+                type: "Delegation",
+                amount: formatAmount(d?.balance?.amount || "0"),
+                time: new Date().toLocaleString(),
+                status: "Completed",
+              })) || []),
+              ...(validatorHistory?.[0]?.unbondings?.map((u) => ({
+                type: "Unbonding",
+                amount: formatAmount(u.amount || "0"),
+                time: new Date(u.completion_time).toLocaleString(),
+                status: "Processing",
+              })) || []),
+              ...(validatorHistory?.[0]?.redelegations?.map((r) => ({
+                type: "Redelegation",
+                amount: formatAmount(r.amount || "0"),
+                time: new Date(r.completion_time).toLocaleString(),
+                status: "Processing",
+              })) || []),
+            ].sort(
+              (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+            )}
+            theme={theme}
+            emptyMessage="No transaction history available"
+          />
         </div>
       </div>
       {formattedValidator && (
