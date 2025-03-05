@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { WalletSession } from "@/components/dashboard";
 import { AddressCard } from "@/components/Account/AddressCard";
 import { BalanceAndAssets } from "@/components/Account/BalanceAndAssets";
@@ -277,7 +277,11 @@ export default function AddressPage() {
   const [session, setSession] = useState<WalletSession | null>(null);
   const { theme } = useTheme();
   const [delegations, setDelegations] = useState<FormattedDelegation[]>([]);
-  const { data: validators = {} } = useValidators();
+  const { data: validators } = useValidators();
+  const validatorMap = useMemo(
+    () => validators?.validatorMap || ({} as Record<string, string>),
+    [validators?.validatorMap]
+  );
   const [selectedValidator, setSelectedValidator] = useState("");
   const [isRedelegateModalOpen, setIsRedelegateModalOpen] = useState(false);
   const [isUndelegateModalOpen, setIsUndelegateModalOpen] = useState(false);
@@ -398,7 +402,7 @@ export default function AddressPage() {
               delegator_address: kiiAddress,
               shares: formatAmount(del.delegation.shares),
               moniker:
-                validators[del.delegation.validator_address] || "Unknown",
+                validatorMap[del.delegation.validator_address] || "Unknown",
             },
             balance: {
               ...del.balance,
@@ -419,7 +423,7 @@ export default function AddressPage() {
     rewardsData,
     withdrawalsData,
     withdrawHistoryData,
-    validators,
+    validatorMap,
     kiiAddress,
   ]);
 
@@ -469,7 +473,7 @@ export default function AddressPage() {
       <WithdrawalsTable withdrawals={[]} />
       <StakesTable
         delegations={delegations}
-        validators={validators}
+        validators={validatorMap}
         theme={theme}
         selectedValidator={selectedValidator}
         setSelectedValidator={setSelectedValidator}
@@ -491,7 +495,7 @@ export default function AddressPage() {
         onClose={() => setIsRedelegateModalOpen(false)}
         validatorAddress={selectedValidator}
         theme={theme}
-        validators={validators}
+        validators={validatorMap}
       />
       <UndelegateModal
         isOpen={isUndelegateModalOpen}
