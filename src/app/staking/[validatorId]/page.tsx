@@ -15,6 +15,7 @@ import { useUnbondingDelegationsQuery } from "@/services/queries/unbondingDelega
 import { useValidatorIcons } from "@/services/queries/validators";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { useValidatorHistory } from "@/services/queries/validatorHistory";
+import { Table } from "@/components/ui/Table/Table";
 
 interface SignDoc {
   chain_id: string;
@@ -127,6 +128,20 @@ interface DelegateModalProps {
   onClose: () => void;
   validator: ValidatorProps;
   theme: Theme;
+}
+
+interface DelegationItem {
+  type: string;
+  amount: string;
+  status: string;
+  completionTime: string;
+}
+
+interface TransactionItem {
+  type: string;
+  amount: string;
+  time: string;
+  status: string;
 }
 
 const formatNumber = (value: string | number) => {
@@ -392,6 +407,72 @@ export default function ValidatorPage({
         commission: validator.commission.commission_rates.rate,
       }
     : null;
+
+  const delegationColumns = [
+    {
+      header: "Type",
+      key: "type",
+    },
+    {
+      header: "Amount",
+      key: "amount",
+      render: (item: DelegationItem) => `${item.amount} KII`,
+    },
+    {
+      header: "Status",
+      key: "status",
+      render: (item: DelegationItem) => (
+        <span
+          className="px-2 py-1 rounded-full"
+          style={{
+            backgroundColor:
+              item.status === "Active" ? theme.accentColor : theme.bgColor,
+            color:
+              item.status === "Active" ? theme.boxColor : theme.accentColor,
+          }}
+        >
+          {item.status}
+        </span>
+      ),
+    },
+    {
+      header: "Completion Time",
+      key: "completionTime",
+    },
+  ];
+
+  const transactionColumns = [
+    {
+      header: "Transaction Type",
+      key: "type",
+    },
+    {
+      header: "Amount",
+      key: "amount",
+      render: (item: TransactionItem) => `${item.amount} KII`,
+    },
+    {
+      header: "Time",
+      key: "time",
+    },
+    {
+      header: "Status",
+      key: "status",
+      render: (item: TransactionItem) => (
+        <span
+          className="px-2 py-1 rounded-full"
+          style={{
+            backgroundColor:
+              item.status === "Completed" ? theme.accentColor : theme.bgColor,
+            color:
+              item.status === "Completed" ? theme.boxColor : theme.accentColor,
+          }}
+        >
+          {item.status}
+        </span>
+      ),
+    },
+  ];
 
   if (!validator) {
     return <div>Validator not found</div>;
@@ -672,7 +753,7 @@ export default function ValidatorPage({
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M12.6666 3.83331L3.33325 13.1666M11.3333 13.1666C10.9796 13.1666 10.6405 13.0262 10.3904 12.7761C10.1404 12.5261 9.99992 12.1869 9.99992 11.8333C9.99992 11.4797 10.1404 11.1406 10.3904 10.8905C10.6405 10.6405 10.9796 10.5 11.3333 10.5C11.6869 10.5 12.026 10.6405 12.2761 10.8905C12.5261 11.1406 12.6666 11.4797 12.6666 11.8333C12.6666 12.1869 12.5261 12.5261 12.2761 12.7761C12.026 13.0262 11.6869 13.1666 11.3333 13.1666ZM4.66659 6.49998C4.31296 6.49998 3.97382 6.3595 3.72378 6.10946C3.47373 5.85941 3.33325 5.52027 3.33325 5.16665C3.33325 4.81302 3.47373 4.47389 3.72378 4.22384C3.97382 3.97379 4.31296 3.83331 4.66659 3.83331C5.02021 3.83331 5.35935 3.97379 5.60939 4.22384C5.85944 4.47389 5.99992 4.81302 5.99992 5.16665C5.99992 5.52027 5.85944 5.85941 5.60939 6.10946C5.35935 6.3595 5.02021 6.49998 4.66659 6.49998Z"
+                        d="M12.6666 3.83331L3.33325 13.1666M11.3333 13.1666C10.9796 13.1666 10.6405 13.0262 10.3904 12.7761C10.1404 12.5261 9.99992 12.1869 9.99992 11.8333C9.99992 11.4797 10.1404 11.1406 10.3904 10.8905C10.6405 10.6405 10.9796 10.5 11.3333 10.5C11.6869 10.5 12.026 10.6405 12.2761 10.8905C12.5261 11.1406 12.6666 11.4797 12.6666 11.8333C12.6666 12.1869 12.5261 12.5261 12.2761 12.7761C12.026 13.0262 11.6869 13.1666 11.3333 13.1666ZM4.66659 6.49998C4.31296 6.49998 3.97382 6.3595 3.72378 6.10946C3.47373 5.85941 3.33325 5.52027 3.33325 5.16665C3.33325 4.81302 3.47378 4.47389 3.72378 4.22384C3.97382 3.97379 4.31296 3.83331 4.66659 3.83331C5.02021 3.83331 5.35935 3.97379 5.60939 4.22384C5.85944 4.47389 5.99992 4.81302 5.99992 5.16665C5.99992 5.52027 5.85944 5.85941 5.60939 6.10946C5.35935 6.3595 5.02021 6.49998 4.66659 6.49998Z"
                         stroke="#E0B1FF"
                         strokeWidth="1.5"
                         strokeLinecap="round"
@@ -850,215 +931,43 @@ export default function ValidatorPage({
               Delegations & Unbondings
             </h3>
           </div>
-          <div className="overflow-x-auto">
-            {!address ? (
-              <div>Please connect your wallet to view delegation history</div>
-            ) : historyLoading ? (
-              <div>Loading delegation history...</div>
-            ) : !validatorHistory || !validatorHistory[0]?.delegations ? (
-              <div>No delegation history available for this validator</div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th
-                      className="text-left text-sm font-normal pb-4 p-2"
-                      style={{
-                        color: theme.primaryTextColor,
-                        backgroundColor: theme.bgColor,
-                      }}
-                    >
-                      Type
-                    </th>
-                    <th
-                      className="text-left text-sm font-normal pb-4 p-2"
-                      style={{
-                        color: theme.primaryTextColor,
-                        backgroundColor: theme.bgColor,
-                      }}
-                    >
-                      Amount
-                    </th>
-                    <th
-                      className="text-left text-sm font-normal pb-4 p-2"
-                      style={{
-                        color: theme.primaryTextColor,
-                        backgroundColor: theme.bgColor,
-                      }}
-                    >
-                      Status
-                    </th>
-                    <th
-                      className="text-left text-sm font-normal pb-4 p-2"
-                      style={{
-                        color: theme.primaryTextColor,
-                        backgroundColor: theme.bgColor,
-                      }}
-                    >
-                      Completion Time
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Delegations */}
-                  {validatorHistory[0]?.delegations?.map(
-                    (delegation, index) => (
-                      <tr key={`delegation-${index}`}>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          Delegation
-                        </td>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          {formatAmount(delegation?.balance?.amount || "0")} KII
-                        </td>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          <span
-                            className="px-2 py-1 rounded-full"
-                            style={{
-                              backgroundColor: theme.accentColor,
-                              color: theme.boxColor,
-                            }}
-                          >
-                            Active
-                          </span>
-                        </td>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          -
-                        </td>
-                      </tr>
-                    )
-                  )}
-
-                  {/* Unbondings */}
-                  {validatorHistory[0]?.unbondings?.map((unbonding, index) => (
-                    <tr key={`unbonding-${index}`}>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        Unbonding
-                      </td>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        {formatAmount(unbonding.amount || "0")} KII
-                      </td>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        <span
-                          className="px-2 py-1 rounded-full"
-                          style={{
-                            backgroundColor: theme.bgColor,
-                            color: theme.accentColor,
-                          }}
-                        >
-                          Unbonding
-                        </span>
-                      </td>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        {new Date(unbonding.completion_time).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {/* Redelegations */}
-                  {validatorHistory[0]?.redelegations?.map(
-                    (redelegation, index) => (
-                      <tr key={`redelegation-${index}`}>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          Redelegation
-                        </td>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          {formatAmount(redelegation.amount || "0")} KII
-                        </td>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          <span
-                            className="px-2 py-1 rounded-full"
-                            style={{
-                              backgroundColor: theme.bgColor,
-                              color: theme.accentColor,
-                            }}
-                          >
-                            Redelegating
-                          </span>
-                        </td>
-                        <td
-                          className="text-sm p-2"
-                          style={{
-                            color: theme.primaryTextColor,
-                            backgroundColor: theme.bgColor,
-                          }}
-                        >
-                          {new Date(
-                            redelegation.completion_time
-                          ).toLocaleString()}
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
+          {!address ? (
+            <div>Please connect your wallet to view delegation history</div>
+          ) : historyLoading ? (
+            <div>Loading delegation history...</div>
+          ) : !validatorHistory || !validatorHistory[0]?.delegations ? (
+            <div>No delegation history available for this validator</div>
+          ) : (
+            <Table
+              columns={delegationColumns}
+              data={[
+                ...(validatorHistory[0]?.delegations?.map((delegation) => ({
+                  type: "Delegation",
+                  amount: formatAmount(delegation?.balance?.amount || "0"),
+                  status: "Active",
+                  completionTime: "-",
+                })) || []),
+                ...(validatorHistory[0]?.unbondings?.map((unbonding) => ({
+                  type: "Unbonding",
+                  amount: formatAmount(unbonding.amount || "0"),
+                  status: "Unbonding",
+                  completionTime: new Date(
+                    unbonding.completion_time
+                  ).toLocaleString(),
+                })) || []),
+                ...(validatorHistory[0]?.redelegations?.map((redelegation) => ({
+                  type: "Redelegation",
+                  amount: formatAmount(redelegation.amount || "0"),
+                  status: "Redelegating",
+                  completionTime: new Date(
+                    redelegation.completion_time
+                  ).toLocaleString(),
+                })) || []),
+              ]}
+              theme={theme}
+              emptyMessage="No delegation history available"
+            />
+          )}
         </div>
       </div>
       <div className="mt-6 px-6">
@@ -1074,130 +983,33 @@ export default function ValidatorPage({
               Transaction History
             </h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th
-                    className="text-left text-sm font-normal pb-4 p-2"
-                    style={{
-                      color: theme.primaryTextColor,
-                      backgroundColor: theme.bgColor,
-                    }}
-                  >
-                    Transaction Type
-                  </th>
-                  <th
-                    className="text-left text-sm font-normal pb-4 p-2"
-                    style={{
-                      color: theme.primaryTextColor,
-                      backgroundColor: theme.bgColor,
-                    }}
-                  >
-                    Amount
-                  </th>
-                  <th
-                    className="text-left text-sm font-normal pb-4 p-2"
-                    style={{
-                      color: theme.primaryTextColor,
-                      backgroundColor: theme.bgColor,
-                    }}
-                  >
-                    Time
-                  </th>
-                  <th
-                    className="text-left text-sm font-normal pb-4 p-2"
-                    style={{
-                      color: theme.primaryTextColor,
-                      backgroundColor: theme.bgColor,
-                    }}
-                  >
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ...(validatorHistory?.[0]?.delegations?.map((d) => ({
-                    type: "Delegation",
-                    amount: formatAmount(d?.balance?.amount || "0"),
-                    time: new Date().toLocaleString(),
-                    status: "Completed",
-                  })) || []),
-                  ...(validatorHistory?.[0]?.unbondings?.map((u) => ({
-                    type: "Unbonding",
-                    amount: formatAmount(u.amount || "0"),
-                    time: new Date(u.completion_time).toLocaleString(),
-                    status: "Processing",
-                  })) || []),
-                  ...(validatorHistory?.[0]?.redelegations?.map((r) => ({
-                    type: "Redelegation",
-                    amount: formatAmount(r.amount || "0"),
-                    time: new Date(r.completion_time).toLocaleString(),
-                    status: "Processing",
-                  })) || []),
-                ]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.time).getTime() - new Date(a.time).getTime()
-                  )
-                  .map((transaction, index) => (
-                    <tr key={index}>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        {transaction.type}
-                      </td>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        {transaction.amount} KII
-                      </td>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        {transaction.time}
-                      </td>
-                      <td
-                        className="text-sm p-2"
-                        style={{
-                          color: theme.primaryTextColor,
-                          backgroundColor: theme.bgColor,
-                        }}
-                      >
-                        <span
-                          className="px-2 py-1 rounded-full"
-                          style={{
-                            backgroundColor:
-                              transaction.status === "Completed"
-                                ? theme.accentColor
-                                : theme.bgColor,
-                            color:
-                              transaction.status === "Completed"
-                                ? theme.boxColor
-                                : theme.accentColor,
-                          }}
-                        >
-                          {transaction.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={transactionColumns}
+            data={[
+              ...(validatorHistory?.[0]?.delegations?.map((d) => ({
+                type: "Delegation",
+                amount: formatAmount(d?.balance?.amount || "0"),
+                time: new Date().toLocaleString(),
+                status: "Completed",
+              })) || []),
+              ...(validatorHistory?.[0]?.unbondings?.map((u) => ({
+                type: "Unbonding",
+                amount: formatAmount(u.amount || "0"),
+                time: new Date(u.completion_time).toLocaleString(),
+                status: "Processing",
+              })) || []),
+              ...(validatorHistory?.[0]?.redelegations?.map((r) => ({
+                type: "Redelegation",
+                amount: formatAmount(r.amount || "0"),
+                time: new Date(r.completion_time).toLocaleString(),
+                status: "Processing",
+              })) || []),
+            ].sort(
+              (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+            )}
+            theme={theme}
+            emptyMessage="No transaction history available"
+          />
         </div>
       </div>
       {formattedValidator && (

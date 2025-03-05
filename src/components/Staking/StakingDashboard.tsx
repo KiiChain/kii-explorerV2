@@ -1,59 +1,13 @@
 "use client";
 
 import { useTheme } from "@/context/ThemeContext";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useValidatorIcons } from "@/services/queries/validators";
-
-interface Validator {
-  operator_address: string;
-  tokens: string;
-  description: {
-    moniker: string;
-    website: string;
-    identity: string;
-    details: string;
-  };
-  commission: {
-    commission_rates: {
-      rate: string;
-    };
-  };
-  status: string;
-  jailed: boolean;
-}
-
-interface ValidatorResponse {
-  status: string;
-  operator_address: string;
-  description: {
-    moniker: string;
-    website: string;
-    identity: string;
-    details: string;
-  };
-  commission: {
-    commission_rates: {
-      rate: string;
-    };
-  };
-  tokens: string;
-  jailed: boolean;
-}
-
-interface StakingParams {
-  params: {
-    unbonding_time: string;
-    max_validators: number;
-    max_entries: number;
-    historical_entries: number;
-    bond_denom: string;
-    min_commission_rate: string;
-    max_voting_power_ratio: string;
-    max_voting_power_enforcement_threshold: string;
-  };
-}
+import {
+  useValidators,
+  useValidatorIcons,
+} from "@/services/queries/validators";
 
 export function StakingDashboard() {
   const { theme } = useTheme();
@@ -61,154 +15,40 @@ export function StakingDashboard() {
   const [activeButton, setActiveButton] = useState<
     "popular" | "active" | "inactive"
   >("active");
-  const [activeValidators, setActiveValidators] = useState<Validator[]>([]);
-  const [inactiveValidators, setInactiveValidators] = useState<Validator[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const validatorsPerPage = 10;
-  const [stakingParams, setStakingParams] = useState({
-    unbondingTime: "21 Days",
-    maxValidators: 25,
-    minCommissionRate: "5%",
-    bondDenom: "ukii",
-  });
 
+  const { data: validatorsData, isLoading } = useValidators();
   const { getValidatorIcon, handleImageError } = useValidatorIcons();
 
-  useEffect(() => {
-    async function fetchValidators() {
-      try {
-        const response = await fetch(
-          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
-        );
-        const data = await response.json();
-
-        console.log("API Response:", data);
-
-        if (!data?.validators || !Array.isArray(data.validators)) {
-          console.error("Invalid validators data:", data);
-          setActiveValidators([]);
-          setInactiveValidators([]);
-          return;
-        }
-
-        const validValidators = data.validators.map(
-          (validator: ValidatorResponse) => ({
-            operator_address: validator.operator_address,
-            tokens: validator.tokens,
-            description: {
-              moniker: validator.description.moniker,
-              website: validator.description.website,
-              identity: validator.description.identity,
-              details: validator.description.details,
-            },
-            commission: {
-              commission_rates: {
-                rate: validator.commission.commission_rates.rate,
-              },
-            },
-            status: validator.status,
-            jailed: validator.jailed,
-          })
-        );
-
-        const active = validValidators.filter(
-          (validator: Validator) =>
-            validator.status === "BOND_STATUS_BONDED" && !validator.jailed
-        );
-
-        const inactive = validValidators.filter(
-          (validator: Validator) =>
-            validator.status !== "BOND_STATUS_BONDED" || validator.jailed
-        );
-
-        console.log("Active validators:", active.length);
-        console.log("Inactive validators:", inactive.length);
-
-        setActiveValidators(active);
-        setInactiveValidators(inactive);
-      } catch (error) {
-        console.error("Error fetching validators:", error);
-        setActiveValidators([]);
-        setInactiveValidators([]);
-      }
-    }
-
-    fetchValidators();
-  }, []);
-
-  useEffect(() => {
-    async function fetchStakingParams() {
-      try {
-        const response = await fetch(
-          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/params"
-        );
-        const data: StakingParams = await response.json();
-
-        const unbondingDays = Math.floor(
-          parseInt(data.params.unbonding_time.replace("s", "")) / (24 * 60 * 60)
-        );
-
-        const minCommissionPercent = (
-          parseFloat(data.params.min_commission_rate) * 100
-        ).toFixed(0);
-
-        setStakingParams({
-          unbondingTime: `${unbondingDays} Days`,
-          maxValidators: data.params.max_validators,
-          minCommissionRate: `${minCommissionPercent}%`,
-          bondDenom: data.params.bond_denom,
-        });
-
-        console.log("Staking params:", data.params);
-      } catch (error) {
-        console.error("Error fetching staking params:", error);
-      }
-    }
-
-    fetchStakingParams();
-  }, []);
-
-  const sortedValidators = useMemo(() => {
-    const sortByVotingPower = (validators: Validator[]) => {
-      return [...validators].sort((a, b) => {
-        const aTokens = BigInt(a.tokens || "0");
-        const bTokens = BigInt(b.tokens || "0");
-        return bTokens > aTokens ? 1 : bTokens < aTokens ? -1 : 0;
-      });
-    };
-
-    return {
-      active: sortByVotingPower(activeValidators),
-      inactive: sortByVotingPower(inactiveValidators),
-    };
-  }, [activeValidators, inactiveValidators]);
-
   const filteredValidators = useMemo(() => {
+    if (!validatorsData) return [];
+
     switch (activeButton) {
       case "active":
-        return sortedValidators.active;
+        return validatorsData.active;
       case "inactive":
-        return sortedValidators.inactive;
+        return validatorsData.inactive;
       case "popular":
-        return sortedValidators.active.slice(0, 10);
+        return validatorsData.active.slice(0, 10);
       default:
         return [];
     }
-  }, [activeButton, sortedValidators]);
+  }, [activeButton, validatorsData]);
 
-  const indexOfLastValidator = currentPage * validatorsPerPage;
-  const indexOfFirstValidator = indexOfLastValidator - validatorsPerPage;
-  const currentValidators = filteredValidators.slice(
-    indexOfFirstValidator,
-    indexOfLastValidator
-  );
   const totalPages = Math.ceil(filteredValidators.length / validatorsPerPage);
+  const currentValidators = filteredValidators.slice(
+    (currentPage - 1) * validatorsPerPage,
+    currentPage * validatorsPerPage
+  );
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeButton]);
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
 
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  if (isLoading) {
+    return <div>Loading validators...</div>;
+  }
 
   return (
     <div
@@ -242,7 +82,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.unbondingTime}
+                {validatorsData?.params.unbondingTime}
               </div>
               <div
                 className="text-base pt-2"
@@ -271,7 +111,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.minCommissionRate}
+                {validatorsData?.params.minCommissionRate}
               </div>
               <div
                 className="text-base pt-2"
@@ -303,7 +143,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.bondDenom}
+                {validatorsData?.params.bondDenom}
               </div>
               <div
                 className="text-base pt-2"
@@ -332,7 +172,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {stakingParams.maxValidators}
+                {validatorsData?.params.maxValidators}
               </div>
               <div
                 className="text-base pt-2"
@@ -478,7 +318,7 @@ export function StakingDashboard() {
                     style={{ color: theme.primaryTextColor }}
                   >
                     {(parseInt(validator.tokens) / 1000000).toLocaleString()}{" "}
-                    {stakingParams.bondDenom}
+                    {validatorsData?.params.bondDenom}
                   </div>
                 </td>
                 <td className="p-4" style={{ color: theme.primaryTextColor }}>
@@ -518,9 +358,12 @@ export function StakingDashboard() {
 
         <div className="flex justify-between items-center mt-6 px-4">
           <div style={{ color: theme.secondaryTextColor }} className="text-sm">
-            Showing {indexOfFirstValidator + 1} to{" "}
-            {Math.min(indexOfLastValidator, filteredValidators.length)} of{" "}
-            {filteredValidators.length} validators
+            Showing {(currentPage - 1) * validatorsPerPage + 1} to{" "}
+            {Math.min(
+              currentPage * validatorsPerPage,
+              filteredValidators.length
+            )}{" "}
+            of {filteredValidators.length} validators
           </div>
           <div className="flex gap-2">
             <button

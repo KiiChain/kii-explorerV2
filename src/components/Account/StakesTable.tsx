@@ -13,6 +13,8 @@ import {
 } from "@/services/mutations/staking";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { useDelegationHistory } from "../../services/queries/delegationHistory";
+import { Table } from "@/components/ui/Table/Table";
+import { formatAmount } from "../../utils/format";
 
 interface Theme {
   boxColor: string;
@@ -382,12 +384,6 @@ export function StakesTable({
     return query?.data || [];
   };
 
-  const formatAmount = (amount: string, decimals: number = 6) => {
-    const value = parseInt(amount);
-    if (isNaN(value)) return "0";
-    return (value / Math.pow(10, decimals)).toFixed(2);
-  };
-
   const handleRedelegateClick = (validatorAddress: string) => {
     setRelocateButtonStates((prev) => ({
       ...prev,
@@ -415,15 +411,156 @@ export function StakesTable({
     }
   }, [isUndelegateModalOpen, selectedValidator]);
 
+  const columns = [
+    {
+      header: "Validator",
+      key: "validator",
+      render: (delegation: DelegationResponse) => {
+        const validatorAddress = delegation.delegation?.validator_address;
+        const moniker = getValidatorMoniker(validatorAddress);
+        return (
+          <div>
+            <div className={`text-[${theme.primaryTextColor}]`}>{moniker}</div>
+          </div>
+        );
+      },
+    },
+    {
+      header: "Shares",
+      key: "shares",
+      render: (delegation: DelegationResponse) => delegation.delegation.shares,
+    },
+    {
+      header: "Balance",
+      key: "balance",
+      render: (delegation: DelegationResponse) => {
+        const validatorAddress = delegation.delegation?.validator_address;
+        const validatorRewards = getValidatorRewards(validatorAddress);
+        const formattedRewards = validatorRewards
+          .filter((reward) => reward.denom === "ukii")
+          .map((reward) => formatAmount(reward.amount))
+          .join(" ");
+
+        return (
+          <div>
+            <div>
+              {delegation.balance.amount} {delegation.balance.denom}
+            </div>
+            {formattedRewards && (
+              <div className={`text-xs text-[${theme.secondaryTextColor}]`}>
+                Claimable: {formattedRewards} KII
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      header: "Delegation History",
+      key: "history",
+      render: (delegation: DelegationResponse) => {
+        const validatorHistory = delegationHistory?.find(
+          (hist) =>
+            hist.validator_address === delegation.delegation.validator_address
+        );
+
+        return (
+          <div className="space-y-2">
+            <div>
+              <span className="text-sm font-medium">Total Delegated:</span>
+              <span className="ml-2">
+                {formatAmount(validatorHistory?.total_delegated || "0")} KII
+              </span>
+            </div>
+            {(validatorHistory?.redelegations ?? []).length > 0 && (
+              <div className="text-sm">
+                <span className="font-medium">Redelegations:</span>
+                {(validatorHistory?.redelegations ?? []).map((redel, idx) => (
+                  <div key={idx} className="ml-2">
+                    {formatAmount(redel.amount)} KII
+                    <span className="text-xs ml-2">
+                      (completes{" "}
+                      {new Date(redel.completion_time).toLocaleDateString()})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(validatorHistory?.unbondings ?? []).length > 0 && (
+              <div className="text-sm">
+                <span className="font-medium">Unbondings:</span>
+                {(validatorHistory?.unbondings ?? []).map((unbond, idx) => (
+                  <div key={idx} className="ml-2">
+                    {formatAmount(unbond.amount)} KII
+                    <span className="text-xs ml-2">
+                      (completes{" "}
+                      {new Date(unbond.completion_time).toLocaleDateString()})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      header: "Action",
+      key: "action",
+      render: (delegation: DelegationResponse) => {
+        const validatorAddress = delegation.delegation?.validator_address;
+        const { hasRedelegation, completionTime } = hasActiveRedelegation(
+          redelegations?.redelegation_responses || [],
+          validatorAddress || ""
+        );
+
+        return !isConnected ? (
+          <div className="flex gap-2 justify-center">
+            <WagmiConnectButton />
+          </div>
+        ) : (
+          <div className="flex gap-2 justify-center">
+            <button
+              className={`px-4 py-2 rounded-lg ${
+                hasRedelegation
+                  ? "bg-gray-400 cursor-not-allowed opacity-50"
+                  : `bg-[${theme.boxColor}] hover:opacity-80`
+              }`}
+              onClick={() => handleRedelegateClick(validatorAddress)}
+              disabled={hasRedelegation}
+              title={
+                hasRedelegation
+                  ? `Redelegation in progress until ${completionTime}`
+                  : "Relocate stake"
+              }
+            >
+              {relocateButtonStates[validatorAddress] ||
+                (hasRedelegation ? "In Progress" : "Relocate")}
+            </button>
+            <button
+              className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
+              onClick={() => handleUndelegateClick(validatorAddress)}
+            >
+              {withdrawButtonStates[validatorAddress] || "Withdraw"}
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
+
   if (!delegations || delegations.length === 0) {
     return (
       <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
         <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
           Stakes
         </div>
-        <div className={`text-[${theme.secondaryTextColor}] text-center py-4`}>
-          No stakes found
-        </div>
+        <Table
+          columns={columns}
+          data={[]}
+          theme={theme}
+          emptyMessage="No stakes found"
+        />
       </div>
     );
   }
@@ -434,219 +571,7 @@ export function StakesTable({
         <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl pb-2`}>
           Stakes
         </div>
-        <table className="w-full">
-          <thead>
-            <tr className={`text-left text-[${theme.secondaryTextColor}]`}>
-              <th
-                className="p-4"
-                style={{
-                  backgroundColor: theme.bgColor,
-                }}
-              >
-                Validator
-              </th>
-              <th
-                className="p-4"
-                style={{
-                  backgroundColor: theme.bgColor,
-                }}
-              >
-                Shares
-              </th>
-              <th
-                className="p-4"
-                style={{
-                  backgroundColor: theme.bgColor,
-                }}
-              >
-                Balance
-              </th>
-              <th
-                className="p-4"
-                style={{
-                  backgroundColor: theme.bgColor,
-                }}
-              >
-                Delegation History
-              </th>
-              <th
-                className="p-4"
-                style={{
-                  backgroundColor: theme.bgColor,
-                }}
-              >
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {delegations.map((delegation, index) => {
-              const validatorAddress = delegation.delegation?.validator_address;
-              const moniker = getValidatorMoniker(validatorAddress);
-              const { hasRedelegation, completionTime } = hasActiveRedelegation(
-                redelegations?.redelegation_responses || [],
-                validatorAddress || ""
-              );
-
-              const validatorRewards = getValidatorRewards(validatorAddress);
-              const formattedRewards = validatorRewards
-                .filter((reward) => reward.denom === "ukii")
-                .map((reward) => formatAmount(reward.amount))
-                .join(" ");
-
-              const validatorHistory = delegationHistory?.find(
-                (hist) =>
-                  hist.validator_address ===
-                  delegation.delegation.validator_address
-              );
-
-              console.log(
-                "Checking redelegation for:",
-                validatorAddress,
-                hasRedelegation
-              );
-
-              return (
-                <tr
-                  key={index}
-                  className={`border border-solid border-[${theme.borderColor}]`}
-                  style={{
-                    backgroundColor: theme.bgColor,
-                  }}
-                >
-                  <td
-                    className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
-                  >
-                    <div>
-                      <div className={`text-[${theme.primaryTextColor}]`}>
-                        {moniker}
-                      </div>
-                      <div
-                        className={`text-xs text-[${theme.secondaryTextColor}]`}
-                      ></div>
-                    </div>
-                  </td>
-                  <td
-                    className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
-                  >
-                    {delegation.delegation.shares}
-                  </td>
-                  <td
-                    className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
-                  >
-                    <div>
-                      <div className={`text-[${theme.primaryTextColor}]`}>
-                        {delegation.balance.amount} {delegation.balance.denom}
-                      </div>
-                      {formattedRewards && (
-                        <div
-                          className={`text-xs text-[${theme.secondaryTextColor}]`}
-                        >
-                          Claimable: {formattedRewards} KII
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td
-                    className={`p-4 text-[${theme.primaryTextColor}] border-r border-solid border-[${theme.borderColor}]`}
-                  >
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-sm font-medium">
-                          Total Delegated:
-                        </span>
-                        <span className="ml-2">
-                          {formatAmount(
-                            validatorHistory?.total_delegated || "0"
-                          )}{" "}
-                          KII
-                        </span>
-                      </div>
-
-                      {(validatorHistory?.redelegations ?? []).length > 0 && (
-                        <div className="text-sm">
-                          <span className="font-medium">Redelegations:</span>
-                          {(validatorHistory?.redelegations ?? []).map(
-                            (redel, idx) => (
-                              <div key={idx} className="ml-2">
-                                {formatAmount(redel.amount)} KII
-                                <span className="text-xs ml-2">
-                                  (completes{" "}
-                                  {new Date(
-                                    redel.completion_time
-                                  ).toLocaleDateString()}
-                                  )
-                                </span>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-
-                      {(validatorHistory?.unbondings ?? []).length > 0 && (
-                        <div className="text-sm">
-                          <span className="font-medium">Unbondings:</span>
-                          {(validatorHistory?.unbondings ?? []).map(
-                            (unbond, idx) => (
-                              <div key={idx} className="ml-2">
-                                {formatAmount(unbond.amount)} KII
-                                <span className="text-xs ml-2">
-                                  (completes{" "}
-                                  {new Date(
-                                    unbond.completion_time
-                                  ).toLocaleDateString()}
-                                  )
-                                </span>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    {!isConnected ? (
-                      <div className="flex gap-2 justify-center">
-                        <WagmiConnectButton />
-                        <WagmiConnectButton />
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          className={`px-4 py-2 rounded-lg ${
-                            hasRedelegation
-                              ? "bg-gray-400 cursor-not-allowed opacity-50"
-                              : `bg-[${theme.boxColor}] hover:opacity-80`
-                          }`}
-                          onClick={() =>
-                            handleRedelegateClick(validatorAddress)
-                          }
-                          disabled={hasRedelegation}
-                          title={
-                            hasRedelegation
-                              ? `Redelegation in progress until ${completionTime}`
-                              : "Relocate stake"
-                          }
-                        >
-                          {relocateButtonStates[validatorAddress] ||
-                            (hasRedelegation ? "In Progress" : "Relocate")}
-                        </button>
-                        <button
-                          className={`px-4 py-2 bg-[${theme.boxColor}] text-[${theme.accentColor}] rounded-lg hover:opacity-80`}
-                          onClick={() =>
-                            handleUndelegateClick(validatorAddress)
-                          }
-                        >
-                          {withdrawButtonStates[validatorAddress] || "Withdraw"}
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <Table columns={columns} data={delegations} theme={theme} />
       </div>
       <RedelegateModal
         isOpen={isRedelegateModalOpen}
