@@ -64,126 +64,144 @@ export function StakingDashboard() {
     setCurrentPage(pageNumber);
   };
 
-  const validatorColumns = [
-    {
-      header: "Rank",
-      key: "rank",
-      render: (item: ValidatorTableItem) => (
-        <div
-          style={{ color: theme.accentColor }}
-          className="font-bold text-4xl text-center"
-        >
-          {item.rank}
-        </div>
-      ),
-    },
-    {
-      header: "Validator",
-      key: "validator",
-      render: (item: ValidatorTableItem) => (
-        <div className="flex items-center gap-7">
-          <Image
-            src={getValidatorIcon(item.website)}
-            alt={`${item.moniker} icon`}
-            width={40}
-            height={40}
-            className="rounded-full"
-            onError={() => handleImageError(item.website)}
-          />
-          <div className="flex-1">
-            <div
-              className="font-medium text-base"
-              style={{ color: theme.primaryTextColor }}
-            >
-              {item.moniker}
-            </div>
-            <div
-              className="text-base pt-1"
-              style={{ color: theme.primaryTextColor }}
-            >
-              {item.website || "No website provided"}
-            </div>
-            {item.details && (
-              <div
-                className="text-base mt-1"
-                style={{ color: theme.secondaryTextColor }}
-              >
-                {item.details}
-              </div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      header: "Your Stake",
-      key: "yourStake",
-      render: (item: ValidatorTableItem) => {
-        const delegation = delegationsData?.delegation_responses?.find(
-          (del) => del.delegation.validator_address === item.operatorAddress
-        );
+  const formatDenom = (denom: string) => (denom === "ukii" ? "kii" : denom);
 
-        const amount = delegation?.balance?.amount || "0";
-        const formattedAmount = (parseInt(amount) / 1000000).toLocaleString();
-
-        return (
-          <div className="text-base" style={{ color: theme.primaryTextColor }}>
-            {formattedAmount} {validatorsData?.params.bondDenom}
-          </div>
-        );
-      },
-    },
-    {
-      header: "Voting Power",
-      key: "votingPower",
-      render: (item: ValidatorTableItem) => (
-        <div className="text-base" style={{ color: theme.primaryTextColor }}>
-          {(parseInt(item.tokens) / 1000000).toLocaleString()}{" "}
-          {validatorsData?.params.bondDenom}
-        </div>
-      ),
-    },
-    {
-      header: "Commission",
-      key: "commission",
-      render: (item: ValidatorTableItem) => (
-        <div style={{ color: theme.primaryTextColor }}>
-          {(parseFloat(item.commission) * 100).toFixed(1)}%
-        </div>
-      ),
-    },
-    {
-      header: "Actions",
-      key: "actions",
-      render: (item: ValidatorTableItem) => {
-        const showActions = address && cosmosAddress;
-
-        return showActions ? (
-          <button
-            className="px-4 py-2 rounded-lg text-base"
-            style={{
-              backgroundColor: theme.boxColor,
-              color: theme.accentColor,
-              boxShadow:
-                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              opacity: item.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
-              cursor:
-                item.status !== "BOND_STATUS_BONDED"
-                  ? "not-allowed"
-                  : "pointer",
-            }}
-            onClick={() => {
-              if (item.status === "BOND_STATUS_BONDED") {
-                router.push(`/staking/${item.operatorAddress}`);
-              }
-            }}
+  const validatorColumns = useMemo(
+    () => [
+      {
+        header: "Rank",
+        key: "rank",
+        render: (item: ValidatorTableItem) => (
+          <div
+            style={{ color: theme.accentColor }}
+            className="font-bold text-4xl text-center"
           >
-            Create Stake
-          </button>
-        ) : null;
+            {item.rank}
+          </div>
+        ),
       },
-    },
-  ];
+      {
+        header: "Validator",
+        key: "validator",
+        render: (item: ValidatorTableItem) => (
+          <div className="flex items-center gap-7">
+            <Image
+              src={getValidatorIcon(item.website)}
+              alt={`${item.moniker} icon`}
+              width={40}
+              height={40}
+              className="rounded-full"
+              onError={() => handleImageError(item.website)}
+            />
+            <div className="flex-1">
+              <div
+                className="font-medium text-base"
+                style={{ color: theme.primaryTextColor }}
+              >
+                {item.moniker}
+              </div>
+              <div
+                className="text-base pt-1"
+                style={{ color: theme.primaryTextColor }}
+              >
+                {item.website || "No website provided"}
+              </div>
+              {item.details && (
+                <div
+                  className="text-base mt-1"
+                  style={{ color: theme.secondaryTextColor }}
+                >
+                  {item.details}
+                </div>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        header: "Your Stake",
+        key: "yourStake",
+        render: (item: ValidatorTableItem) => {
+          const delegation = delegationsData?.delegation_responses?.find(
+            (del) => del.delegation.validator_address === item.operatorAddress
+          );
+
+          const amount = delegation?.balance?.amount || "0";
+          const formattedAmount = (parseInt(amount) / 1000000).toLocaleString();
+
+          return (
+            <div
+              className="text-base"
+              style={{ color: theme.primaryTextColor }}
+            >
+              {formattedAmount}{" "}
+              {formatDenom(validatorsData?.params.bondDenom || "ukii")}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Voting Power",
+        key: "votingPower",
+        render: (item: ValidatorTableItem) => (
+          <div className="text-base" style={{ color: theme.primaryTextColor }}>
+            {(parseInt(item.tokens) / 1000000).toLocaleString()}{" "}
+            {formatDenom(validatorsData?.params.bondDenom || "ukii")}
+          </div>
+        ),
+      },
+      {
+        header: "Commission",
+        key: "commission",
+        render: (item: ValidatorTableItem) => (
+          <div style={{ color: theme.primaryTextColor }}>
+            {(parseFloat(item.commission) * 100).toFixed(1)}%
+          </div>
+        ),
+      },
+      {
+        header: "Actions",
+        key: "actions",
+        render: (item: ValidatorTableItem) => {
+          const showActions = address && cosmosAddress;
+
+          return showActions ? (
+            <button
+              className="px-4 py-2 rounded-lg text-base"
+              style={{
+                backgroundColor: theme.boxColor,
+                color: theme.accentColor,
+                boxShadow:
+                  "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                opacity: item.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
+                cursor:
+                  item.status !== "BOND_STATUS_BONDED"
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+              onClick={() => {
+                if (item.status === "BOND_STATUS_BONDED") {
+                  router.push(`/staking/${item.operatorAddress}`);
+                }
+              }}
+            >
+              Manage validator
+            </button>
+          ) : null;
+        },
+      },
+    ],
+    [
+      theme,
+      router,
+      address,
+      cosmosAddress,
+      validatorsData,
+      delegationsData,
+      getValidatorIcon,
+      handleImageError,
+    ]
+  );
 
   const tableData = currentValidators.map((validator, index) => ({
     rank: (currentPage - 1) * validatorsPerPage + index + 1,

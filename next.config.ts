@@ -9,8 +9,15 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "**.kiichain.io",
+      },
+      {
+        protocol: "https",
+        hostname: "**.kiprotocol.com",
+      },
+      {
+        protocol: "https",
         hostname: "www.google.com",
-        pathname: "/s2/favicons/**",
       },
     ],
   },

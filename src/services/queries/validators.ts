@@ -120,7 +120,6 @@ export const useValidators = () => {
             ).toFixed(0)}%`,
             bondDenom: paramsData.params.bond_denom,
           },
-
           validatorMap: Object.fromEntries(
             validators.map((v: ValidatorResponse) => [
               v.operator_address,

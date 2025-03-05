@@ -3,6 +3,7 @@
 import React, { useState, use } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { useAccount, useBalance, useWalletClient } from "wagmi";
 import { toast } from "react-hot-toast";
@@ -389,6 +390,7 @@ export default function ValidatorPage({
   const { isConnected, address } = useAccount();
   const { theme } = useTheme();
   const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
+  const router = useRouter();
 
   const { data: validator } = useValidatorQuery(validatorId);
   const { data: validatorHistory, isLoading: historyLoading } =
@@ -521,25 +523,45 @@ export default function ValidatorPage({
                     </p>
                   </div>
                 </div>
-                <div className="flex mt-4">
-                  {!isConnected ? (
-                    <WagmiConnectButton
-                      customStyle={{
-                        backgroundColor: theme.bgColor,
-                        color: theme.accentColor,
-                      }}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setIsDelegateModalOpen(true)}
-                      className="px-4 py-2 rounded-lg text-white"
-                      style={{
-                        backgroundColor: theme.bgColor,
-                        color: theme.accentColor,
-                      }}
-                    >
-                      Create Stake
-                    </button>
+                <div className="flex gap-4">
+                  <div>
+                    {!isConnected ? (
+                      <WagmiConnectButton
+                        customStyle={{
+                          backgroundColor: theme.bgColor,
+                          color: theme.accentColor,
+                        }}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setIsDelegateModalOpen(true)}
+                        className="px-4 py-2 rounded-lg text-white"
+                        style={{
+                          backgroundColor: theme.bgColor,
+                          color: theme.accentColor,
+                        }}
+                      >
+                        Create Stake
+                      </button>
+                    )}
+                  </div>
+                  {isConnected && (
+                    <div>
+                      <button
+                        onClick={() => {
+                          if (address) {
+                            router.push(`/account/${address}`);
+                          }
+                        }}
+                        className="px-4 py-2 rounded-lg text-white"
+                        style={{
+                          backgroundColor: theme.bgColor,
+                          color: theme.accentColor,
+                        }}
+                      >
+                        My delegations
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
