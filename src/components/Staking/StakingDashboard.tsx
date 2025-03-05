@@ -8,6 +8,21 @@ import {
   useValidators,
   useValidatorIcons,
 } from "@/services/queries/validators";
+import { Table } from "@/components/ui/Table/Table";
+import { useAccount } from "wagmi";
+import { useDelegationsQuery } from "@/services/queries/delegations";
+import { useCosmosAddress } from "@/services/queries/cosmosAddress";
+
+interface ValidatorTableItem {
+  rank: number;
+  moniker: string;
+  website: string;
+  details?: string;
+  tokens: string;
+  commission: string;
+  status: string;
+  operatorAddress: string;
+}
 
 export function StakingDashboard() {
   const { theme } = useTheme();
@@ -20,6 +35,9 @@ export function StakingDashboard() {
 
   const { data: validatorsData, isLoading } = useValidators();
   const { getValidatorIcon, handleImageError } = useValidatorIcons();
+  const { address } = useAccount();
+  const { data: cosmosAddress } = useCosmosAddress(address);
+  const { data: delegationsData } = useDelegationsQuery(cosmosAddress);
 
   const filteredValidators = useMemo(() => {
     if (!validatorsData) return [];
@@ -45,6 +63,138 @@ export function StakingDashboard() {
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
+
+  const validatorColumns = [
+    {
+      header: "Rank",
+      key: "rank",
+      render: (item: ValidatorTableItem) => (
+        <div
+          style={{ color: theme.accentColor }}
+          className="font-bold text-4xl text-center"
+        >
+          {item.rank}
+        </div>
+      ),
+    },
+    {
+      header: "Validator",
+      key: "validator",
+      render: (item: ValidatorTableItem) => (
+        <div className="flex items-center gap-7">
+          <Image
+            src={getValidatorIcon(item.website)}
+            alt={`${item.moniker} icon`}
+            width={40}
+            height={40}
+            className="rounded-full"
+            onError={() => handleImageError(item.website)}
+          />
+          <div className="flex-1">
+            <div
+              className="font-medium text-base"
+              style={{ color: theme.primaryTextColor }}
+            >
+              {item.moniker}
+            </div>
+            <div
+              className="text-base pt-1"
+              style={{ color: theme.primaryTextColor }}
+            >
+              {item.website || "No website provided"}
+            </div>
+            {item.details && (
+              <div
+                className="text-base mt-1"
+                style={{ color: theme.secondaryTextColor }}
+              >
+                {item.details}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: "Your Stake",
+      key: "yourStake",
+      render: (item: ValidatorTableItem) => {
+        const delegation = delegationsData?.delegation_responses?.find(
+          (del) => del.delegation.validator_address === item.operatorAddress
+        );
+
+        const amount = delegation?.balance?.amount || "0";
+        const formattedAmount = (parseInt(amount) / 1000000).toLocaleString();
+
+        return (
+          <div className="text-base" style={{ color: theme.primaryTextColor }}>
+            {formattedAmount} {validatorsData?.params.bondDenom}
+          </div>
+        );
+      },
+    },
+    {
+      header: "Voting Power",
+      key: "votingPower",
+      render: (item: ValidatorTableItem) => (
+        <div className="text-base" style={{ color: theme.primaryTextColor }}>
+          {(parseInt(item.tokens) / 1000000).toLocaleString()}{" "}
+          {validatorsData?.params.bondDenom}
+        </div>
+      ),
+    },
+    {
+      header: "Commission",
+      key: "commission",
+      render: (item: ValidatorTableItem) => (
+        <div style={{ color: theme.primaryTextColor }}>
+          {(parseFloat(item.commission) * 100).toFixed(1)}%
+        </div>
+      ),
+    },
+    {
+      header: "Actions",
+      key: "actions",
+      render: (item: ValidatorTableItem) => {
+        const showActions = address && cosmosAddress;
+
+        return showActions ? (
+          <button
+            className="px-4 py-2 rounded-lg text-base"
+            style={{
+              backgroundColor: theme.boxColor,
+              color: theme.accentColor,
+              boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+              opacity: item.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
+              cursor:
+                item.status !== "BOND_STATUS_BONDED"
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+            onClick={() => {
+              if (item.status === "BOND_STATUS_BONDED") {
+                router.push(`/staking/${item.operatorAddress}`);
+              }
+            }}
+          >
+            Create Stake
+          </button>
+        ) : null;
+      },
+    },
+  ];
+
+  const tableData = currentValidators.map((validator, index) => ({
+    rank: (currentPage - 1) * validatorsPerPage + index + 1,
+    moniker: validator.description.moniker,
+    website: validator.description.website,
+    details: validator.description.details,
+    tokens: validator.tokens,
+    commission: validator.commission.commission_rates.rate,
+    status: validator.status,
+    operatorAddress: validator.operator_address,
+  }));
 
   if (isLoading) {
     return <div>Loading validators...</div>;
@@ -250,111 +400,12 @@ export function StakingDashboard() {
         }}
         className="rounded-xl p-8"
       >
-        <table className="w-full">
-          <thead>
-            <tr
-              className="text-left text-base"
-              style={{ color: theme.primaryTextColor }}
-            >
-              <th className="p-4">Rank</th>
-              <th className="p-4">Validator</th>
-              <th className="p-4">Voting Power</th>
-              <th className="p-4">Commission</th>
-              <th className="p-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentValidators.map((validator, index) => (
-              <tr
-                key={validator.operator_address}
-                style={{ backgroundColor: theme.bgColor }}
-                className="border-t p-4 m-4 mb-4"
-              >
-                <td
-                  style={{ color: theme.accentColor }}
-                  className="p-4 font-bold text-center text-4xl"
-                >
-                  {(currentPage - 1) * validatorsPerPage + index + 1}
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-7">
-                    <Image
-                      src={getValidatorIcon(validator.description.website)}
-                      alt={`${validator.description.moniker} icon`}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                      onError={() =>
-                        handleImageError(validator.description.website)
-                      }
-                    />
-                    <div className="flex-1">
-                      <div
-                        className="font-medium text-base"
-                        style={{ color: theme.primaryTextColor }}
-                      >
-                        {validator.description.moniker}
-                      </div>
-                      <div
-                        style={{ color: theme.primaryTextColor }}
-                        className="text-base pt-1"
-                      >
-                        {validator.description.website || "No website provided"}
-                      </div>
-                      {validator.description.details && (
-                        <div
-                          style={{ color: theme.secondaryTextColor }}
-                          className="text-base mt-1"
-                        >
-                          {validator.description.details}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div
-                    className="text-base"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    {(parseInt(validator.tokens) / 1000000).toLocaleString()}{" "}
-                    {validatorsData?.params.bondDenom}
-                  </div>
-                </td>
-                <td className="p-4" style={{ color: theme.primaryTextColor }}>
-                  {(
-                    parseFloat(validator.commission.commission_rates.rate) * 100
-                  ).toFixed(1)}
-                  %
-                </td>
-                <td className="p-4">
-                  <button
-                    className="px-4 py-2 rounded-lg text-base"
-                    style={{
-                      backgroundColor: theme.boxColor,
-                      color: theme.accentColor,
-                      boxShadow:
-                        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                      opacity:
-                        validator.status !== "BOND_STATUS_BONDED" ? 0.5 : 1,
-                      cursor:
-                        validator.status !== "BOND_STATUS_BONDED"
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                    onClick={() => {
-                      if (validator.status === "BOND_STATUS_BONDED") {
-                        router.push(`/staking/${validator.operator_address}`);
-                      }
-                    }}
-                  >
-                    Create Stake
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table
+          columns={validatorColumns}
+          data={tableData}
+          theme={theme}
+          emptyMessage="No validators found"
+        />
 
         <div className="flex justify-between items-center mt-6 px-4">
           <div style={{ color: theme.secondaryTextColor }} className="text-sm">

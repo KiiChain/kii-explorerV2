@@ -267,10 +267,11 @@ const UndelegateModal = ({
 };
 
 export default function AddressPage() {
-  const { address } = useParams();
+  const { address: paramAddress } = useParams();
+  const { address: connectedAddress } = useAccount();
   const validAddress =
-    typeof address === "string" && address.startsWith("0x")
-      ? (address as `0x${string}`)
+    typeof paramAddress === "string" && paramAddress.startsWith("0x")
+      ? (paramAddress as `0x${string}`)
       : undefined;
   const { data: balance } = useBalance({ address: validAddress });
   const router = useRouter();
@@ -298,8 +299,8 @@ export default function AddressPage() {
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
 
-  const { data: kiiAddressData } = useKiiAddressQuery(address as string);
-  const kiiAddress = kiiAddressData?.kii_address || address;
+  const { data: kiiAddressData } = useKiiAddressQuery(paramAddress as string);
+  const kiiAddress = kiiAddressData?.kii_address || paramAddress;
 
   const {
     data: transactionsData,
@@ -317,8 +318,11 @@ export default function AddressPage() {
     withdrawalsData?.withdraw_address
   );
 
+  const isOwner =
+    connectedAddress?.toLowerCase() === validAddress?.toLowerCase();
+
   useEffect(() => {
-    if (!address) {
+    if (!paramAddress) {
       router.push("/");
       return;
     }
@@ -416,7 +420,7 @@ export default function AddressPage() {
       setSession(walletData);
     }
   }, [
-    address,
+    paramAddress,
     router,
     balance,
     delegationsData,
@@ -441,7 +445,9 @@ export default function AddressPage() {
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>
-      <AddressCard account={typeof address === "string" ? address : ""} />
+      <AddressCard
+        account={typeof paramAddress === "string" ? paramAddress : ""}
+      />
       <BalanceAndAssets
         assets={[
           {
@@ -481,6 +487,7 @@ export default function AddressPage() {
         setIsUndelegateModalOpen={setIsUndelegateModalOpen}
         isRedelegateModalOpen={isRedelegateModalOpen}
         isUndelegateModalOpen={isUndelegateModalOpen}
+        isOwner={isOwner}
       />
       <TransactionsTable
         transactions={transactions}
@@ -488,7 +495,9 @@ export default function AddressPage() {
         hasMore={hasNextPage}
         isLoading={isFetchingNextPage}
       />
-      <AccountInfo account={typeof address === "string" ? address : ""} />
+      <AccountInfo
+        account={typeof paramAddress === "string" ? paramAddress : ""}
+      />
 
       <RedelegateModal
         isOpen={isRedelegateModalOpen}

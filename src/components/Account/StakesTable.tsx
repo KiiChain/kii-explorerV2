@@ -53,6 +53,7 @@ interface StakeProps {
   setIsUndelegateModalOpen: (isOpen: boolean) => void;
   isRedelegateModalOpen: boolean;
   isUndelegateModalOpen: boolean;
+  isOwner: boolean;
 }
 
 interface ModalProps {
@@ -282,6 +283,7 @@ export function StakesTable({
   setIsUndelegateModalOpen,
   isRedelegateModalOpen,
   isUndelegateModalOpen,
+  isOwner,
 }: StakeProps) {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -518,7 +520,7 @@ export function StakesTable({
           <div className="flex gap-2 justify-center">
             <WagmiConnectButton />
           </div>
-        ) : (
+        ) : isOwner ? (
           <div className="flex gap-2 justify-center">
             <button
               className={`px-4 py-2 rounded-lg ${
@@ -544,7 +546,7 @@ export function StakesTable({
               {withdrawButtonStates[validatorAddress] || "Withdraw"}
             </button>
           </div>
-        );
+        ) : null;
       },
     },
   ];
