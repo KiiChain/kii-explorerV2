@@ -3,7 +3,7 @@
 import { Card, CardContent } from "./ui/card";
 
 import { useQuery } from "@tanstack/react-query";
-import { useBalance } from "wagmi";
+import { useBalance, useAccount } from "wagmi";
 
 import {
   HeightIcon,
@@ -21,10 +21,12 @@ import { StatCard } from "./StatCard";
 import { BlockTable } from "./BlockTable";
 
 import { ApplicationVersions } from "./ApplicationVersions";
-import { useAccount } from "wagmi";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { cosmosService } from "@/services/cosmos";
-import { API_ENDPOINTS } from "@/constants/endpoints";
+import { useChainData } from "@/services/queries/chainData";
+import { useValidatorSet } from "@/services/queries/validatorSet";
+import { useLatestBlocks } from "@/services/queries/blocks";
+import { useTransactionsQuery } from "@/services/queries/transactions";
 
 export interface WalletSession {
   balance: string;
@@ -36,30 +38,6 @@ export interface WalletSession {
     amount: string;
     rewards: string;
   }[];
-}
-
-interface ValidatorSetResponse {
-  validators: {
-    address: string;
-    pub_key: {
-      "@type": string;
-      key: string;
-    };
-    voting_power: string;
-    proposer_priority: string;
-  }[];
-  pagination: {
-    total: string;
-  };
-}
-
-interface EVMTransaction {
-  from_address: string;
-  to_address: string;
-  value: string;
-  method: string;
-  hash: string;
-  timestamp: string;
 }
 
 export function connectWallet() {
@@ -112,117 +90,20 @@ export default function Dashboard() {
 
   console.log("Connected account:", address);
 
-  const { data: chainData } = useQuery({
-    queryKey: ["chain-data"],
-    queryFn: async () => {
-      const [genesisResponse, stakingResponse, communityPoolResponse] =
-        await Promise.all([
-          fetch(`${API_ENDPOINTS.RPC}/genesis`).catch(() => null),
-          fetch(`${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/pool`).catch(
-            () => null
-          ),
-          fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/community_pool`
-          ).catch(() => null),
-        ]);
+  const { data: chainData } = useChainData();
+  const { data: validatorSetData } = useValidatorSet();
+  const { data: latestBlocks = [] } = useLatestBlocks();
+  const { data: transactionsData } = useTransactionsQuery();
 
-      const genesisData = genesisResponse ? await genesisResponse.json() : null;
-      const stakingData = stakingResponse ? await stakingResponse.json() : null;
-      const communityPoolData = communityPoolResponse
-        ? await communityPoolResponse.json()
-        : null;
-
-      const bondedKii = stakingData
-        ? (parseInt(stakingData.pool.bonded_tokens) / 1_000_000).toFixed(4)
-        : "0.0000";
-
-      const communityPoolAmount = communityPoolData?.pool?.find(
-        (item: { denom: string }) => item.denom === "ukii"
-      )?.amount;
-
-      const communityPoolKii = communityPoolAmount
-        ? (parseFloat(communityPoolAmount) / 1_000_000).toFixed(4)
-        : "0.0000";
-
-      return {
-        validatorCount: genesisData?.genesis.validators.length ?? 0,
-        bondedTokens: bondedKii,
-        communityPool: communityPoolKii,
-      };
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: validatorSetData } = useQuery({
-    queryKey: ["validator-set"],
-    queryFn: async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/validatorsets/latest`
-      );
-      const data: ValidatorSetResponse = await response.json();
-      return data.validators.length;
-    },
-    refetchInterval: 10000,
-  });
-
-  const { data: latestBlocks = [] } = useQuery({
-    queryKey: ["latest-blocks"],
-    queryFn: async () => {
-      const blocks = [];
-      const latestBlockResponse = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/latest`
-      );
-      const latestBlockData = await latestBlockResponse.json();
-      const latestHeight = parseInt(latestBlockData.block.header.height);
-
-      for (let i = 0; i < 20; i++) {
-        const height = latestHeight - i;
-        try {
-          const blockResponse = await fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/${height}`
-          );
-          const blockData = await blockResponse.json();
-
-          if (blockData && blockData.block && blockData.block_id) {
-            blocks.push({
-              height: blockData.block.header.height,
-              hash: blockData.block_id.hash || "N/A",
-              timestamp: new Date(blockData.block.header.time).toLocaleString(),
-              txCount: blockData.block.data.txs?.length || 0,
-              proposer: blockData.block.header.proposer_address || "N/A",
-              transactions: [],
-            });
-          }
-        } catch (blockError) {
-          console.error(`Error processing block ${height}:`, blockError);
-        }
-      }
-      return blocks;
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: latestTransactions = [] } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.EVM_INDEXER}/transactions?order=timestamp.desc&limit=200&offset=0`
-      );
-      const transactions: EVMTransaction[] = await response.json();
-      return transactions.map((tx) => ({
-        from: tx.from_address,
-        to: tx.to_address,
-        amount:
-          tx.method === "0x00000000"
-            ? (BigInt(tx.value) / BigInt(1e18)).toString()
-            : "EVM Contract Call",
-        denom: tx.method === "0x00000000" ? "KII" : "",
-        timestamp: tx.timestamp,
-        hash: tx.hash,
-      }));
-    },
-    refetchInterval: 30000,
-  });
+  const latestTransactions =
+    transactionsData?.pages[0]?.txs.map((tx) => ({
+      from_address: tx.from,
+      to_address: tx.to,
+      value: tx.amount,
+      method: tx.denom === "KII" ? "0x00000000" : "0x",
+      hash: tx.hash,
+      timestamp: tx.timestamp,
+    })) || [];
 
   const handleNavigation = (path: string) => {
     if (!address || !session) {

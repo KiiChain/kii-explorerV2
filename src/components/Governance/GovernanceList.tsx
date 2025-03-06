@@ -1,73 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
-import axios from "axios";
-import dayjs from "dayjs";
-import duration from "dayjs/plugin/duration";
-
-dayjs.extend(duration);
-
-// Definimos el tipo para las propuestas
-interface Proposal {
-  proposal_id: string;
-  content?: {
-    title?: string;
-  };
-  voting_start_time: string;
-  voting_end_time: string;
-  final_tally_result?: {
-    yes?: string;
-    no?: string;
-    abstain?: string;
-    no_with_veto?: string;
-  };
-}
-
-const API_BASE_URL = "https://lcd.uno.sentry.testnet.v3.kiivalidator.com";
-const GOVERNANCE_ENDPOINT = `${API_BASE_URL}/cosmos/gov/v1beta1/proposals`;
+import {
+  useProposals,
+  calculateVotingMetrics,
+} from "@/services/queries/governance";
 
 const GovernanceList = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [params, setParams] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchProposals = async () => {
-    try {
-      const response = await axios.get(GOVERNANCE_ENDPOINT);
-      setProposals(response.data.proposals || []);
-    } catch (err) {
-      setError("Error fetching proposals");
-      console.error("Error fetching proposals:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchParams = async (paramsType: string) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/cosmos/gov/v1beta1/params/${paramsType}`
-      );
-      setParams(response.data);
-      console.log(params);
-    } catch (err) {
-      setError("Error fetching params");
-      console.error("Error fetching params:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchProposals();
-    fetchParams("voting");
-  }, []);
-
-  const filteredProposals = proposals.filter((proposal) =>
-    proposal.content?.title?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { data: proposals = [], isLoading, error } = useProposals(searchTerm);
 
   return (
     <div className="p-5 rounded-lg">
@@ -96,31 +40,12 @@ const GovernanceList = () => {
       {isLoading ? (
         <p style={{ color: theme.primaryTextColor }}>Loading proposals...</p>
       ) : error ? (
-        <p style={{ color: "red" }}>{error}</p>
+        <p style={{ color: "red" }}>{error.toString()}</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 text-base p-1">
-          {filteredProposals.map((proposal, index) => {
-            const votingStartTime = dayjs(proposal.voting_start_time);
-            const votingEndTime = dayjs(proposal.voting_end_time);
-            const votingPeriodDays = votingEndTime.diff(
-              votingStartTime,
-              "days"
-            );
-
-            const yesVotes = parseInt(proposal.final_tally_result?.yes || "0");
-            const noVotes = parseInt(proposal.final_tally_result?.no || "0");
-            const abstainVotes = parseInt(
-              proposal.final_tally_result?.abstain || "0"
-            );
-            const noWithVetoVotes = parseInt(
-              proposal.final_tally_result?.no_with_veto || "0"
-            );
-
-            const totalVotes =
-              yesVotes + noVotes + abstainVotes + noWithVetoVotes;
-            const yesPercentage = totalVotes
-              ? Math.round((yesVotes / totalVotes) * 100)
-              : 0;
+          {proposals.map((proposal, index) => {
+            const { votingPeriodDays, yesPercentage } =
+              calculateVotingMetrics(proposal);
 
             return (
               <div
@@ -133,10 +58,8 @@ const GovernanceList = () => {
                 >
                   {votingPeriodDays === 0 ? (
                     <div
-                      className="flex items-center w-32 rounded-lg  mb-2 text-sm"
-                      style={{
-                        backgroundColor: theme.boxColor,
-                      }}
+                      className="flex items-center w-32 rounded-lg mb-2 text-sm"
+                      style={{ backgroundColor: theme.boxColor }}
                     >
                       <div className="pl-4">
                         <svg

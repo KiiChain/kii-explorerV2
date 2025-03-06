@@ -187,7 +187,7 @@ export default function TransactionPage({
           }
         } else {
           const response = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/tx/v1beta1/txs/${hash}`
+            `https://uno.sentry.testnet.v3.kiivalidator.com/tx/v1beta1/txs/${hash}`
           );
 
           if (!response.ok) throw new Error("Network response was not ok");

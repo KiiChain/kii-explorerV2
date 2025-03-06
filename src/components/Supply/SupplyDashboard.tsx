@@ -2,91 +2,11 @@
 
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/context/ThemeContext";
-import { useEffect, useState } from "react";
-
-interface BankSupply {
-  id: string;
-  address: string;
-  amount: string;
-  percentage: string;
-}
-
-interface SupplyResponse {
-  supply: {
-    denom: string;
-    amount: string;
-  }[];
-}
-
-interface GenesisResponse {
-  genesis: {
-    app_state: {
-      bank: {
-        balances: {
-          address: string;
-          coins: {
-            denom: string;
-            amount: string;
-          }[];
-        }[];
-      };
-    };
-  };
-}
+import { useSupplyData } from "@/services/queries/supply";
 
 export function SupplyDashboard() {
   const { theme } = useTheme();
-  const [supplies, setSupplies] = useState<BankSupply[]>([]);
-
-  useEffect(() => {
-    const fetchSupplyData = async () => {
-      try {
-        const supplyResponse = await fetch(
-          "https://lcd.dos.sentry.testnet.v3.kiivalidator.com/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true"
-        );
-        const supplyData: SupplyResponse = await supplyResponse.json();
-
-        const genesisResponse = await fetch(
-          "https://rpc.uno.sentry.testnet.v3.kiivalidator.com/genesis"
-        );
-        const genesisData: GenesisResponse = await genesisResponse.json();
-
-        const totalSupply = supplyData.supply.find(
-          (s) => s.denom === "ukii"
-        )?.amount;
-
-        if (!totalSupply) return;
-
-        const balances = genesisData.genesis.app_state.bank.balances
-          .map((balance) => {
-            const ukiiCoin = balance.coins.find(
-              (coin) => coin.denom === "ukii"
-            );
-            if (!ukiiCoin) return null;
-
-            const percentage = (
-              (Number(ukiiCoin.amount) / Number(totalSupply)) *
-              100
-            ).toFixed(2);
-
-            return {
-              id: balance.address,
-              address: balance.address,
-              amount: ukiiCoin.amount,
-              percentage: `${percentage}%`,
-            };
-          })
-          .filter((b): b is BankSupply => b !== null)
-          .sort((a, b) => Number(b.amount) - Number(a.amount));
-
-        setSupplies(balances.slice(0, 20));
-      } catch (error) {
-        console.error("Error fetching supply data:", error);
-      }
-    };
-
-    fetchSupplyData();
-  }, []);
+  const { data: supplies = [] } = useSupplyData();
 
   return (
     <div className="px-6" style={{ backgroundColor: theme.bgColor }}>
