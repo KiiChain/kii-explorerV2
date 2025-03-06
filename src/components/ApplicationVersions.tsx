@@ -1,56 +1,11 @@
 import { useTheme } from "@/context/ThemeContext";
-import { useState, useEffect } from "react";
-
-interface NodeInfo {
-  default_node_info: {
-    protocol_version: {
-      p2p: string;
-      block: string;
-      app: string;
-    };
-    network: string;
-    version: string;
-    moniker: string;
-  };
-  application_version: {
-    name: string;
-    app_name: string;
-    version: string;
-    git_commit: string;
-    go_version: string;
-    cosmos_sdk_version: string;
-    build_deps: Array<{
-      path: string;
-      version: string;
-      sum: string;
-    }>;
-  };
-}
+import { useNodeInfo } from "@/services/queries/nodeInfo";
 
 export function ApplicationVersions() {
   const { theme } = useTheme();
-  const [nodeInfo, setNodeInfo] = useState<NodeInfo | null>(null);
+  const { data: nodeInfo, isLoading } = useNodeInfo();
 
-  useEffect(() => {
-    async function fetchNodeInfo() {
-      try {
-        const response = await fetch(
-          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/node_info"
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch node info");
-        }
-        const data = await response.json();
-        setNodeInfo(data);
-      } catch (error) {
-        console.error("Error fetching node info:", error);
-      }
-    }
-
-    fetchNodeInfo();
-  }, []);
-
-  if (!nodeInfo) {
+  if (isLoading || !nodeInfo) {
     return <div>Loading...</div>;
   }
 
