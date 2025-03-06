@@ -35,7 +35,7 @@ export function StakingDashboard() {
 
   const { data: validatorsData, isLoading } = useValidators();
   const { getValidatorIcon, handleImageError } = useValidatorIcons();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const { data: cosmosAddress } = useCosmosAddress(address);
   const { data: delegationsData } = useDelegationsQuery(cosmosAddress);
 
@@ -163,7 +163,7 @@ export function StakingDashboard() {
         header: "Actions",
         key: "actions",
         render: (item: ValidatorTableItem) => {
-          const showActions = address && cosmosAddress;
+          const showActions = isConnected;
 
           return showActions ? (
             <button
@@ -200,6 +200,7 @@ export function StakingDashboard() {
       delegationsData,
       getValidatorIcon,
       handleImageError,
+      isConnected,
     ]
   );
 
