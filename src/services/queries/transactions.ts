@@ -1,39 +1,51 @@
-import { API_ENDPOINTS } from "@/constants/endpoints";
 import { useInfiniteQuery } from "@tanstack/react-query";
-interface TxResponse {
-  height: string;
-  txhash: string;
+import { API_ENDPOINTS } from "@/constants/endpoints";
+
+interface EVMTransaction {
+  from_address: string;
+  to_address: string;
+  value: string;
+  method: string;
+  hash: string;
   timestamp: string;
-  tx: {
-    body: {
-      messages: Array<{
-        "@type": string;
-      }>;
-    };
-  };
 }
 
-export const useTransactionsQuery = (kiiAddress?: string) => {
-  return useInfiniteQuery({
-    queryKey: ["transactions", kiiAddress],
-    queryFn: async ({ pageParam = 1 }) => {
-      const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/tx/v1beta1/txs?events=message.sender='${kiiAddress}'&pagination.page=${pageParam}&pagination.limit=10`
-      );
-      const data = await response.json();
+interface TransactionResponse {
+  txs: {
+    from: string;
+    to: string;
+    amount: string;
+    denom: string;
+    timestamp: string;
+    hash: string;
+  }[];
+}
+
+export const useTransactionsQuery = (address?: string) => {
+  return useInfiniteQuery<TransactionResponse>({
+    queryKey: ["transactions", address],
+    queryFn: async (): Promise<TransactionResponse> => {
+      const response = await fetch(`${API_ENDPOINTS.EVM_INDEXER}/transactions`);
+      const transactions: EVMTransaction[] = await response.json();
+
+      const formattedTxs = transactions.map((tx) => ({
+        from: tx.from_address,
+        to: tx.to_address,
+        amount:
+          tx.method === "0x00000000"
+            ? (BigInt(tx.value) / BigInt("1000000000000000000")).toString()
+            : "EVM Contract Call",
+        denom: tx.method === "0x00000000" ? "KII" : "",
+        timestamp: new Date(parseInt(tx.timestamp) * 1000).toLocaleString(),
+        hash: tx.hash,
+      }));
+
       return {
-        txs:
-          data.tx_responses?.map((tx: TxResponse) => ({
-            height: tx.height,
-            hash: tx.txhash,
-            messages: tx.tx.body.messages[0]?.["@type"] || "Unknown",
-            time: new Date(tx.timestamp).toLocaleString(),
-          })) || [],
-        nextPage: data.pagination?.next_key ? pageParam + 1 : undefined,
+        txs: formattedTxs,
       };
     },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: !!kiiAddress,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => pages.length,
+    refetchInterval: 30000,
   });
 };
