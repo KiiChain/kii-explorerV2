@@ -6,6 +6,7 @@ import {
   useProposals,
   calculateVotingMetrics,
 } from "@/services/queries/governance";
+import Link from "next/link";
 
 const GovernanceList = () => {
   const { theme } = useTheme();
@@ -48,84 +49,90 @@ const GovernanceList = () => {
               calculateVotingMetrics(proposal);
 
             return (
-              <div
+              <Link
                 key={proposal.proposal_id || `proposal-${index}`}
-                className="flex items-center p-6 rounded-lg"
+                href={`/governance/${proposal.proposal_id}`}
+                className="block"
               >
                 <div
-                  className="flex flex-col w-full p-4 rounded-lg"
-                  style={{ backgroundColor: theme.bgColor }}
+                  className="flex items-center p-6 rounded-lg cursor-pointer hover:opacity-90"
+                  style={{ backgroundColor: theme.boxColor }}
                 >
-                  {votingPeriodDays === 0 ? (
-                    <div
-                      className="flex items-center w-32 rounded-lg mb-2 text-sm"
-                      style={{ backgroundColor: theme.boxColor }}
-                    >
-                      <div className="pl-4">
-                        <svg
-                          width="14"
-                          height="9"
-                          viewBox="0 0 14 9"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="mr-2"
-                        >
-                          <path
-                            d="M4.5668 7.27329L1.94822 4.7897C1.80712 4.65587 1.61575 4.58069 1.4162 4.58069C1.21666 4.58069 1.02529 4.65587 0.884187 4.7897C0.743087 4.92353 0.663818 5.10503 0.663818 5.29429C0.663818 5.388 0.68328 5.4808 0.72109 5.56738C0.758901 5.65395 0.814321 5.73262 0.884187 5.79888L4.03855 8.79065C4.33286 9.06978 4.80828 9.06978 5.10259 8.79065L13.0866 1.21819C13.2277 1.08437 13.307 0.902859 13.307 0.713601C13.307 0.524342 13.2277 0.342835 13.0866 0.209009C12.9455 0.0751829 12.7541 0 12.5546 0C12.355 0 12.1637 0.0751829 12.0226 0.209009L4.5668 7.27329Z"
-                            fill="#00F9A6"
-                          />
-                        </svg>
-                      </div>
-                      <p
-                        className="p-1 rounded-lg text-center"
-                        style={{
-                          backgroundColor: theme.boxColor,
-                          color: theme.tertiaryTextColor,
-                        }}
+                  <div
+                    className="flex flex-col w-full p-4 rounded-lg"
+                    style={{ backgroundColor: theme.bgColor }}
+                  >
+                    {votingPeriodDays === 0 ? (
+                      <div
+                        className="flex items-center w-32 rounded-lg mb-2 text-sm"
+                        style={{ backgroundColor: theme.boxColor }}
                       >
-                        Passed
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2">
-                      <div className="pb-3 flex">
+                        <div className="pl-4">
+                          <svg
+                            width="14"
+                            height="9"
+                            viewBox="0 0 14 9"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="mr-2"
+                          >
+                            <path
+                              d="M4.5668 7.27329L1.94822 4.7897C1.80712 4.65587 1.61575 4.58069 1.4162 4.58069C1.21666 4.58069 1.02529 4.65587 0.884187 4.7897C0.743087 4.92353 0.663818 5.10503 0.663818 5.29429C0.663818 5.388 0.68328 5.4808 0.72109 5.56738C0.758901 5.65395 0.814321 5.73262 0.884187 5.79888L4.03855 8.79065C4.33286 9.06978 4.80828 9.06978 5.10259 8.79065L13.0866 1.21819C13.2277 1.08437 13.307 0.902859 13.307 0.713601C13.307 0.524342 13.2277 0.342835 13.0866 0.209009C12.9455 0.0751829 12.7541 0 12.5546 0C12.355 0 12.1637 0.0751829 12.0226 0.209009L4.5668 7.27329Z"
+                              fill="#00F9A6"
+                            />
+                          </svg>
+                        </div>
                         <p
-                          className="py-2 px-4 rounded-lg text-center"
-                          style={{ backgroundColor: theme.boxColor }}
-                        >
-                          {`Voting Period: ${votingPeriodDays} days`}
-                        </p>
-                      </div>
-                      <div className="pb-3 flex">
-                        <p
-                          className="py-2 px-4 rounded-lg text-center"
+                          className="p-1 rounded-lg text-center"
                           style={{
                             backgroundColor: theme.boxColor,
-                            color: theme.accentColor,
+                            color: theme.tertiaryTextColor,
                           }}
                         >
-                          {`Expires In: ${votingPeriodDays} days`}
+                          Passed
                         </p>
                       </div>
+                    ) : (
+                      <div className="grid grid-cols-2">
+                        <div className="pb-3 flex">
+                          <p
+                            className="py-2 px-4 rounded-lg text-center"
+                            style={{ backgroundColor: theme.boxColor }}
+                          >
+                            {`Voting Period: ${votingPeriodDays} days`}
+                          </p>
+                        </div>
+                        <div className="pb-3 flex">
+                          <p
+                            className="py-2 px-4 rounded-lg text-center"
+                            style={{
+                              backgroundColor: theme.boxColor,
+                              color: theme.accentColor,
+                            }}
+                          >
+                            {`Expires In: ${votingPeriodDays} days`}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <h2>{`#${proposal.proposal_id || "N/A"} ${
+                      proposal.content?.title || "No Title"
+                    }`}</h2>
+
+                    <div className="mt-4 w-full bg-gray-200 rounded-lg h-4">
+                      <div
+                        style={{
+                          width: `${yesPercentage}%`,
+                          backgroundColor: theme.tertiaryTextColor,
+                          height: "100%",
+                          borderRadius: "inherit",
+                        }}
+                      ></div>
                     </div>
-                  )}
-
-                  <h2>{`#${proposal.proposal_id || "N/A"} ${
-                    proposal.content?.title || "No Title"
-                  }`}</h2>
-
-                  <div className="mt-4 w-full bg-gray-200 rounded-lg h-4">
-                    <div
-                      style={{
-                        width: `${yesPercentage}%`,
-                        backgroundColor: theme.tertiaryTextColor,
-                        height: "100%",
-                        borderRadius: "inherit",
-                      }}
-                    ></div>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
