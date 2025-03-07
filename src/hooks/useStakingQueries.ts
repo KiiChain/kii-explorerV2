@@ -1,14 +1,11 @@
 import { useReadContract } from "wagmi";
 
-// Dirección del precompile de staking
 const STAKING_PRECOMPILE_ADDRESS = "0x0000000000000000000000000000000000001005";
 
-// ABI para interactuar con el precompile
 const stakingABI = [
   "function delegation(address delegator, string memory valAddress) external view returns (tuple(uint256 amount, string denom, tuple(string delegator_address, uint256 shares, uint256 decimals, string validator_address) delegation))",
 ];
 
-// Define interfaces for the expected data structure
 interface DelegationDetails {
   delegator_address: string;
   shares: number;
@@ -26,12 +23,10 @@ interface Delegation {
   delegation: DelegationDetails;
 }
 
-// Hook para consultar el balance en staking
 function useStakingQueries(
   delegatorAddress: string,
   validatorAddresses: string[]
 ) {
-  // Use first validator for now, or handle multiple validators
   const validatorAddress = validatorAddresses[0] || "";
 
   const {
