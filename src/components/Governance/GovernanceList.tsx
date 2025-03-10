@@ -14,6 +14,10 @@ const GovernanceList = () => {
 
   const { data: proposals = [], isLoading, error } = useProposals(searchTerm);
 
+  const sortedProposals = [...proposals].sort((a, b) => {
+    return Number(b.proposal_id) - Number(a.proposal_id);
+  });
+
   return (
     <div className="p-5 rounded-lg">
       <div
@@ -44,7 +48,7 @@ const GovernanceList = () => {
         <p style={{ color: "red" }}>{error.toString()}</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 text-base p-1">
-          {proposals.map((proposal, index) => {
+          {sortedProposals.map((proposal, index) => {
             const { votingPeriodDays, yesPercentage } =
               calculateVotingMetrics(proposal);
 

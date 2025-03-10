@@ -4,8 +4,21 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAccount, useWriteContract } from "wagmi";
 import { parseEther } from "viem";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { formatDistanceToNow, formatDistance } from "date-fns";
+import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
+import { API_ENDPOINTS } from "@/constants/endpoints";
+
+interface Proposal {
+  id: string;
+  final_tally_result?: {
+    yes: string;
+    no: string;
+    abstain: string;
+    no_with_veto: string;
+  };
+}
 
 interface ProposalDetailProps {
   proposal: {
@@ -38,6 +51,11 @@ interface ProposalDetailProps {
   };
 }
 
+interface VoteStatus {
+  hasVoted: boolean;
+  voteOption?: string;
+}
+
 const GOVERNANCE_ABI = [
   {
     inputs: [
@@ -61,6 +79,8 @@ const GOVERNANCE_ABI = [
 const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
   const { theme } = useTheme();
   const { address } = useAccount();
+  const { data: kiiAddressData } = useKiiAddressQuery(address);
+  const cosmosAddress = kiiAddressData?.kii_address;
 
   const {
     writeContract,
@@ -71,6 +91,7 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
 
   const [voteSuccess, setVoteSuccess] = useState(false);
   const [depositSuccess, setDepositSuccess] = useState(false);
+  const [voteStatus, setVoteStatus] = useState<VoteStatus>({ hasVoted: false });
 
   const canVote = proposal.status === "PROPOSAL_STATUS_VOTING_PERIOD";
   const canDeposit = proposal.status === "PROPOSAL_STATUS_DEPOSIT_PERIOD";
@@ -98,12 +119,18 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
 
     try {
       setVoteSuccess(false);
+
+      if (isWritePending) {
+        return;
+      }
+
       await writeContract({
         address: "0x0000000000000000000000000000000000001006",
         abi: GOVERNANCE_ABI,
         functionName: "vote",
         args: [BigInt(proposal.id), 1],
       });
+
       setVoteSuccess(true);
       toast.success("Vote submitted successfully", {
         description: "Your vote has been recorded on the blockchain",
@@ -161,6 +188,75 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
       });
     }
   };
+
+  const getTimeAgo = (timestamp: string) => {
+    try {
+      if (!timestamp) return "Unknown date";
+
+      // Si es una fecha en formato ISO
+      if (timestamp.includes("T")) {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return "Invalid date";
+
+        const now = new Date();
+        // Si la fecha es futura
+        if (date > now) {
+          return `in ${formatDistance(now, date)}`;
+        }
+        return formatDistanceToNow(date, { addSuffix: true });
+      }
+
+      // Si es un timestamp numérico
+      const timestampNum = parseInt(timestamp, 10);
+      if (isNaN(timestampNum)) return "Invalid date";
+
+      const milliseconds =
+        timestampNum.toString().length > 13
+          ? Math.floor(timestampNum / 1000000)
+          : timestampNum;
+
+      const date = new Date(milliseconds);
+      if (isNaN(date.getTime())) return "Invalid date";
+
+      const now = new Date();
+      if (date > now) {
+        return `in ${formatDistance(now, date)}`;
+      }
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
+  const getVoteStatus = useCallback(
+    async (proposal: Proposal) => {
+      try {
+        if (!cosmosAddress) return { hasVoted: false };
+
+        const response = await fetch(
+          `${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/proposals/${proposal.id}/votes/${cosmosAddress}`
+        );
+
+        if (!response.ok) {
+          return { hasVoted: false };
+        }
+
+        return {
+          hasVoted: true,
+          voteOption: "VOTED",
+        };
+      } catch (error) {
+        console.error("Error checking vote status:", error);
+        return { hasVoted: false };
+      }
+    },
+    [cosmosAddress]
+  );
+
+  useEffect(() => {
+    getVoteStatus(proposal).then(setVoteStatus);
+  }, [proposal, cosmosAddress, getVoteStatus]);
 
   return (
     <div className="space-y-4 p-12">
@@ -398,7 +494,9 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 Submitted at: {proposal.timeline.submitted}
               </span>
             </div>
-            <span style={{ color: theme.secondaryTextColor }}>10 days ago</span>
+            <span style={{ color: theme.secondaryTextColor }}>
+              {getTimeAgo(proposal.timeline.submitted)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -410,7 +508,9 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 Deposited at: {proposal.timeline.deposited}
               </span>
             </div>
-            <span style={{ color: theme.secondaryTextColor }}>10 days ago</span>
+            <span style={{ color: theme.secondaryTextColor }}>
+              {getTimeAgo(proposal.timeline.deposited)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -422,7 +522,9 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 Voting start from {proposal.timeline.votingStart}
               </span>
             </div>
-            <span style={{ color: theme.secondaryTextColor }}>10 days ago</span>
+            <span style={{ color: theme.secondaryTextColor }}>
+              {getTimeAgo(proposal.timeline.votingStart)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -434,7 +536,9 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 Voting end {proposal.timeline.votingEnd}
               </span>
             </div>
-            <span style={{ color: theme.secondaryTextColor }}>10 days ago</span>
+            <span style={{ color: theme.secondaryTextColor }}>
+              {getTimeAgo(proposal.timeline.votingEnd)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -446,7 +550,9 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 Upgrade Plan: (EST) {proposal.timeline.upgradePlan}
               </span>
             </div>
-            <span style={{ color: theme.secondaryTextColor }}>10 days ago</span>
+            <span style={{ color: theme.secondaryTextColor }}>
+              {getTimeAgo(proposal.timeline.upgradePlan)}
+            </span>
           </div>
         </div>
       </div>
@@ -459,25 +565,37 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
         <h2 style={{ color: theme.primaryTextColor }} className="text-xl mb-4">
           Votes
         </h2>
-        {address ? (
+        {!address ? (
+          <div style={{ color: theme.secondaryTextColor }}>
+            Connect your wallet to see your votes
+          </div>
+        ) : (
           <div className="flex items-center space-x-4">
             <span style={{ color: theme.secondaryTextColor }}>
               Your address:
             </span>
             <span style={{ color: theme.primaryTextColor }}>{address}</span>
-            <span
-              className="px-3 py-1 rounded text-sm"
-              style={{
-                backgroundColor: theme.accentColor,
-                color: theme.bgColor,
-              }}
-            >
-              YES
-            </span>
-          </div>
-        ) : (
-          <div style={{ color: theme.secondaryTextColor }}>
-            Connect your wallet to see your votes
+            {voteStatus.hasVoted ? (
+              <span
+                className="px-3 py-1 rounded text-sm"
+                style={{
+                  backgroundColor: theme.accentColor,
+                  color: theme.bgColor,
+                }}
+              >
+                {voteStatus.voteOption}
+              </span>
+            ) : (
+              <span
+                className="px-3 py-1 rounded text-sm"
+                style={{
+                  backgroundColor: theme.secondaryTextColor,
+                  color: theme.bgColor,
+                }}
+              >
+                NOT VOTED
+              </span>
+            )}
           </div>
         )}
       </div>
