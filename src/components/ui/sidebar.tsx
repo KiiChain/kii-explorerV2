@@ -850,6 +850,11 @@ const menuItems = [
     href: "/",
   },
   {
+    icon: <Icons.StakingIcon className="h-4 w-4" />,
+    label: "Staking",
+    href: "/staking",
+  },
+  {
     icon: <Icons.BlocksIcon className="h-4 w-4" />,
     label: "Blocks",
     href: "/blocks",
@@ -860,34 +865,34 @@ const menuItems = [
     href: "/uptime",
   },
   {
-    icon: <Icons.SupplyIcon className="h-6 w-6" />,
+    icon: <Icons.SupplyIcon className="h-4 w-4" />,
     label: "Supply",
     href: "/supply",
   },
   {
-    icon: <Icons.ParametersIcon className="h-6 w-6" />,
+    icon: <Icons.ParametersIcon className="h-4 w-4" />,
     label: "Parameters",
     href: "/parameters",
   },
   {
-    icon: <Icons.StateSyncIcon className="h-6 w-6" />,
+    icon: <Icons.StateSyncIcon className="h-4 w-4" />,
     label: "State Sync",
-    href: "/stateSync",
+    href: "/state-sync",
   },
   {
-    icon: <Icons.FaucetIcon className="h-6 w-6" />,
+    icon: <Icons.FaucetIcon className="h-4 w-4" />,
     label: "Faucet",
     href: "/faucet",
   },
   {
-    icon: <Icons.GovernanceIcon className="h-4 w-4 md:h-5 md:w-5" />,
+    icon: <Icons.GovernanceIcon className="h-4 w-4" />,
     label: "Governance",
     href: "/governance",
   },
   {
-    icon: <Icons.SmartContractIaIcon className="h-6 w-6" />,
+    icon: <Icons.SmartContractIaIcon className="h-4 w-4" />,
     label: "Deploy Smart Contracts",
-    href: "/iframe",
+    href: "/deploy",
   },
   {
     icon: <Icons.SmartContractsIcon className="h-4 w-4" />,
