@@ -497,10 +497,7 @@ const SidebarContent = React.forwardRef<
               }}
             >
               {React.cloneElement(item.icon, {
-                className: cn(
-                  "h-4 w-4 md:h-5 md:w-5",
-                  "transition-transform duration-200"
-                ),
+                className: cn("h-20 w-20", "transition-transform duration-200"),
                 style: {
                   color: isActive
                     ? theme.primaryTextColor
@@ -667,8 +664,10 @@ const SidebarMenuButton = React.forwardRef<
         data-active={isActive}
         className={cn(
           sidebarMenuButtonVariants({ variant, size }),
-          "[&>svg]:h-20 [&>svg]:w-20",
-          "[&>span]:text-sm",
+          "grid grid-cols-[48px_1fr] items-center w-full h-16",
+          "[&>div]:flex [&>div]:justify-center [&>div]:items-center [&>div]:h-full",
+          "[&>span]:flex [&>span]:items-center [&>span]:h-full [&>span]:!ml-4",
+          "!gap-0 !p-0",
           className
         )}
         {...props}
@@ -845,58 +844,58 @@ SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 
 const menuItems = [
   {
-    icon: <Icons.DashboardIcon className="h-4 w-4" />,
+    icon: <Icons.DashboardIcon className="h-8 w-8" />,
     label: "Dashboard",
     href: "/",
   },
   {
-    icon: <Icons.StakingIcon className="h-4 w-4" />,
+    icon: <Icons.StakingIcon className="h-8 w-8" />,
     label: "Staking",
     href: "/staking",
   },
   {
-    icon: <Icons.BlocksIcon className="h-4 w-4" />,
+    icon: <Icons.BlocksIcon className="h-8 w-8" />,
     label: "Blocks",
     href: "/blocks",
   },
   {
-    icon: <Icons.UptimeIcon className="h-4 w-4" />,
+    icon: <Icons.UptimeIcon className="h-8 w-8" />,
     label: "Uptime",
     href: "/uptime",
   },
   {
-    icon: <Icons.SupplyIcon className="h-4 w-4" />,
+    icon: <Icons.SupplyIcon className="h-8 w-8" />,
     label: "Supply",
     href: "/supply",
   },
   {
-    icon: <Icons.ParametersIcon className="h-4 w-4" />,
+    icon: <Icons.ParametersIcon className="h-8 w-8" />,
     label: "Parameters",
     href: "/parameters",
   },
   {
-    icon: <Icons.StateSyncIcon className="h-4 w-4" />,
+    icon: <Icons.StateSyncIcon className="h-8 w-8" />,
     label: "State Sync",
-    href: "/state-sync",
+    href: "/stateSync",
   },
   {
-    icon: <Icons.FaucetIcon className="h-4 w-4" />,
+    icon: <Icons.FaucetIcon className="h-8 w-8" />,
     label: "Faucet",
     href: "/faucet",
   },
   {
-    icon: <Icons.GovernanceIcon className="h-4 w-4" />,
+    icon: <Icons.GovernanceIcon className="h-8 w-8" />,
     label: "Governance",
     href: "/governance",
   },
   {
-    icon: <Icons.SmartContractIaIcon className="h-4 w-4" />,
+    icon: <Icons.SmartContractIaIcon className="h-8 w-8" />,
     label: "Deploy Smart Contracts",
-    href: "/deploy",
+    href: "/iframe",
   },
   {
-    icon: <Icons.SmartContractsIcon className="h-4 w-4" />,
-    label: "Smart Contracts",
+    icon: <Icons.SmartContractsIcon className="h-8 w-8" />,
+    label: "Smart Contracts deployed",
     href: "/smartContracts",
   },
 ];
