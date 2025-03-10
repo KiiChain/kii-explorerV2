@@ -885,7 +885,7 @@ const menuItems = [
     href: "/faucet",
   },
   {
-    icon: <Icons.GovernanceIcon className="h-6 w-6" />,
+    icon: <Icons.GovernanceIcon className="h-4 w-4 md:h-5 md:w-5" />,
     label: "Governance",
     href: "/governance",
   },
