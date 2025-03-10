@@ -5,6 +5,7 @@ import { useAccount, useWriteContract } from "wagmi";
 import { parseEther } from "viem";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface ProposalDetailProps {
   proposal: {
@@ -71,8 +72,30 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
   const [voteSuccess, setVoteSuccess] = useState(false);
   const [depositSuccess, setDepositSuccess] = useState(false);
 
+  const canVote = proposal.status === "PROPOSAL_STATUS_VOTING_PERIOD";
+  const canDeposit = proposal.status === "PROPOSAL_STATUS_DEPOSIT_PERIOD";
+
   const handleVote = async () => {
     if (!address) return;
+
+    if (!canVote) {
+      toast.error(
+        proposal.status === "PROPOSAL_STATUS_PASSED"
+          ? "This proposal has already passed"
+          : proposal.status === "PROPOSAL_STATUS_REJECTED"
+          ? "This proposal has been rejected"
+          : proposal.status === "PROPOSAL_STATUS_FAILED"
+          ? "This proposal has failed"
+          : proposal.status === "PROPOSAL_STATUS_DEPOSIT_PERIOD"
+          ? "This proposal is in deposit period"
+          : "Voting is not available for this proposal",
+        {
+          description: "The proposal's current status doesn't allow voting",
+        }
+      );
+      return;
+    }
+
     try {
       setVoteSuccess(false);
       await writeContract({
@@ -82,14 +105,40 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
         args: [BigInt(proposal.id), 1],
       });
       setVoteSuccess(true);
+      toast.success("Vote submitted successfully", {
+        description: "Your vote has been recorded on the blockchain",
+      });
       setTimeout(() => setVoteSuccess(false), 2000);
     } catch (error) {
       console.error("Error initiating vote:", error);
+      toast.error("Failed to submit vote", {
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
     }
   };
 
   const handleDeposit = async () => {
     if (!address) return;
+
+    if (!canDeposit) {
+      toast.error(
+        proposal.status === "PROPOSAL_STATUS_VOTING_PERIOD"
+          ? "This proposal is in voting period"
+          : proposal.status === "PROPOSAL_STATUS_PASSED"
+          ? "This proposal has already passed"
+          : proposal.status === "PROPOSAL_STATUS_REJECTED"
+          ? "This proposal has been rejected"
+          : proposal.status === "PROPOSAL_STATUS_FAILED"
+          ? "This proposal has failed"
+          : "Deposits are not available for this proposal",
+        {
+          description: "The proposal's current status doesn't allow deposits",
+        }
+      );
+      return;
+    }
+
     try {
       setDepositSuccess(false);
       await writeContract({
@@ -100,9 +149,16 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
         value: parseEther("1"),
       });
       setDepositSuccess(true);
+      toast.success("Deposit submitted successfully", {
+        description: "Your deposit has been recorded on the blockchain",
+      });
       setTimeout(() => setDepositSuccess(false), 2000);
     } catch (error) {
       console.error("Error initiating deposit:", error);
+      toast.error("Failed to submit deposit", {
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
     }
   };
 
@@ -276,7 +332,9 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
           ) : (
             <>
               <button
-                className="flex-1 py-3 rounded-lg text-white"
+                className={`flex-1 py-3 rounded-lg text-white ${
+                  !canVote && "opacity-50"
+                }`}
                 style={{
                   backgroundColor: theme.accentColor,
                   color: theme.primaryTextColor,
@@ -292,7 +350,9 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                   : "VOTE"}
               </button>
               <button
-                className="flex-1 py-3 rounded-lg text-white"
+                className={`flex-1 py-3 rounded-lg text-white ${
+                  !canDeposit && "opacity-50"
+                }`}
                 style={{
                   backgroundColor: theme.accentColor,
                   color: theme.primaryTextColor,
