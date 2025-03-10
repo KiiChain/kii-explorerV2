@@ -91,9 +91,18 @@ export const useGovernanceParams = (paramsType: string) => {
 };
 
 export const calculateVotingMetrics = (proposal: Proposal) => {
-  const votingStartTime = dayjs(proposal.voting_start_time);
+  const now = dayjs();
   const votingEndTime = dayjs(proposal.voting_end_time);
-  const votingPeriodDays = votingEndTime.diff(votingStartTime, "days");
+
+  let votingPeriodDays = 0;
+  if (proposal.status === "PROPOSAL_STATUS_VOTING_PERIOD") {
+    votingPeriodDays = Math.ceil(votingEndTime.diff(now, "day", true));
+  } else if (proposal.status === "PROPOSAL_STATUS_DEPOSIT_PERIOD") {
+    const depositEndTime = dayjs(proposal.deposit_end_time);
+    votingPeriodDays = Math.ceil(depositEndTime.diff(now, "day", true));
+  }
+
+  votingPeriodDays = Math.max(0, votingPeriodDays);
 
   const yesVotes = parseInt(proposal.final_tally_result?.yes || "0");
   const noVotes = parseInt(proposal.final_tally_result?.no || "0");
