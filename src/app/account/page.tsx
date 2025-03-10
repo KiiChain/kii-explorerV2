@@ -432,16 +432,17 @@ export default function AddressPage() {
   ]);
 
   const transactions =
-    (
-      transactionsData?.pages as {
-        txs: Array<{
-          height: string;
-          hash: string;
-          messages: string;
-          time: string;
-        }>;
-      }[]
-    )?.flatMap((page) => page.txs) || [];
+    transactionsData?.pages.flatMap((page) =>
+      page.txs.map((tx) => ({
+        height: "0",
+        hash: tx.hash,
+        messages:
+          tx.amount === "EVM Contract Call"
+            ? "Contract Interaction"
+            : `Transfer ${tx.amount} ${tx.denom}`,
+        time: tx.timestamp,
+      }))
+    ) || [];
 
   return (
     <div className={`mx-6 px-6 bg-[${theme.bgColor}]`}>

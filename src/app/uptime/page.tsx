@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { UptimeDashboard } from "@/components/Uptime/UptimeDashboard";
+import { useValidatorsWithUptime } from "@/services/queries/validators";
 
 export interface ValidatorResponse {
   operator_address: string;
@@ -17,30 +20,8 @@ export interface ValidatorResponse {
   jailed: boolean;
 }
 
-async function fetchValidators() {
-  try {
-    const response = await fetch(
-      "https://uno.sentry.testnet.v3.kiivalidator.com/cosmos/staking/v1beta1/validators"
-    );
-    const data = await response.json();
-    return data.validators.map((v: ValidatorResponse) => ({
-      operatorAddress: v.operator_address,
-      moniker: v.description.moniker,
-      status: v.status,
-      tokens: v.tokens,
-      commission: v.commission.commission_rates.rate,
-      website: v.description.website,
-      jailed: v.jailed,
-      uptime: 0,
-    }));
-  } catch (error) {
-    console.error("Error fetching validators:", error);
-    return [];
-  }
-}
-
-export default async function UptimePage() {
-  const validators = await fetchValidators();
+export default function UptimePage() {
+  const { data: validators = [] } = useValidatorsWithUptime();
 
   return (
     <div className="px-6">

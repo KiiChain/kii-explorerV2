@@ -186,3 +186,30 @@ export const useValidatorIcons = () => {
 
   return { getValidatorIcon, handleImageError };
 };
+
+export const useValidatorsWithUptime = () => {
+  return useQuery({
+    queryKey: ["validators-uptime"],
+    queryFn: async () => {
+      const response = await fetch(
+        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch validators data");
+      }
+      const data = await response.json();
+
+      return data.validators.map((v: ValidatorResponse) => ({
+        operatorAddress: v.operator_address,
+        moniker: v.description.moniker,
+        status: v.status,
+        tokens: v.tokens,
+        commission: v.commission.commission_rates.rate,
+        website: v.description.website,
+        jailed: v.jailed,
+        uptime: 0,
+      }));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
