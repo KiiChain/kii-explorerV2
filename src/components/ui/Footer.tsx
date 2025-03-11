@@ -47,7 +47,7 @@ export function Footer() {
 
   return (
     <footer
-      className="w-full py-8 px-12 flex flex-col items-center gap-6 mt-auto"
+      className="w-full py-8 px-12 flex flex-col items-center gap-6 mt-8"
       style={{ backgroundColor: theme.boxColor }}
     >
       {/* Íconos de redes sociales */}
