@@ -488,7 +488,7 @@ const SidebarContent = React.forwardRef<
               }}
             >
               {React.cloneElement(item.icon, {
-                className: cn("h-20 w-20", "transition-transform duration-200"),
+                className: cn("w-20", "transition-transform duration-200"),
                 style: {
                   color: isActive
                     ? theme.primaryTextColor
@@ -620,9 +620,9 @@ const SidebarMenuButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
-        "flex h-20 min-w-0 items-center justify-start gap-6 overflow-hidden rounded-md px-6 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
+        "flex h-16 min-w-0 items-center justify-start gap-6 overflow-hidden rounded-md px-6 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
         "[&>span]:my-auto [&>svg]:translate-y-[-2px]",
-        "[&>span:last-child]:truncate [&>svg]:h-20 [&>svg]:w-20 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+        "[&>span:last-child]:truncate [&>svg]:h-16 [&>svg]:w-20 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
         size === "sm" && "text-xs",
         size === "md" && "text-base",
