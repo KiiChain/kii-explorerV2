@@ -505,7 +505,7 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 style={{ color: theme.secondaryTextColor }}
                 className="ml-2"
               >
-                Deposited at: {proposal.timeline.deposited}
+                Deposit Ends At: {proposal.timeline.deposited}
               </span>
             </div>
             <span style={{ color: theme.secondaryTextColor }}>

@@ -19,7 +19,7 @@ const GovernanceList = () => {
   });
 
   return (
-    <div className="p-5 rounded-lg">
+    <div className="p-1 rounded-lg">
       <div
         style={{ backgroundColor: theme.boxColor }}
         className="flex justify-between mb-4"
@@ -47,7 +47,7 @@ const GovernanceList = () => {
       ) : error ? (
         <p style={{ color: "red" }}>{error.toString()}</p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 text-base p-1">
+        <div className="grid grid-cols-2 gap-1 text-sm p-1">
           {sortedProposals.map((proposal, index) => {
             const { votingPeriodDays, yesPercentage } =
               calculateVotingMetrics(proposal);
@@ -59,11 +59,11 @@ const GovernanceList = () => {
                 className="block"
               >
                 <div
-                  className="flex items-center p-6 rounded-lg cursor-pointer hover:opacity-90"
+                  className="flex items-center p-3 rounded-lg cursor-pointer hover:opacity-90"
                   style={{ backgroundColor: theme.boxColor }}
                 >
                   <div
-                    className="flex flex-col w-full p-4 rounded-lg"
+                    className="flex flex-col w-full p-2 rounded-lg"
                     style={{ backgroundColor: theme.bgColor }}
                   >
                     {proposal.status === "PROPOSAL_STATUS_PASSED" ||
@@ -107,9 +107,9 @@ const GovernanceList = () => {
                       </div>
                     ) : (
                       <div className="grid grid-cols-2">
-                        <div className="pb-3 flex">
+                        <div className="pb-2 flex">
                           <p
-                            className="py-2 px-4 rounded-lg text-center"
+                            className="py-1 px-2 rounded-lg text-center"
                             style={{ backgroundColor: theme.boxColor }}
                           >
                             {proposal.status ===
@@ -118,9 +118,9 @@ const GovernanceList = () => {
                               : "Voting Period"}
                           </p>
                         </div>
-                        <div className="pb-3 flex">
+                        <div className="pb-2 flex">
                           <p
-                            className="py-2 px-4 rounded-lg text-center"
+                            className="py-1 px-2 rounded-lg text-center"
                             style={{
                               backgroundColor: theme.boxColor,
                               color: theme.accentColor,
@@ -132,11 +132,13 @@ const GovernanceList = () => {
                       </div>
                     )}
 
-                    <h2>{`#${proposal.proposal_id || "N/A"} ${
-                      proposal.content?.title || "No Title"
-                    }`}</h2>
+                    <h2 className="text-sm">
+                      {`#${proposal.proposal_id || "N/A"} ${
+                        proposal.content?.title || "No Title"
+                      }`}
+                    </h2>
 
-                    <div className="mt-4 w-full bg-gray-200 rounded-lg h-4">
+                    <div className="mt-2 w-full bg-gray-200 rounded-lg h-3">
                       <div
                         style={{
                           width: `${yesPercentage}%`,
