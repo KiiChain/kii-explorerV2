@@ -20,6 +20,7 @@ import { createAppKit } from "@reown/appkit/react";
 import { TESTNET_ORO_EVM } from "@/config/chain";
 import { defineChain } from "@reown/appkit/networks";
 import { Toaster } from "sonner";
+import { Footer } from "@/components/ui/Footer";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -92,23 +93,26 @@ function ContentWrapper({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div
-        className="flex h-screen w-full overflow-hidden"
+        className="flex h-screen w-full overflow-hidden flex-col"
         style={{ backgroundColor: theme.bgColor }}
       >
-        <Sidebar className="mt-10">
-          <SidebarHeader className="flex items-center justify-between p-4">
-            <Logo />
-            <SidebarTrigger />
-          </SidebarHeader>
-          <SidebarContent />
-        </Sidebar>
-        <main className="flex-1 relative overflow-y-auto pl-28">
-          <div className="px-12 pt-12">
-            <UptimeHeader />
-          </div>
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar className="mt-10">
+            <SidebarHeader className="flex items-center justify-between p-4">
+              <Logo />
+              <SidebarTrigger />
+            </SidebarHeader>
+            <SidebarContent />
+          </Sidebar>
+          <main className="flex-1 relative overflow-y-auto pl-28">
+            <div className="px-12 pt-12">
+              <UptimeHeader />
+            </div>
 
-          {children}
-        </main>
+            {children}
+          </main>
+        </div>
+        <Footer />
       </div>
     </SidebarProvider>
   );
