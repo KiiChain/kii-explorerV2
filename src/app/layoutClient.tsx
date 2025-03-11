@@ -93,10 +93,10 @@ function ContentWrapper({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div
-        className="flex h-screen w-full overflow-hidden flex-col"
+        className="flex min-h-screen w-full flex-col"
         style={{ backgroundColor: theme.bgColor }}
       >
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1">
           <Sidebar className="mt-10">
             <SidebarHeader className="flex items-center justify-between p-4">
               <Logo />
@@ -104,15 +104,14 @@ function ContentWrapper({ children }: { children: React.ReactNode }) {
             </SidebarHeader>
             <SidebarContent />
           </Sidebar>
-          <main className="flex-1 relative overflow-y-auto pl-28">
+          <main className="flex flex-col flex-1 pl-28">
             <div className="px-12 pt-12">
               <UptimeHeader />
             </div>
-
-            {children}
+            <div className="flex-1">{children}</div>
+            <Footer />
           </main>
         </div>
-        <Footer />
       </div>
     </SidebarProvider>
   );
