@@ -184,126 +184,114 @@ SidebarProvider.displayName = "SidebarProvider";
 const Sidebar = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
-    side?: "left" | "right";
-    variant?: "sidebar" | "floating" | "inset";
-    collapsible?: "offcanvas" | "icon" | "none";
+    position?: "left" | "right";
+    collapsible?: "none" | "icon" | "offcanvas";
+    variant?: "default" | "floating" | "inset";
   }
->(
-  (
-    {
-      side = "left",
-      variant = "sidebar",
-      collapsible = "offcanvas",
-      className,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
-    const { theme } = useTheme();
+>(({ position = "left", className, ...props }, ref) => {
+  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const { theme } = useTheme();
 
-    if (collapsible === "none") {
-      return (
-        <div
-          className={cn("flex h-full w-[--sidebar-width] flex-col", className)}
-          style={{
-            backgroundColor: theme.boxColor,
-            color: theme.primaryTextColor,
-          }}
-          ref={ref}
-          {...props}
-        >
-          {children}
-        </div>
-      );
-    }
-
-    if (isMobile) {
-      return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-          <SheetContent
-            data-sidebar="sidebar"
-            data-mobile="true"
-            className="w-[--sidebar-width] p-0 [&>button]:hidden"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-                backgroundColor: theme.boxColor,
-                color: theme.primaryTextColor,
-              } as React.CSSProperties
-            }
-            side={side}
-          >
-            <div className="flex h-full w-full flex-col">{children}</div>
-          </SheetContent>
-        </Sheet>
-      );
-    }
-
+  if (props.collapsible === "none") {
     return (
       <div
-        ref={ref}
-        className="group peer hidden md:block w-32"
-        data-state={state}
-        data-collapsible={state === "collapsed" ? collapsible : ""}
-        data-variant={variant}
-        data-side={side}
+        className={cn("flex h-full w-[--sidebar-width] flex-col", className)}
         style={{
+          backgroundColor: theme.boxColor,
           color: theme.primaryTextColor,
         }}
+        ref={ref}
+        {...props}
       >
-        {/* This is what handles the sidebar gap on desktop */}
-        <div
-          className={cn(
-            "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
-            "group-data-[collapsible=offcanvas]:w-0",
-            "group-data-[side=right]:rotate-180",
-            variant === "floating" || variant === "inset"
-              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
-          )}
-        />
-        <div
-          className={cn(
-            "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
-            side === "left"
-              ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-              : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-
-            variant === "floating" || variant === "inset"
-              ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]  group-data-[side=right]:border-l",
-            className
-          )}
-          style={{
-            backgroundColor: theme.boxColor,
-            borderColor: theme.borderColor,
-          }}
-          {...props}
-        >
-          <div
-            data-sidebar="sidebar"
-            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow overflow-hidden"
-            style={{
-              backgroundColor: theme.bgColor,
-            }}
-          >
-            <div className="relative">
-              {state === "collapsed" && (
-                <SidebarTrigger
-                  className="absolute -right-10 top-[3.75rem] z-20"
-                  variant="ghost"
-                ></SidebarTrigger>
-              )}
-            </div>
-            {children}
-          </div>
-        </div>
+        {props.children}
       </div>
     );
   }
-);
+
+  if (isMobile) {
+    return (
+      <Sheet open={openMobile} onOpenChange={(open) => setOpenMobile(open)}>
+        <SheetContent
+          data-sidebar="sidebar"
+          data-mobile="true"
+          className="w-[--sidebar-width] p-0 [&>button]:hidden"
+          style={
+            {
+              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              backgroundColor: theme.boxColor,
+              color: theme.primaryTextColor,
+            } as React.CSSProperties
+          }
+          side={position}
+        >
+          <div className="flex h-full w-full flex-col">{props.children}</div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="group peer hidden md:block w-32"
+      data-state={state}
+      data-collapsible={state === "collapsed" ? props.collapsible : ""}
+      data-variant={props.variant}
+      data-side={position}
+      style={{
+        color: theme.primaryTextColor,
+      }}
+    >
+      {/* This is what handles the sidebar gap on desktop */}
+      <div
+        className={cn(
+          "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
+          "group-data-[collapsible=offcanvas]:w-0",
+          "group-data-[side=right]:rotate-180",
+          props.variant === "floating" || props.variant === "inset"
+            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
+            : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
+        )}
+      />
+      <div
+        className={cn(
+          "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
+          position === "left"
+            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
+            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+
+          props.variant === "floating" || props.variant === "inset"
+            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
+            : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
+          className
+        )}
+        style={{
+          backgroundColor: theme.boxColor,
+          borderColor: theme.borderColor,
+        }}
+        {...props}
+      >
+        <div
+          data-sidebar="sidebar"
+          className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow overflow-hidden"
+          style={{
+            backgroundColor: theme.bgColor,
+          }}
+        >
+          <div className="relative">
+            {state === "collapsed" && (
+              <SidebarTrigger
+                className="absolute -right-10 top-[3.75rem] z-20"
+                variant="ghost"
+              ></SidebarTrigger>
+            )}
+          </div>
+          {props.children}
+        </div>
+      </div>
+    </div>
+  );
+});
 Sidebar.displayName = "Sidebar";
 
 const SidebarTrigger = React.forwardRef<
@@ -789,6 +777,11 @@ const menuItems = [
     href: "/staking",
   },
   {
+    icon: <Icons.GovernanceIcon className="h-8 w-8" />,
+    label: "Governance",
+    href: "/governance",
+  },
+  {
     icon: <Icons.BlocksIcon className="h-8 w-8" />,
     label: "Blocks",
     href: "/blocks",
@@ -818,11 +811,7 @@ const menuItems = [
     label: "Faucet",
     href: "/faucet",
   },
-  {
-    icon: <Icons.GovernanceIcon className="h-8 w-8" />,
-    label: "Governance",
-    href: "/governance",
-  },
+
   {
     icon: <Icons.SmartContractIaIcon className="h-8 w-8" />,
     label: "Deploy Smart Contracts",

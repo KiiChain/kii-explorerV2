@@ -78,7 +78,7 @@ export function Footer() {
           className="hover:opacity-70 transition-opacity"
           style={{ color: theme.secondaryTextColor }}
         >
-          Términos y Condiciones
+          Terms & Conditions
         </a>
         <a
           href="https://kiichain.io/PrivacyPolicy"
@@ -87,7 +87,7 @@ export function Footer() {
           className="hover:opacity-70 transition-opacity"
           style={{ color: theme.secondaryTextColor }}
         >
-          Política de Privacidad
+          Privacy Policy
         </a>
       </div>
     </footer>

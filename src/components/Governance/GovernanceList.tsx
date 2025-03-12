@@ -22,10 +22,10 @@ const GovernanceList = () => {
     <div className="p-1 rounded-lg">
       <div
         style={{ backgroundColor: theme.boxColor }}
-        className="flex justify-between mb-4"
+        className="flex justify-between mb-6"
       >
         <div
-          className="flex items-center py-1 px-2 rounded-lg"
+          className="flex items-center py-1 px-4 rounded-lg w-full mt-4 mx-4"
           style={{ backgroundColor: theme.bgColor }}
         >
           <input

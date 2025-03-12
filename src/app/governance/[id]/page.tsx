@@ -16,7 +16,7 @@ export default async function Page({
 
   return (
     <main>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div className="px-20 py-12">Loading...</div>}>
         <ProposalData id={id} />
       </Suspense>
     </main>
