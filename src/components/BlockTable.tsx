@@ -35,17 +35,18 @@ export function BlockTable({
     router.push(`/blocksID/${height}`);
   };
 
+  const convertWeiToKii = (wei: string): string => {
+    const kii = Number(wei);
+    return kii.toFixed(2);
+  };
+
   const formatAmount = (value: string): string => {
-    if (value === "EVM CONTRACT CALL") return value;
-    try {
-      return (BigInt(value) / BigInt("1000000000000000000")).toString();
-    } catch {
-      return "0";
-    }
+    if (!value) return "0";
+    return convertWeiToKii(value);
   };
 
   const isContractCall = (tx: Transaction): boolean => {
-    return tx.method !== "0x00000000" && tx.value === "0";
+    return tx.method !== "0x00000000";
   };
 
   return (
@@ -153,8 +154,8 @@ export function BlockTable({
                   >
                     {latestTransactions[index]
                       ? isContractCall(latestTransactions[index])
-                        ? "EVM CONTRACT CALL"
-                        : `${formatAmount(latestTransactions[index].value)}`
+                        ? "EVM Contract Call"
+                        : `${formatAmount(latestTransactions[index].value)} KII`
                       : "0 KII"}
                   </span>
                 </div>
