@@ -11,12 +11,12 @@ interface Block {
 }
 
 interface Transaction {
-  from: string;
-  to: string;
-  amount: string;
-  denom: string;
-  timestamp: string;
+  from_address: string;
+  to_address: string;
+  value: string;
+  method: string;
   hash: string;
+  timestamp: string;
 }
 
 export function BlockTable({
@@ -33,6 +33,20 @@ export function BlockTable({
 
   const handleBlockClick = (height: string) => {
     router.push(`/blocksID/${height}`);
+  };
+
+  const convertWeiToKii = (wei: string): string => {
+    const kii = Number(wei);
+    return kii.toFixed(2);
+  };
+
+  const formatAmount = (value: string): string => {
+    if (!value) return "0";
+    return convertWeiToKii(value);
+  };
+
+  const isContractCall = (tx: Transaction): boolean => {
+    return tx.method !== "0x00000000";
   };
 
   return (
@@ -86,16 +100,19 @@ export function BlockTable({
                         style={{ color: theme.accentColor }}
                         className="cursor-pointer hover:opacity-80"
                         onClick={() =>
-                          latestTransactions[index]?.from &&
+                          latestTransactions[index]?.from_address &&
                           router.push(
-                            `/account/${latestTransactions[index].from}`
+                            `/account/${latestTransactions[index].from_address}`
                           )
                         }
                       >
                         {window.innerWidth < 1600 &&
-                        latestTransactions[index]?.from
-                          ? `${latestTransactions[index].from.slice(0, -15)}...`
-                          : latestTransactions[index]?.from || "N/A"}
+                        latestTransactions[index]?.from_address
+                          ? `${latestTransactions[index].from_address.slice(
+                              0,
+                              -15
+                            )}...`
+                          : latestTransactions[index]?.from_address || "N/A"}
                       </span>
                     </div>
                   </span>
@@ -108,16 +125,19 @@ export function BlockTable({
                         style={{ color: theme.accentColor }}
                         className="cursor-pointer hover:opacity-80"
                         onClick={() =>
-                          latestTransactions[index]?.to &&
+                          latestTransactions[index]?.to_address &&
                           router.push(
-                            `/account/${latestTransactions[index].to}`
+                            `/account/${latestTransactions[index].to_address}`
                           )
                         }
                       >
                         {window.innerWidth < 1600 &&
-                        latestTransactions[index]?.to
-                          ? `${latestTransactions[index].to.slice(0, -15)}...`
-                          : latestTransactions[index]?.to || "N/A"}
+                        latestTransactions[index]?.to_address
+                          ? `${latestTransactions[index].to_address.slice(
+                              0,
+                              -15
+                            )}...`
+                          : latestTransactions[index]?.to_address || "N/A"}
                       </span>
                     </div>
                   </span>
@@ -132,9 +152,11 @@ export function BlockTable({
                     }}
                     className="px-3 py-1 rounded-full text-center inline-block w-fit cursor-pointer hover:opacity-80"
                   >
-                    {latestTransactions[index]?.amount === "EVM Contract Call"
-                      ? "EVM CONTRACT CALL"
-                      : `${latestTransactions[index]?.amount || 0} KII`}
+                    {latestTransactions[index]
+                      ? isContractCall(latestTransactions[index])
+                        ? "EVM Contract Call"
+                        : `${formatAmount(latestTransactions[index].value)} KII`
+                      : "0 KII"}
                   </span>
                 </div>
               </td>

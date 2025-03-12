@@ -1,52 +1,11 @@
 "use client";
 
 import { useTheme } from "@/context/ThemeContext";
-import { useState, useEffect } from "react";
-
-interface BlockInfo {
-  height: string;
-  hash: string;
-}
+import { useStateSyncInfo } from "@/services/queries/stateSync";
 
 export function StateSyncDashboard() {
   const { theme } = useTheme();
-  const [blockInfo, setBlockInfo] = useState<BlockInfo>({
-    height: "0",
-    hash: "",
-  });
-
-  useEffect(() => {
-    const fetchBlockInfo = async () => {
-      try {
-        const latestResponse = await fetch(
-          "https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/latest"
-        );
-        const latestData = await latestResponse.json();
-        const currentHeight = parseInt(latestData.block.header.height);
-        const trustHeight = currentHeight - 500;
-
-        const trustResponse = await fetch(
-          `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${trustHeight}`
-        );
-        const trustData = await trustResponse.json();
-
-        setBlockInfo({
-          height: trustHeight.toString(),
-          hash: trustData.block_id.hash,
-        });
-      } catch (error) {
-        console.error("Error fetching block info:", error);
-      }
-    };
-
-    // Fetch immediately
-    fetchBlockInfo();
-
-    // Then fetch every 6 seconds
-    const interval = setInterval(fetchBlockInfo, 6000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const { data: blockInfo } = useStateSyncInfo();
 
   return (
     <div style={{ backgroundColor: theme.bgColor }} className="px-6">
@@ -163,12 +122,12 @@ export function StateSyncDashboard() {
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> trust_height = </span>
-                <span style={{ color: "#FFFFFF" }}>{blockInfo.height}</span>
+                <span style={{ color: "#FFFFFF" }}>{blockInfo?.height}</span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> trust_hash = </span>
                 <span style={{ color: "#FFFFFF" }}>
-                  &quot;{blockInfo.hash}&quot;
+                  &quot;{blockInfo?.hash}&quot;
                 </span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>

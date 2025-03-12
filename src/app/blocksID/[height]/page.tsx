@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { useBlockDetails } from "@/services/queries/blockDetails";
 
 interface BlockHeader {
   version: {
@@ -13,25 +14,6 @@ interface BlockHeader {
   time: string;
   proposer_address: string;
   app_hash: string;
-}
-
-interface BlockData {
-  block_id: {
-    hash: string;
-  };
-  block: {
-    header: BlockHeader;
-    data: {
-      txs: string[];
-    };
-    last_commit: {
-      signatures: Array<{
-        validator_address: string;
-        timestamp: string;
-        signature: string;
-      }>;
-    };
-  };
 }
 
 interface JSONValue {
@@ -52,26 +34,8 @@ export default function BlockPage({
 }) {
   const resolvedParams = React.use(params);
   const { height } = resolvedParams;
-  const [blockData, setBlockData] = useState<BlockData | null>(null);
+  const { data: blockData } = useBlockDetails(height);
   const { theme } = useTheme();
-
-  useEffect(() => {
-    const fetchBlockDetails = async () => {
-      try {
-        const response = await fetch(
-          `https://lcd.uno.sentry.testnet.v3.kiivalidator.com/cosmos/base/tendermint/v1beta1/blocks/${height}`
-        );
-        const data = await response.json();
-        setBlockData(data);
-      } catch (error) {
-        console.error("Error fetching block details:", error);
-      }
-    };
-
-    if (height) {
-      fetchBlockDetails();
-    }
-  }, [height]);
 
   const formatJSON = (
     json:

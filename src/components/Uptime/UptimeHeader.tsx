@@ -4,43 +4,26 @@ import React, { useState } from "react";
 import { SearchIcon, LightModeIcon, DarkModeIcon } from "@/components/ui/icons";
 import { useTheme } from "@/context/ThemeContext";
 import { darkTheme } from "@/theme";
-import { useRouter } from "next/navigation";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
+import { useSearch } from "@/services/queries/search";
 
 export function UptimeHeader() {
   const { theme, toggleTheme } = useTheme();
-  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
   const [searchKey, setSearchKey] = useState("");
+  const { searchItem } = useSearch();
 
-  const confirm = async () => {
+  const handleSearch = async () => {
     setErrorMessage("");
-
-    if (!searchKey) {
-      setErrorMessage("Please enter a value!");
-      return;
-    }
-
-    const height = /^\d+$/;
-    const txhash = /^[A-Z\d]{64}$/;
-    const addr = /^[a-z\d]+1[a-z\d]{38,58}$/;
-    const evmAddr = /^0x[a-fA-F0-9]{40}$/;
-    const evmTxHash = /^0x[a-fA-F0-9]{64}$/;
-
-    if (height.test(searchKey)) {
-      router.push(`/blocksID/${searchKey}`);
-    } else if (txhash.test(searchKey) || evmTxHash.test(searchKey)) {
-      router.push(`/transaction/${searchKey}`);
-    } else if (addr.test(searchKey) || evmAddr.test(searchKey)) {
-      router.push(`/account/${searchKey}`);
-    } else {
-      setErrorMessage("The input not recognized");
+    const result = await searchItem(searchKey);
+    if (result?.error) {
+      setErrorMessage(result.error);
     }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
-      confirm();
+      handleSearch();
     }
   };
 
