@@ -36,7 +36,7 @@ export function BlockTable({
   };
 
   const formatAmount = (value: string): string => {
-    if (value === "EVM Contract Call") return value;
+    if (value === "EVM CONTRACT CALL") return value;
     try {
       return (BigInt(value) / BigInt("1000000000000000000")).toString();
     } catch {
@@ -154,7 +154,7 @@ export function BlockTable({
                     {latestTransactions[index]
                       ? isContractCall(latestTransactions[index])
                         ? "EVM CONTRACT CALL"
-                        : `${formatAmount(latestTransactions[index].value)} KII`
+                        : `${formatAmount(latestTransactions[index].value)}`
                       : "0 KII"}
                   </span>
                 </div>

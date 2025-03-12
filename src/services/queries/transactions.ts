@@ -34,7 +34,7 @@ export const useTransactionsQuery = (address?: string) => {
         amount:
           tx.method === "0x00000000"
             ? (BigInt(tx.value) / BigInt("1000000000000000000")).toString()
-            : "EVM Contract Call",
+            : "EVM CONTRACT CALL",
         denom: tx.method === "0x00000000" ? "KII" : "",
         timestamp: new Date(parseInt(tx.timestamp) * 1000).toLocaleString(),
         hash: tx.hash,
