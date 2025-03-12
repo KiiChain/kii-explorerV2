@@ -1,10 +1,8 @@
 import ProposalDetail from "@/components/Governance/ProposalDetail";
-import { getProposalDetails } from "@/services/queries/governance";
 import { Suspense } from "react";
 
 async function ProposalData({ id }: { id: string }) {
-  const proposal = await getProposalDetails(id);
-  return <ProposalDetail proposal={proposal} />;
+  return <ProposalDetail proposalId={id} />;
 }
 
 export default async function Page({

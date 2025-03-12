@@ -2,211 +2,52 @@
 
 import { useTheme } from "@/context/ThemeContext";
 import { useAccount, useWriteContract } from "wagmi";
-import { parseEther } from "viem";
-import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
-import { useState, useEffect, useCallback } from "react";
-import { toast } from "sonner";
-import { formatDistanceToNow, formatDistance } from "date-fns";
-import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
-interface Proposal {
-  id: string;
-  final_tally_result?: {
-    yes: string;
-    no: string;
-    abstain: string;
-    no_with_veto: string;
-  };
-}
+import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
+
+import { formatDistanceToNow, formatDistance } from "date-fns";
+
+import { useProposalDetail } from "@/services/hooks/useProposalDetail";
 
 interface ProposalDetailProps {
-  proposal: {
-    id: string;
-    type: string;
-    title: string;
-    description: string;
-    status: string;
-    plan: {
-      name: string;
-      time: string;
-      height: string;
-      info: string;
-      upgradedClientState: string;
-    };
-    tally: {
-      turnout: number;
-      yes: number;
-      no: number;
-      noWithVeto: number;
-      abstain: number;
-    };
-    timeline: {
-      submitted: string;
-      deposited: string;
-      votingStart: string;
-      votingEnd: string;
-      upgradePlan: string;
-    };
-  };
+  proposalId: string;
 }
 
-interface VoteStatus {
-  hasVoted: boolean;
-  voteOption?: string;
-}
-
-const GOVERNANCE_ABI = [
-  {
-    inputs: [
-      { name: "proposalID", type: "uint64" },
-      { name: "option", type: "int32" },
-    ],
-    name: "vote",
-    outputs: [{ name: "success", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ name: "proposalID", type: "uint64" }],
-    name: "deposit",
-    outputs: [{ name: "success", type: "bool" }],
-    stateMutability: "payable",
-    type: "function",
-  },
-] as const;
-
-const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
+const ProposalDetail = ({ proposalId }: ProposalDetailProps) => {
   const { theme } = useTheme();
   const { address } = useAccount();
-  const { data: kiiAddressData } = useKiiAddressQuery(address);
-  const cosmosAddress = kiiAddressData?.kii_address;
+  const { isError: isWriteError, error: writeError } = useWriteContract();
 
   const {
-    writeContract,
-    isPending: isWritePending,
-    isError: isWriteError,
-    error: writeError,
-  } = useWriteContract();
-
-  const [voteSuccess, setVoteSuccess] = useState(false);
-  const [depositSuccess, setDepositSuccess] = useState(false);
-  const [voteStatus, setVoteStatus] = useState<VoteStatus>({ hasVoted: false });
-
-  const canVote = proposal.status === "PROPOSAL_STATUS_VOTING_PERIOD";
-  const canDeposit = proposal.status === "PROPOSAL_STATUS_DEPOSIT_PERIOD";
-
-  const handleVote = async () => {
-    if (!address) return;
-
-    if (!canVote) {
-      toast.error(
-        proposal.status === "PROPOSAL_STATUS_PASSED"
-          ? "This proposal has already passed"
-          : proposal.status === "PROPOSAL_STATUS_REJECTED"
-          ? "This proposal has been rejected"
-          : proposal.status === "PROPOSAL_STATUS_FAILED"
-          ? "This proposal has failed"
-          : proposal.status === "PROPOSAL_STATUS_DEPOSIT_PERIOD"
-          ? "This proposal is in deposit period"
-          : "Voting is not available for this proposal",
-        {
-          description: "The proposal's current status doesn't allow voting",
-        }
-      );
-      return;
-    }
-
-    try {
-      setVoteSuccess(false);
-
-      if (isWritePending) {
-        return;
-      }
-
-      await writeContract({
-        address: "0x0000000000000000000000000000000000001006",
-        abi: GOVERNANCE_ABI,
-        functionName: "vote",
-        args: [BigInt(proposal.id), 1],
-      });
-
-      setVoteSuccess(true);
-      toast.success("Vote submitted successfully", {
-        description: "Your vote has been recorded on the blockchain",
-      });
-      setTimeout(() => setVoteSuccess(false), 2000);
-    } catch (error) {
-      console.error("Error initiating vote:", error);
-      toast.error("Failed to submit vote", {
-        description:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      });
-    }
-  };
-
-  const handleDeposit = async () => {
-    if (!address) return;
-
-    if (!canDeposit) {
-      toast.error(
-        proposal.status === "PROPOSAL_STATUS_VOTING_PERIOD"
-          ? "This proposal is in voting period"
-          : proposal.status === "PROPOSAL_STATUS_PASSED"
-          ? "This proposal has already passed"
-          : proposal.status === "PROPOSAL_STATUS_REJECTED"
-          ? "This proposal has been rejected"
-          : proposal.status === "PROPOSAL_STATUS_FAILED"
-          ? "This proposal has failed"
-          : "Deposits are not available for this proposal",
-        {
-          description: "The proposal's current status doesn't allow deposits",
-        }
-      );
-      return;
-    }
-
-    try {
-      setDepositSuccess(false);
-      await writeContract({
-        address: "0x0000000000000000000000000000000000001006",
-        abi: GOVERNANCE_ABI,
-        functionName: "deposit",
-        args: [BigInt(proposal.id)],
-        value: parseEther("1"),
-      });
-      setDepositSuccess(true);
-      toast.success("Deposit submitted successfully", {
-        description: "Your deposit has been recorded on the blockchain",
-      });
-      setTimeout(() => setDepositSuccess(false), 2000);
-    } catch (error) {
-      console.error("Error initiating deposit:", error);
-      toast.error("Failed to submit deposit", {
-        description:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      });
-    }
-  };
+    proposal,
+    isLoading,
+    error,
+    voteStatus: proposalVoteStatus,
+    isWritePending: proposalIsWritePending,
+    voteSuccess: proposalVoteSuccess,
+    depositSuccess: proposalDepositSuccess,
+    canVote: canVoteProposal,
+    canDeposit: canDepositProposal,
+    handleVote: handleVoteProposal,
+    handleDeposit: handleDepositProposal,
+  } = useProposalDetail(proposalId);
 
   const getTimeAgo = (timestamp: string) => {
     try {
       if (!timestamp) return "Unknown date";
 
-      // Si es una fecha en formato ISO
       if (timestamp.includes("T")) {
         const date = new Date(timestamp);
         if (isNaN(date.getTime())) return "Invalid date";
 
         const now = new Date();
-        // Si la fecha es futura
+
         if (date > now) {
           return `in ${formatDistance(now, date)}`;
         }
         return formatDistanceToNow(date, { addSuffix: true });
       }
 
-      // Si es un timestamp numérico
       const timestampNum = parseInt(timestamp, 10);
       if (isNaN(timestampNum)) return "Invalid date";
 
@@ -229,34 +70,25 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
     }
   };
 
-  const getVoteStatus = useCallback(
-    async (proposal: Proposal) => {
-      try {
-        if (!cosmosAddress) return { hasVoted: false };
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <span style={{ color: theme.primaryTextColor }}>
+          Error loading proposal data
+        </span>
+      </div>
+    );
+  }
 
-        const response = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/proposals/${proposal.id}/votes/${cosmosAddress}`
-        );
-
-        if (!response.ok) {
-          return { hasVoted: false };
-        }
-
-        return {
-          hasVoted: true,
-          voteOption: "VOTED",
-        };
-      } catch (error) {
-        console.error("Error checking vote status:", error);
-        return { hasVoted: false };
-      }
-    },
-    [cosmosAddress]
-  );
-
-  useEffect(() => {
-    getVoteStatus(proposal).then(setVoteStatus);
-  }, [proposal, cosmosAddress, getVoteStatus]);
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <span style={{ color: theme.primaryTextColor }}>
+          Loading proposal data...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 p-12">
@@ -270,7 +102,7 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
       >
         <div className="flex justify-between items-center p-4">
           <h1 className="text-xl" style={{ color: theme.primaryTextColor }}>
-            {proposal.id}. {proposal.title}
+            {proposal?.id}. {proposal?.title || "Untitled"}
           </h1>
           <span
             className="px-3 py-1 rounded text-sm"
@@ -292,13 +124,13 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
             <div className="flex">
               <span style={{ color: theme.secondaryTextColor }}>@Type</span>
               <span style={{ color: theme.primaryTextColor }} className="ml-4">
-                {proposal.type}
+                {proposal?.type || "N/A"}
               </span>
             </div>
             <div className="flex">
               <span style={{ color: theme.secondaryTextColor }}>Title</span>
               <span style={{ color: theme.primaryTextColor }} className="ml-4">
-                {proposal.title}
+                {proposal?.title || "N/A"}
               </span>
             </div>
             <div className="flex">
@@ -306,7 +138,7 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 Description
               </span>
               <span style={{ color: theme.primaryTextColor }} className="ml-4">
-                {proposal.description}
+                {proposal?.description || "N/A"}
               </span>
             </div>
           </div>
@@ -325,10 +157,10 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
               <tbody>
                 <tr style={{ color: theme.primaryTextColor }}>
                   <td>v2.0.0</td>
-                  <td>{proposal.plan?.time || "-"}</td>
-                  <td>{proposal.plan?.height || "-"}</td>
-                  <td>{proposal.plan?.info || "-"}</td>
-                  <td>{proposal.plan?.upgradedClientState || "-"}</td>
+                  <td>{proposal?.plan?.time || "-"}</td>
+                  <td>{proposal?.plan?.height || "-"}</td>
+                  <td>{proposal?.plan?.info || "-"}</td>
+                  <td>{proposal?.plan?.upgradedClientState || "-"}</td>
                 </tr>
               </tbody>
             </table>
@@ -350,14 +182,14 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
             <div className="flex justify-between mb-2">
               <span style={{ color: theme.secondaryTextColor }}>Turnout</span>
               <span style={{ color: theme.primaryTextColor }}>
-                {proposal.tally.turnout}%
+                {proposal?.tally?.turnout}%
               </span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-2.5">
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${Math.min(proposal.tally.turnout, 100)}%`,
+                  width: `${Math.min(proposal?.tally?.turnout ?? 0, 100)}%`,
                   backgroundColor: "#00A3FF",
                 }}
               />
@@ -369,14 +201,14 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
             <div className="flex justify-between mb-2">
               <span style={{ color: theme.secondaryTextColor }}>Yes</span>
               <span style={{ color: theme.primaryTextColor }}>
-                {proposal.tally.yes}%
+                {proposal?.tally?.yes}%
               </span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-2.5">
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${Math.min(proposal.tally.yes, 100)}%`,
+                  width: `${Math.min(proposal?.tally?.yes ?? 0, 100)}%`,
                   backgroundColor: "#00F9A6",
                 }}
               />
@@ -388,14 +220,14 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
             <div className="flex justify-between mb-2">
               <span style={{ color: theme.secondaryTextColor }}>No</span>
               <span style={{ color: theme.primaryTextColor }}>
-                {proposal.tally.no}%
+                {proposal?.tally?.no}%
               </span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-2.5">
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${Math.min(proposal.tally.no, 100)}%`,
+                  width: `${Math.min(proposal?.tally?.no ?? 0, 100)}%`,
                   backgroundColor: "#FF4B4B",
                 }}
               />
@@ -429,37 +261,37 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
             <>
               <button
                 className={`flex-1 py-3 rounded-lg text-white ${
-                  !canVote && "opacity-50"
+                  !canVoteProposal && "opacity-50"
                 }`}
                 style={{
                   backgroundColor: theme.accentColor,
                   color: theme.primaryTextColor,
-                  opacity: isWritePending ? 0.7 : 1,
+                  opacity: proposalIsWritePending ? 0.7 : 1,
                 }}
-                onClick={handleVote}
-                disabled={isWritePending}
+                onClick={handleVoteProposal}
+                disabled={proposalIsWritePending}
               >
-                {isWritePending
+                {proposalIsWritePending
                   ? "Processing..."
-                  : voteSuccess
+                  : proposalVoteSuccess
                   ? "Transaction Successful!"
                   : "VOTE"}
               </button>
               <button
                 className={`flex-1 py-3 rounded-lg text-white ${
-                  !canDeposit && "opacity-50"
+                  !canDepositProposal && "opacity-50"
                 }`}
                 style={{
                   backgroundColor: theme.accentColor,
                   color: theme.primaryTextColor,
-                  opacity: isWritePending ? 0.7 : 1,
+                  opacity: proposalIsWritePending ? 0.7 : 1,
                 }}
-                onClick={handleDeposit}
-                disabled={isWritePending}
+                onClick={handleDepositProposal}
+                disabled={proposalIsWritePending}
               >
-                {isWritePending
+                {proposalIsWritePending
                   ? "Processing..."
-                  : depositSuccess
+                  : proposalDepositSuccess
                   ? "Transaction Successful!"
                   : "DEPOSIT"}
               </button>
@@ -491,11 +323,11 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 style={{ color: theme.secondaryTextColor }}
                 className="ml-2"
               >
-                Submitted at: {proposal.timeline.submitted}
+                Submitted at: {proposal?.timeline?.submitted}
               </span>
             </div>
             <span style={{ color: theme.secondaryTextColor }}>
-              {getTimeAgo(proposal.timeline.submitted)}
+              {getTimeAgo(proposal?.timeline?.submitted ?? "")}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -505,11 +337,11 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 style={{ color: theme.secondaryTextColor }}
                 className="ml-2"
               >
-                Deposit Ends At: {proposal.timeline.deposited}
+                Deposit Ends At: {proposal?.timeline?.deposited}
               </span>
             </div>
             <span style={{ color: theme.secondaryTextColor }}>
-              {getTimeAgo(proposal.timeline.deposited)}
+              {getTimeAgo(proposal?.timeline?.deposited ?? "")}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -519,11 +351,11 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 style={{ color: theme.secondaryTextColor }}
                 className="ml-2"
               >
-                Voting start from {proposal.timeline.votingStart}
+                Voting start from {proposal?.timeline?.votingStart}
               </span>
             </div>
             <span style={{ color: theme.secondaryTextColor }}>
-              {getTimeAgo(proposal.timeline.votingStart)}
+              {getTimeAgo(proposal?.timeline?.votingStart ?? "")}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -533,11 +365,11 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 style={{ color: theme.secondaryTextColor }}
                 className="ml-2"
               >
-                Voting end {proposal.timeline.votingEnd}
+                Voting end {proposal?.timeline?.votingEnd}
               </span>
             </div>
             <span style={{ color: theme.secondaryTextColor }}>
-              {getTimeAgo(proposal.timeline.votingEnd)}
+              {getTimeAgo(proposal?.timeline?.votingEnd ?? "")}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -547,11 +379,11 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                 style={{ color: theme.secondaryTextColor }}
                 className="ml-2"
               >
-                Upgrade Plan: (EST) {proposal.timeline.upgradePlan}
+                Upgrade Plan: (EST) {proposal?.timeline?.upgradePlan}
               </span>
             </div>
             <span style={{ color: theme.secondaryTextColor }}>
-              {getTimeAgo(proposal.timeline.upgradePlan)}
+              {getTimeAgo(proposal?.timeline?.upgradePlan ?? "")}
             </span>
           </div>
         </div>
@@ -575,7 +407,7 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
               Your address:
             </span>
             <span style={{ color: theme.primaryTextColor }}>{address}</span>
-            {voteStatus.hasVoted ? (
+            {proposalVoteStatus.hasVoted ? (
               <span
                 className="px-3 py-1 rounded text-sm"
                 style={{
@@ -583,7 +415,7 @@ const ProposalDetail = ({ proposal }: ProposalDetailProps) => {
                   color: theme.bgColor,
                 }}
               >
-                {voteStatus.voteOption}
+                {proposalVoteStatus.voteOption}
               </span>
             ) : (
               <span
