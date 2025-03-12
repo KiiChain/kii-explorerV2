@@ -1,29 +1,10 @@
+import { GOVERNANCE_ABI } from "@/constants/abis/governance";
 import { useState } from "react";
 import { useAccount, useWriteContract } from "wagmi";
 import { parseEther } from "viem";
 import { toast } from "sonner";
 import { useProposalQuery, useProposalVoteStatus } from "../queries/proposals";
 import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
-
-const GOVERNANCE_ABI = [
-  {
-    inputs: [
-      { name: "proposalID", type: "uint64" },
-      { name: "option", type: "int32" },
-    ],
-    name: "vote",
-    outputs: [{ name: "success", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ name: "proposalID", type: "uint64" }],
-    name: "deposit",
-    outputs: [{ name: "success", type: "bool" }],
-    stateMutability: "payable",
-    type: "function",
-  },
-] as const;
 
 export const useProposalDetail = (proposalId: string) => {
   const { address } = useAccount();
