@@ -443,7 +443,7 @@ const SidebarContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex flex-col flex-1 h-full overflow-hidden",
+        "flex flex-col flex-1 h-full overflow-y-auto",
         isMobile ? "w-full" : "w-60",
         className
       )}
