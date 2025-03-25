@@ -1,5 +1,6 @@
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "@/constants/endpoints";
+import { useValidatorsData } from "./uptime";
 
 interface ValidatorDetails {
   moniker: string;
@@ -69,29 +70,30 @@ export const useValidatorQueries = (
 };
 
 export const useValidators = () => {
+  const validatorsRes = useValidatorsData();
+
   return useQuery({
     queryKey: ["validators-list"],
+    enabled: !!validatorsRes.data,
     queryFn: async () => {
       try {
-        const [validatorsRes, paramsRes] = await Promise.all([
-          fetch(`${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators`),
+        const [paramsRes] = await Promise.all([
           fetch(`${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/params`),
         ]);
 
-        if (!validatorsRes.ok || !paramsRes.ok) {
+        if (validatorsRes.isError || !paramsRes.ok) {
           throw new Error("Failed to fetch validators data");
         }
 
-        const validatorsData = await validatorsRes.json();
+        const validatorsData = await validatorsRes.data;
         const paramsData: StakingParams = await paramsRes.json();
-        const validators = validatorsData.validators || [];
 
-        const activeValidators = validators.filter(
+        const activeValidators = validatorsData.filter(
           (validator: ValidatorResponse) =>
             validator.status === "BOND_STATUS_BONDED" && !validator.jailed
         );
 
-        const inactiveValidators = validators.filter(
+        const inactiveValidators = validatorsData.filter(
           (validator: ValidatorResponse) =>
             validator.status !== "BOND_STATUS_BONDED" || validator.jailed
         );
@@ -121,7 +123,7 @@ export const useValidators = () => {
             bondDenom: paramsData.params.bond_denom,
           },
           validatorMap: Object.fromEntries(
-            validators.map((v: ValidatorResponse) => [
+            validatorsData.map((v: ValidatorResponse) => [
               v.operator_address,
               v.description.moniker,
             ])

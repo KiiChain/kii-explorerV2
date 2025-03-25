@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 
+const DEFAULT_LIMIT = 1000
+
 interface Validator {
   operatorAddress: string;
   moniker: string;
@@ -25,7 +27,7 @@ export const useValidatorsData = () => {
     queryKey: ["validators-data"],
     queryFn: async () => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators`
+        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators?pagination.limit=${DEFAULT_LIMIT}`
       );
       const data = await response.json();
       return data.validators;
