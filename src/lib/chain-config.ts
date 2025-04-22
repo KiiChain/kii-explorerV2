@@ -1,8 +1,8 @@
 export const KII_TESTNET = {
   chainId: "kiichain3",
   chainName: "KiiChain Testnet Oro",
-  rpc: "https://rpc.uno.sentry.testnet.v3.kiivalidator.com",
-  rest: "https://lcd.uno.sentry.testnet.v3.kiivalidator.com",
+  rpc: "https://rpc.plata-404.kiivalidator.com",
+  rest: "https://lcd.plata-404.kiivalidator.com",
   bip44: {
     coinType: 118,
   },
@@ -39,7 +39,7 @@ export const KII_TESTNET = {
       coinDecimals: 6,
       coinGeckoId: "kii",
       coinImageUrl:
-      "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
+        "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
       gasPriceStep: {
         low: 0.01,
         average: 0.025,
