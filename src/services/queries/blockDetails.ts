@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 
 interface BlockHeader {
   version: {
@@ -37,7 +37,7 @@ export const useBlockDetails = (height: string) => {
     queryKey: ["block-details", height],
     queryFn: async (): Promise<BlockData> => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/${height}`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/${height}`
       );
       if (!response.ok) {
         throw new Error(`Error fetching block details: ${response.status}`);

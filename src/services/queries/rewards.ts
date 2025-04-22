@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "@/constants/endpoints";
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
 
 interface ValidatorReward {
@@ -25,7 +25,7 @@ export const useValidatorRewards = (
       }
 
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards/${validatorAddress}`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards/${validatorAddress}`
       );
 
       if (!response.ok) {
@@ -47,7 +47,7 @@ export const useRewardsQuery = (delegatorAddress?: string) => {
       if (!delegatorAddress) throw new Error("Delegator address is required");
 
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/distribution/v1beta1/delegators/${delegatorAddress}/rewards`
       );
 
       if (!response.ok) throw new Error("Failed to fetch rewards");

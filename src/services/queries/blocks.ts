@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 import { useTransactionsQuery } from "./transactions";
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 
 interface EVMTransaction {
   hash: string;
@@ -37,7 +37,7 @@ export const useLatestBlocks = () => {
     queryFn: async (): Promise<Block[]> => {
       const blocks = [];
       const latestBlockResponse = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/latest`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/latest`
       );
       const latestBlockData = await latestBlockResponse.json();
       const latestHeight = parseInt(latestBlockData.block.header.height);
@@ -46,7 +46,7 @@ export const useLatestBlocks = () => {
         const height = latestHeight - i;
         try {
           const blockResponse = await fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/${height}`
+            `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/${height}`
           );
           const blockData = await blockResponse.json();
 

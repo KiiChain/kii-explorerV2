@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "@/constants/endpoints";
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
 
 export const useKiiAddressQuery = (evmAddress?: string) => {
@@ -6,7 +6,7 @@ export const useKiiAddressQuery = (evmAddress?: string) => {
     queryKey: ["kiiAddress", evmAddress],
     queryFn: async () => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${evmAddress}`
+        `${CHAIN_LCD_ENDPOINT}/kiichain/evm/kii_address?evm_address=${evmAddress}`
       );
       return response.json();
     },

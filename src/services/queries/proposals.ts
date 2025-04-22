@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 export interface Proposal {
   id: string;
@@ -41,7 +41,7 @@ export const useProposalQuery = (proposalId: string) => {
     queryFn: async () => {
       try {
         const response = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/proposals/${proposalId}`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/proposals/${proposalId}`
         );
 
         const data = await response.json();
@@ -119,7 +119,7 @@ export const useProposalVoteStatus = (
 
       try {
         const response = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/proposals/${proposalId}/votes/${cosmosAddress}`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/proposals/${proposalId}/votes/${cosmosAddress}`
         );
 
         if (!response.ok) {
@@ -146,7 +146,7 @@ export const useProposalsQuery = () => {
     queryFn: async () => {
       try {
         const response = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/proposals`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/proposals`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch proposals");

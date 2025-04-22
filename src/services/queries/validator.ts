@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface Validator {
   description: {
@@ -21,7 +21,7 @@ export const useValidatorQuery = (validatorId: string) => {
     queryKey: ["validator", validatorId],
     queryFn: async () => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${validatorId}`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/validators/${validatorId}`
       );
       const data = await response.json();
       return data.validator as Validator;

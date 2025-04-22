@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface ChainParameters {
   height: string;
@@ -54,15 +54,15 @@ export const useChainParameters = () => {
         nodeInfoRes,
       ] = await Promise.all([
         fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/latest`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/latest`
         ),
-        fetch(`${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/params`),
-        fetch(`${API_ENDPOINTS.LCD}/cosmos/slashing/v1beta1/params`),
-        fetch(`${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/params`),
-        fetch(`${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/params/voting`),
-        fetch(`${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/params/deposit`),
-        fetch(`${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/params/tallying`),
-        fetch(`${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/node_info`),
+        fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/params`),
+        fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/slashing/v1beta1/params`),
+        fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/distribution/v1beta1/params`),
+        fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/params/voting`),
+        fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/params/deposit`),
+        fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/params/tallying`),
+        fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/node_info`),
       ]);
 
       const [

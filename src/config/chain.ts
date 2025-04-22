@@ -2,12 +2,16 @@ import { defineChain } from "@reown/appkit/networks";
 
 export const ORO_DENOM =
   "factory/kii1ef2eurf9ls4kmhc6adcazscmzn8en73tuh2nvq/ORO";
-export const KIICHAIN_LCD_ENDPOINT =
-  "https://lcd.uno.sentry.testnet.v3.kiivalidator.com";
+export const CHAIN_LCD_ENDPOINT = "https://lcd.plata-404.kiivalidator.com";
+export const EVM_INDEXER = "https://evm-indexer.testnet.v3.kiivalidator.com";
+export const CHAIN_RPC_ENDPOINT = "https://rpc.plata-404.kiivalidator.com";
+export const CHAIN_JSON_RPC_ENDPOINT = "https://json-rpc.plata-404.com/";
+export const BACKEND_ENDPOINT = "https://backend.testnet.kiivalidator.com";
+
 export const KIICHAIN_BASE_DENOM = "ukii";
 
 export const TESTNET_ORO_EVM = defineChain({
-  id: 1336,
+  id: 404,
   caipNetworkId: "eip155:1336",
   chainNamespace: "eip155",
   name: "Kii Testnet Oro",
@@ -18,12 +22,15 @@ export const TESTNET_ORO_EVM = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/"],
-      webSocket: ["https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/"],
+      http: ["https://json-rpc.plata-404.kiivalidator.com/"],
+      webSocket: ["https://json-rpc.plata-404.kiivalidator.com/"],
     },
   },
   blockExplorers: {
-    default: { name: "KiiExplorer", url: "https://explorer.kiichain.io/testnet" },
+    default: {
+      name: "KiiExplorer",
+      url: "https://explorer.kiichain.io/testnet",
+    },
   },
   contracts: {},
 });

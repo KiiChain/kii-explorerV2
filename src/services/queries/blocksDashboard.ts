@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 
 interface Block {
   block: {
@@ -61,14 +61,14 @@ export const useBlocksDashboard = () => {
     queryKey: ["blocks-dashboard"],
     queryFn: async (): Promise<Block[]> => {
       const latestResponse = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/latest`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/latest`
       );
       const latestData = await latestResponse.json();
       const latestHeight = parseInt(latestData.block.header.height);
 
       const blockPromises = Array.from({ length: 50 }, (_, i) =>
         fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/${
+          `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/${
             latestHeight - i
           }`
         ).then((res) => res.json())
@@ -85,7 +85,7 @@ export const useRecentTransactions = () => {
     queryKey: ["recent-transactions"],
     queryFn: async (): Promise<Transaction[]> => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/tx/v1beta1/txs?events=message.action=%27/cosmos.bank.v1beta1.MsgSend%27&order_by=2`
       );
       const data = await response.json();
 

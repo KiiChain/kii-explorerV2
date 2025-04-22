@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 
@@ -54,7 +54,7 @@ export const useProposals = (searchTerm: string = "") => {
     queryKey: ["proposals", searchTerm],
     queryFn: async (): Promise<Proposal[]> => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/proposals`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/proposals`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch proposals");
@@ -79,7 +79,7 @@ export const useGovernanceParams = (paramsType: string) => {
     queryKey: ["governance-params", paramsType],
     queryFn: async (): Promise<GovernanceParams> => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/gov/v1beta1/params/${paramsType}`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/gov/v1beta1/params/${paramsType}`
       );
       if (!response.ok) {
         throw new Error(`Failed to fetch ${paramsType} params`);
@@ -125,9 +125,9 @@ export const calculateVotingMetrics = (proposal: Proposal) => {
 
 export const getProposalDetails = async (proposalId: string) => {
   try {
-    console.log("API_ENDPOINTS.LCD:", API_ENDPOINTS.LCD);
+    console.log("CHAIN_LCD_ENDPOINT:", CHAIN_LCD_ENDPOINT);
 
-    const baseUrl = API_ENDPOINTS.LCD.replace(/\/$/, "");
+    const baseUrl = CHAIN_LCD_ENDPOINT.replace(/\/$/, "");
     const proposalUrl = `${baseUrl}/cosmos/gov/v1beta1/proposals/${proposalId}`;
     const tallyUrl = `${baseUrl}/cosmos/gov/v1beta1/proposals/${proposalId}/tally`;
     const votesUrl = `${baseUrl}/cosmos/gov/v1beta1/proposals/${proposalId}/votes`;
