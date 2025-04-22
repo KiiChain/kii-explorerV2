@@ -12,6 +12,7 @@ import {
   FaYoutube,
   FaInstagram,
   FaFacebook,
+  FaTiktok,
 } from "react-icons/fa6";
 
 export function Footer() {
@@ -19,13 +20,17 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { icon: <FaXTwitter size={20} />, href: "https://twitter.com/KiiGlobal" },
+    { icon: <FaXTwitter size={20} />, href: "https://x.com/KiiChainio" },
     {
       icon: <FaDiscord size={20} />,
       href: "https://discord.com/invite/kiichain",
     },
     { icon: <FaTelegram size={20} />, href: "https://t.me/KiiChainGlobal" },
-    { icon: <FaGithub size={20} />, href: "https://github.com/KiiGlobal" },
+    { icon: <FaGithub size={20} />, href: "https://github.com/KiiChain" },
+    {
+      icon: <FaTiktok size={20} />,
+      href: "https://www.tiktok.com/@kiichain_",
+    },
     { icon: <FaMedium size={20} />, href: "https://kiichain.medium.com" },
     {
       icon: <FaLinkedin size={20} />,
