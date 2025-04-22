@@ -1,7 +1,7 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
-const DEFAULT_LIMIT = 1000
+const DEFAULT_LIMIT = 1000;
 
 interface Validator {
   operatorAddress: string;
@@ -27,7 +27,7 @@ export const useValidatorsData = () => {
     queryKey: ["validators-data"],
     queryFn: async () => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators?pagination.limit=${DEFAULT_LIMIT}`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/validators?pagination.limit=${DEFAULT_LIMIT}`
       );
       const data = await response.json();
       return data.validators;
@@ -44,9 +44,7 @@ export const useSigningInfos = () => {
     queryFn: async () => {
       const fetchPage = async (page: number) => {
         const response = await fetch(
-          `${
-            API_ENDPOINTS.LCD
-          }/cosmos/slashing/v1beta1/signing_infos?pagination.limit=${pageSize}&pagination.offset=${
+          `${CHAIN_LCD_ENDPOINT}/cosmos/slashing/v1beta1/signing_infos?pagination.limit=${pageSize}&pagination.offset=${
             (page - 1) * pageSize
           }`
         );

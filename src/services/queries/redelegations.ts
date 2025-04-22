@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface RedelegationEntry {
   redelegation_entry: {
@@ -28,7 +28,7 @@ export const useRedelegations = (delegatorAddress?: string) => {
       }
 
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${delegatorAddress}/redelegations`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegators/${delegatorAddress}/redelegations`
       );
 
       if (!response.ok) {

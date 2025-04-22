@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT, CHAIN_RPC_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface BankSupply {
   id: string;
@@ -38,9 +38,9 @@ export const useSupplyData = () => {
       try {
         const [supplyResponse, genesisResponse] = await Promise.all([
           fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true`
+            `${CHAIN_LCD_ENDPOINT}/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true`
           ),
-          fetch(`${API_ENDPOINTS.RPC}/genesis`),
+          fetch(`${CHAIN_RPC_ENDPOINT}/genesis`),
         ]);
 
         const supplyData: SupplyResponse = await supplyResponse.json();

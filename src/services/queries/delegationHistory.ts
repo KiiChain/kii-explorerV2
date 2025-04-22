@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface DelegationInfo {
   validator_address: string;
@@ -58,13 +58,13 @@ export function useDelegationHistory(delegatorAddress: string | undefined) {
       const [delegationsRes, redelegationsRes, unbondingRes] =
         await Promise.all([
           fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${delegatorAddress}`
+            `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegations/${delegatorAddress}`
           ),
           fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${delegatorAddress}/redelegations`
+            `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegators/${delegatorAddress}/redelegations`
           ),
           fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${delegatorAddress}/unbonding_delegations`
+            `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegators/${delegatorAddress}/unbonding_delegations`
           ),
         ]);
 

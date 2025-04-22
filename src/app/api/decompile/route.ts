@@ -1,7 +1,5 @@
+import { CHAIN_JSON_RPC_ENDPOINT } from "@/config/chain";
 import { NextResponse } from "next/server";
-
-const JSON_RPC_ENDPOINT =
-  "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      const response = await fetch(JSON_RPC_ENDPOINT, {
+      const response = await fetch(CHAIN_JSON_RPC_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

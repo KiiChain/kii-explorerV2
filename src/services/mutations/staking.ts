@@ -6,8 +6,8 @@ import {
 } from "@/lib/abi/staking";
 import { toast } from "sonner";
 import { type WalletClient } from "viem";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 import { bech32 } from "bech32";
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 
 interface StakingMutationParams {
   walletClient: WalletClient;
@@ -95,7 +95,7 @@ export const useRedelegateMutation = () => {
         }
 
         const redelegationsResponse = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${cosmosAddress}/redelegations`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegators/${cosmosAddress}/redelegations`
         );
         const redelegationsData = await redelegationsResponse.json();
 

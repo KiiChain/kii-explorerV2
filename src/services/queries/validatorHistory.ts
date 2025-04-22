@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface DelegationResponse {
   delegation: {
@@ -78,7 +78,7 @@ export const useValidatorHistory = (
       }
 
       try {
-        const kiiAddressUrl = `${API_ENDPOINTS.LCD}/kiichain/evm/kii_address?evm_address=${evmAddress}`;
+        const kiiAddressUrl = `${CHAIN_LCD_ENDPOINT}/kiichain/evm/kii_address?evm_address=${evmAddress}`;
         const kiiAddressRes = await fetch(kiiAddressUrl);
         if (!kiiAddressRes.ok) {
           throw new Error(
@@ -94,15 +94,15 @@ export const useValidatorHistory = (
           return [];
         }
 
-        const delegationsUrl = `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegations/${kiiAddress}`;
+        const delegationsUrl = `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegations/${kiiAddress}`;
         const delegationsRes = await fetch(delegationsUrl);
         const delegationsData = await delegationsRes.json();
 
-        const redelegationsUrl = `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${kiiAddress}/redelegations`;
+        const redelegationsUrl = `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegators/${kiiAddress}/redelegations`;
         const redelegationsRes = await fetch(redelegationsUrl);
         const redelegationsData = await redelegationsRes.json();
 
-        const unbondingUrl = `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${kiiAddress}/unbonding_delegations`;
+        const unbondingUrl = `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegators/${kiiAddress}/unbonding_delegations`;
         const unbondingRes = await fetch(unbondingUrl);
         const unbondingData = await unbondingRes.json();
 

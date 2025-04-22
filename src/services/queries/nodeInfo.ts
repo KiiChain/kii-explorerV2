@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface NodeInfo {
   default_node_info: {
@@ -32,7 +32,7 @@ export const useNodeInfo = () => {
     queryKey: ["node-info"],
     queryFn: async (): Promise<NodeInfo> => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/node_info`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/node_info`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch node info");

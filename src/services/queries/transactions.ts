@@ -1,5 +1,5 @@
+import { EVM_INDEXER } from "@/config/chain";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface EVMTransaction {
   from_address: string;
@@ -25,7 +25,7 @@ export const useTransactionsQuery = (address?: string) => {
   return useInfiniteQuery<TransactionResponse>({
     queryKey: ["transactions", address],
     queryFn: async (): Promise<TransactionResponse> => {
-      const response = await fetch(`${API_ENDPOINTS.EVM_INDEXER}/transactions`);
+      const response = await fetch(`${EVM_INDEXER}/transactions`);
       const transactions: EVMTransaction[] = await response.json();
 
       const formattedTxs = transactions.map((tx) => ({
