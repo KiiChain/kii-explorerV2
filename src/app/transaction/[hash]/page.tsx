@@ -114,7 +114,7 @@ export default function TransactionPage({
           };
 
           const responseTransaction = await fetch(
-            "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
+            "https://json-rpc.plata-404.kiivalidator.com",
             requestOptions
           );
 
@@ -165,7 +165,7 @@ export default function TransactionPage({
             };
 
             const responseReceipt = await fetch(
-              "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
+              "https://json-rpc.plata-404.kiivalidator.com",
               receiptRequestOptions
             );
 
@@ -187,7 +187,7 @@ export default function TransactionPage({
           }
         } else {
           const response = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/tx/v1beta1/txs/${hash}`
+            `https://plata-404.kiivalidator.com/tx/v1beta1/txs/${hash}`
           );
 
           if (!response.ok) throw new Error("Network response was not ok");

@@ -116,8 +116,8 @@ export function StateSyncDashboard() {
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> rpc_servers = </span>
                 <span style={{ color: "#FFFFFF" }}>
-                  &quot;https://rpc.uno.sentry.testnet.v3.kiivalidator.com,
-                  https://rpc.dos.sentry.testnet.v3.kiivalidator.com&quot;
+                  &quot;https://rpc.plata-404.kiivalidator.com,
+                  https://rpc.plata-404.kiivalidator.com&quot;
                 </span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
