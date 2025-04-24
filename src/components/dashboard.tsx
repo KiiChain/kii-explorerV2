@@ -28,7 +28,7 @@ import { useValidatorSet } from "@/services/queries/validatorSet";
 import { useLatestBlocks } from "@/services/queries/blocks";
 import { useTransactionsQuery } from "@/services/queries/transactions";
 import { KIICHAIN_BASE_DENOM } from "@/config/chain";
-import { evmAddrToCosmos } from "@/utils/address";
+import { useHexToBech } from "@/services/hooks/addressConvertion";
 
 export interface WalletSession {
   balance: string;
@@ -54,6 +54,7 @@ export default function Dashboard() {
   const { data: validatorSetData } = useValidatorSet();
   const { data: latestBlocks = [] } = useLatestBlocks();
   const { data: transactionsData } = useTransactionsQuery();
+  const { cosmosAddress } = useHexToBech(address!);
 
   const formatBalance = (value: string | number): string => {
     return Number(value).toFixed(2);
@@ -63,8 +64,6 @@ export default function Dashboard() {
     queryKey: ["cosmos-balances", address],
     queryFn: async () => {
       if (!address) return null;
-
-      const cosmosAddress = evmAddrToCosmos(address);
 
       const [totalStaked, totalRewards] = await Promise.all([
         cosmosService.getDelegations(cosmosAddress),

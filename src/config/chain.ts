@@ -1,4 +1,5 @@
 import * as kiiEvm from "@kiichain/kiijs-evm";
+import { defineChain } from "viem";
 
 export const EVM_INDEXER = "https://evm-indexer.testnet.v3.kiivalidator.com";
 export const BACKEND_ENDPOINT = "https://backend.testnet.kiivalidator.com";
