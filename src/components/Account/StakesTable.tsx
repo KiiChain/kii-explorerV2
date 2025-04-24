@@ -290,9 +290,12 @@ export function StakesTable({
   const { data: cosmosAddress } = useCosmosAddress(address);
   const { data: redelegations } = useRedelegations(cosmosAddress);
   const validatorQueries = useValidatorQueries(delegations);
-  const rewardsQueries = useValidatorRewardsQueries(cosmosAddress, delegations);
+  const rewardsQueries = useValidatorRewardsQueries(
+    cosmosAddress!,
+    delegations
+  );
   const redelegateMutation = useRedelegateMutation();
-  const { data: delegationHistory } = useDelegationHistory(cosmosAddress);
+  const { data: delegationHistory } = useDelegationHistory(cosmosAddress!);
 
   const [relocateButtonStates, setRelocateButtonStates] = useState<{
     [key: string]: string;
