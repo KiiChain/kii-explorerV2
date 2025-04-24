@@ -14,6 +14,7 @@ import { getSigningKiiChainClient } from "@kiichain/kiijs-proto";
 import { useMigrateCosmosTokensMutation } from "@/services/mutations/migration";
 import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
 import { SigningStargateClient } from "@cosmjs/stargate";
+import { HiChevronDown } from "react-icons/hi";
 
 export function WalletMigrationDashboard() {
   const { theme } = useTheme();
@@ -217,7 +218,7 @@ export function WalletMigrationDashboard() {
                     color: theme.faucetTextColor2,
                     opacity: isLoading ? 0.7 : 1,
                   }}
-                  className="w-full py-3 px-4 font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center justify-center"
+                  className="w-full py-3 px-4 font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg flex justify-center items-center relative"
                   onClick={() => {
                     if (keplrConnected) {
                       setShowKeplrDropdown(!showKeplrDropdown);
@@ -226,9 +227,15 @@ export function WalletMigrationDashboard() {
                     }
                   }}
                 >
-                  {keplrConnected
-                    ? `${formatAddress(keplrAddress)}`
-                    : "Connect Keplr"}
+                  <span className="text-center truncate">
+                    {keplrConnected
+                      ? `${formatAddress(keplrAddress)}`
+                      : "Connect Keplr"}
+                  </span>
+
+                  {keplrConnected && (
+                    <HiChevronDown className="absolute right-4 w-4 h-4" />
+                  )}
                 </button>
 
                 {showKeplrDropdown && (
@@ -265,7 +272,7 @@ export function WalletMigrationDashboard() {
                     color: theme.faucetTextColor2,
                     opacity: isLoading ? 0.7 : 1,
                   }}
-                  className="w-full py-3 px-4 font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg flex items-center justify-center"
+                  className="w-full py-3 px-4 font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg flex justify-center items-center relative"
                   onClick={() => {
                     if (isConnected) {
                       setShowEvmDropdown(!showEvmDropdown);
@@ -277,6 +284,10 @@ export function WalletMigrationDashboard() {
                   {isConnected
                     ? `${formatAddress(evmAddress!)}`
                     : "Connect Evm"}
+
+                  {isConnected && (
+                    <HiChevronDown className="absolute right-4 w-4 h-4" />
+                  )}
                 </button>
 
                 {showEvmDropdown && (

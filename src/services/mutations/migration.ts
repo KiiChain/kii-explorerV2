@@ -63,14 +63,23 @@ async function migrateTokens(
     throw new Error("Token balance not enought");
 
   // Create message
+  const tokensToSend = [
+    {
+      denom: KIICHAIN_BASE_DENOM,
+      amount: sendableKii,
+    },
+  ];
+
+  // add only oro balance if users have balance
+  if (BigInt(oroBalance.amount) > BigInt("0")) {
+    tokensToSend.unshift({
+      denom: KIICHAIN_ORO_DENOM,
+      amount: oroBalance.amount,
+    });
+  }
+
   const msg = send({
-    amount: [
-      oroBalance,
-      {
-        denom: KIICHAIN_BASE_DENOM,
-        amount: sendableKii,
-      },
-    ],
+    amount: tokensToSend,
     fromAddress: cosmosAddr,
     toAddress: evmAddr,
   });
