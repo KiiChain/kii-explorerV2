@@ -31,23 +31,6 @@ interface DelegateMutationParams {
   validatorAddress: string;
 }
 
-interface RedelegationResponse {
-  redelegation: {
-    validator_dst_address: string;
-  };
-  entries: Array<{
-    redelegation_entry: {
-      completion_time: string;
-    };
-  }>;
-}
-
-interface RedelegationEntry {
-  redelegation_entry: {
-    completion_time: string;
-  };
-}
-
 interface ContractError extends Error {
   data?: string;
 }
@@ -79,12 +62,6 @@ export const useRedelegateMutation = () => {
 
         // get staking contract
         const { contract, address } = await getStakingContract(walletClient);
-
-        // Check if the user has active delegations
-        const checkDelegations = await contract.delegation(
-          address,
-          validatorAddress
-        );
 
         const amountInWei = ethers.parseUnits(amount, 6);
         const amountIn18Dec = amountInWei * BigInt(10 ** 12);
