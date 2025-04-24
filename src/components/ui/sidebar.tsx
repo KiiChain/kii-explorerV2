@@ -798,11 +798,11 @@ const menuItems = [
     label: "Uptime",
     href: "/uptime",
   },
-  {
-    icon: <Icons.SupplyIcon className="h-8 w-8" />,
-    label: "Supply",
-    href: "/supply",
-  },
+  // {
+  //   icon: <Icons.SupplyIcon className="h-8 w-8" />,
+  //   label: "Supply",
+  //   href: "/supply",
+  // },
   {
     icon: <Icons.ParametersIcon className="h-8 w-8" />,
     label: "Parameters",
@@ -827,6 +827,11 @@ const menuItems = [
   {
     icon: <Icons.SmartContractsIcon className="h-8 w-8" />,
     label: "Smart Contracts deployed",
+    href: "/smartContracts",
+  },
+  {
+    icon: <Icons.SmartContractsIcon className="h-8 w-8" />,
+    label: "Account Migration",
     href: "/smartContracts",
   },
 ];
