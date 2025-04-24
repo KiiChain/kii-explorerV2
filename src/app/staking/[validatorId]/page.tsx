@@ -17,6 +17,7 @@ import { useValidatorIcons } from "@/services/queries/validators";
 import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { useValidatorHistory } from "@/services/queries/validatorHistory";
 import { Table } from "@/components/ui/Table/Table";
+import { OfflineSigner } from "@cosmjs/proto-signing";
 
 interface SignDoc {
   chain_id: string;
@@ -99,7 +100,7 @@ declare global {
         data: string
       ) => Promise<{ signature: string }>;
       enable: (chainId: string) => Promise<void>;
-      getOfflineSigner: any;
+      getOfflineSigner: (chainId: string) => OfflineSigner;
       getKey: (chainId: string) => Promise<{ address: string }>;
       experimentalSuggestChain: (chainInfo: ChainInfo) => Promise<void>;
     };

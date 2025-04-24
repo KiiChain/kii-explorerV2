@@ -13,6 +13,7 @@ import { useAppKit } from "@reown/appkit/react";
 import { getSigningKiiChainClient } from "@kiichain/kiijs-proto";
 import { useMigrateCosmosTokensMutation } from "@/services/mutations/migration";
 import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
+import { SigningStargateClient } from "@cosmjs/stargate";
 
 export function WalletMigrationDashboard() {
   const { theme } = useTheme();
@@ -21,7 +22,9 @@ export function WalletMigrationDashboard() {
   const [keplrAddress, setKeplrAddress] = useState("");
   const [kiiBalance, setKiiBalance] = useState("");
   const [oroBalance, setOroBalance] = useState("");
-  const [keplrClient, setKeplClient] = useState<any>(null);
+  const [keplrClient, setKeplClient] = useState<
+    SigningStargateClient | undefined
+  >();
   const [fetchBalance, setFetchBalance] = useState(false);
   const { address: evmAddress, isConnected } = useAccount();
   const { open } = useAppKit();
@@ -66,19 +69,19 @@ export function WalletMigrationDashboard() {
   useEffect(() => {
     const balance = async () => {
       // format Kii balance
-      const kiiBalance = await keplrClient.getBalance(
+      const kiiBalance = await keplrClient?.getBalance(
         keplrAddress,
         KIICHAIN_BASE_DENOM
       );
-      const kiiFormated = (Number(kiiBalance.amount) / 1_000_000).toFixed(2);
+      const kiiFormated = (Number(kiiBalance?.amount) / 1_000_000).toFixed(2);
       setKiiBalance(kiiFormated);
 
       // format Oro balance
-      const oroBalance = await keplrClient.getBalance(
+      const oroBalance = await keplrClient?.getBalance(
         keplrAddress,
         KIICHAIN_ORO_DENOM
       );
-      const oroFormatted = (Number(oroBalance.amount) / 1_000_000).toFixed(2);
+      const oroFormatted = (Number(oroBalance?.amount) / 1_000_000).toFixed(2);
       setOroBalance(oroFormatted);
     };
 
@@ -123,6 +126,11 @@ export function WalletMigrationDashboard() {
         rpcEndpoint: CHAIN_RPC_ENDPOINT,
         signer,
       });
+
+      if (!client) {
+        throw new Error("Error gettint the signing client");
+      }
+
       setKeplClient(client);
 
       setFetchBalance(true);
@@ -155,7 +163,7 @@ export function WalletMigrationDashboard() {
     MigrateCosmosTokensMutation.mutate({
       cosmosAddr: keplrAddress,
       evmAddr: evmAddress!,
-      cosmosClient: keplrClient,
+      cosmosClient: keplrClient!,
       setFetchBalance,
     });
     setIsLoading(false);

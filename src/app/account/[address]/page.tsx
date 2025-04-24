@@ -305,14 +305,14 @@ export default function AddressPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useTransactionsQuery(cosmosAddress);
+  } = useTransactionsQuery(cosmosAddress!);
 
-  const { data: delegationsData } = useDelegationsQuery(cosmosAddress);
-  const { data: rewardsData } = useRewardsQuery(cosmosAddress);
-  const { data: withdrawalsData } = useWithdrawalsQuery(cosmosAddress);
+  const { data: delegationsData } = useDelegationsQuery(cosmosAddress!);
+  const { data: rewardsData } = useRewardsQuery(cosmosAddress!);
+  const { data: withdrawalsData } = useWithdrawalsQuery(cosmosAddress!);
 
   const { data: withdrawHistoryData } = useWithdrawHistoryQuery(
-    cosmosAddress,
+    cosmosAddress!,
     withdrawalsData?.withdraw_address
   );
 
