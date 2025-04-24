@@ -16,13 +16,6 @@ interface ValidatorReward {
 }
 
 export const cosmosService = {
-  getKiiAddress: async (evmAddress: string) => {
-    const response = await fetch(
-      `${CHAIN_LCD_ENDPOINT}/kiichain/evm/kii_address?evm_address=${evmAddress}`
-    );
-    return await response.json();
-  },
-
   getDelegations: async (kiiAddress: string) => {
     const response = await fetch(
       `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/delegations/${kiiAddress}`
@@ -49,7 +42,7 @@ export const cosmosService = {
     return (
       data.rewards?.reduce((acc: number, reward: ValidatorReward) => {
         const kiiReward = reward.reward?.find(
-          (r: Reward) => r.denom === "ukii"
+          (r: Reward) => r.denom === "akii"
         );
         const amount = kiiReward
           ? parseFloat(kiiReward.amount) / 1_000_000_000_000_000_000
