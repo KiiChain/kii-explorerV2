@@ -3,7 +3,6 @@ import { useAccount, useWalletClient } from "wagmi";
 
 import { toast } from "react-toastify";
 import { useRedelegations } from "../../services/queries/redelegations";
-import { useCosmosAddress } from "@/services/queries/cosmosAddress";
 
 import { useValidatorQueries } from "@/services/queries/validators";
 import { useValidatorRewardsQueries } from "@/services/queries/validatorRewards";
@@ -15,6 +14,7 @@ import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { useDelegationHistory } from "../../services/queries/delegationHistory";
 import { Table } from "@/components/ui/Table/Table";
 import { formatAmount } from "../../utils/format";
+import { useHexToBech } from "@/services/hooks/addressConvertion";
 
 interface Theme {
   boxColor: string;
@@ -287,7 +287,7 @@ export function StakesTable({
 }: StakeProps) {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const { data: cosmosAddress } = useCosmosAddress(address);
+  const { cosmosAddress } = useHexToBech(address!);
   const { data: redelegations } = useRedelegations(cosmosAddress);
   const validatorQueries = useValidatorQueries(delegations);
   const rewardsQueries = useValidatorRewardsQueries(cosmosAddress, delegations);

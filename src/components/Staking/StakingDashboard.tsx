@@ -11,7 +11,7 @@ import {
 import { Table } from "@/components/ui/Table/Table";
 import { useAccount } from "wagmi";
 import { useDelegationsQuery } from "@/services/queries/delegations";
-import { useCosmosAddress } from "@/services/queries/cosmosAddress";
+import { useHexToBech } from "@/services/hooks/addressConvertion";
 
 interface ValidatorTableItem {
   rank: number;
@@ -36,8 +36,9 @@ export function StakingDashboard() {
   const { data: validatorsData, isLoading } = useValidators();
   const { getValidatorIcon, handleImageError } = useValidatorIcons();
   const { address, isConnected } = useAccount();
-  const { data: cosmosAddress } = useCosmosAddress(address);
-  const { data: delegationsData } = useDelegationsQuery(cosmosAddress);
+
+  const { cosmosAddress } = useHexToBech(address!);
+  const { data: delegationsData } = useDelegationsQuery(cosmosAddress!);
 
   const filteredValidators = useMemo(() => {
     if (!validatorsData) return [];
@@ -64,7 +65,7 @@ export function StakingDashboard() {
     setCurrentPage(pageNumber);
   };
 
-  const formatDenom = (denom: string) => (denom === "ukii" ? "kii" : denom);
+  const formatDenom = (denom: string) => (denom === "akii" ? "kii" : denom);
 
   const validatorColumns = useMemo(
     () => [
@@ -136,7 +137,7 @@ export function StakingDashboard() {
               className="text-base"
               style={{ color: theme.primaryTextColor }}
             >
-              {formattedAmount}{" "}
+              {formattedAmount}
               {formatDenom(validatorsData?.params.bondDenom || "akii")}
             </div>
           );

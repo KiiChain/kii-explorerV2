@@ -15,7 +15,6 @@ import { useValidators } from "@/services/queries/validators";
 
 import { useWithdrawHistoryQuery } from "@/services/queries/withdrawals";
 import { useTransactionsQuery } from "@/services/queries/transactions";
-import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
 import { useDelegationsQuery } from "@/services/queries/delegations";
 import { useRewardsQuery } from "@/services/queries/rewards";
 import { useWithdrawalsQuery } from "@/services/queries/withdrawals";
@@ -25,6 +24,7 @@ import {
   useRedelegateMutation,
   useUndelegateMutation,
 } from "@/services/mutations/staking";
+import { useHexToBech } from "@/services/hooks/addressConvertion";
 
 interface Theme {
   bgColor: string;
@@ -293,28 +293,27 @@ export default function AddressPage() {
     withdrawalsPercentage: "0",
   });
 
+  const { cosmosAddress } = useHexToBech(paramAddress as string);
+
   const formatAmount = (amount: string, decimals: number = 6) => {
     const value = parseInt(amount);
     if (isNaN(value)) return "0";
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
 
-  const { data: kiiAddressData } = useKiiAddressQuery(paramAddress as string);
-  const kiiAddress = kiiAddressData?.kii_address || paramAddress;
-
   const {
     data: transactionsData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useTransactionsQuery(kiiAddress);
+  } = useTransactionsQuery(cosmosAddress);
 
-  const { data: delegationsData } = useDelegationsQuery(kiiAddress);
-  const { data: rewardsData } = useRewardsQuery(kiiAddress);
-  const { data: withdrawalsData } = useWithdrawalsQuery(kiiAddress);
+  const { data: delegationsData } = useDelegationsQuery(cosmosAddress);
+  const { data: rewardsData } = useRewardsQuery(cosmosAddress);
+  const { data: withdrawalsData } = useWithdrawalsQuery(cosmosAddress);
 
   const { data: withdrawHistoryData } = useWithdrawHistoryQuery(
-    kiiAddress,
+    cosmosAddress,
     withdrawalsData?.withdraw_address
   );
 
@@ -403,7 +402,7 @@ export default function AddressPage() {
           (del: DelegationResponse) => ({
             delegation: {
               ...del.delegation,
-              delegator_address: kiiAddress,
+              delegator_address: cosmosAddress,
               shares: formatAmount(del.delegation.shares),
               moniker:
                 validatorMap[del.delegation.validator_address] || "Unknown",
@@ -428,7 +427,7 @@ export default function AddressPage() {
     withdrawalsData,
     withdrawHistoryData,
     validatorMap,
-    kiiAddress,
+    cosmosAddress,
   ]);
 
   const transactions =
