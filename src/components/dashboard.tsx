@@ -27,6 +27,8 @@ import { useChainData } from "@/services/queries/chainData";
 import { useValidatorSet } from "@/services/queries/validatorSet";
 import { useLatestBlocks } from "@/services/queries/blocks";
 import { useTransactionsQuery } from "@/services/queries/transactions";
+import { KIICHAIN_BASE_DENOM } from "@/config/chain";
+import { evmAddrToCosmos } from "@/utils/address";
 
 export interface WalletSession {
   balance: string;
@@ -62,12 +64,11 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!address) return null;
 
-      const cosmosData = await cosmosService.getKiiAddress(address);
-      if (!cosmosData?.kii_address) return null;
+      const cosmosAddress = evmAddrToCosmos(address);
 
       const [totalStaked, totalRewards] = await Promise.all([
-        cosmosService.getDelegations(cosmosData.kii_address),
-        cosmosService.getRewards(cosmosData.kii_address),
+        cosmosService.getDelegations(cosmosAddress),
+        cosmosService.getRewards(cosmosAddress),
       ]);
 
       return {
@@ -155,7 +156,7 @@ export default function Dashboard() {
             >
               <p style={{ color: theme.primaryTextColor }}>Staked</p>
               <p style={{ color: theme.secondaryTextColor }}>
-                {formatBalance(cosmosBalances?.stakingBalance ?? "0")} KII
+                {session.staking}
               </p>
             </div>
             <div
@@ -164,7 +165,7 @@ export default function Dashboard() {
             >
               <p style={{ color: theme.primaryTextColor }}>Rewards</p>
               <p style={{ color: theme.secondaryTextColor }}>
-                {formatBalance(cosmosBalances?.rewardsBalance ?? "0")} KII
+                {session.reward}
               </p>
             </div>
             <div
@@ -210,7 +211,7 @@ export default function Dashboard() {
         style={{ backgroundColor: theme.bgColor }}
       >
         <StatCard title="KII Price" value="N/A" unit="TESTNET" />
-        <StatCard title="Gas Price" value="2500" unit="akii" />
+        <StatCard title="Gas Price" value="2500" unit={KIICHAIN_BASE_DENOM} />
         <StatCard title="Block Height" value={latestBlocks[0]?.height || "0"} />
       </div>
 

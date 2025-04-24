@@ -15,7 +15,6 @@ import { useValidators } from "@/services/queries/validators";
 
 import { useWithdrawHistoryQuery } from "@/services/queries/withdrawals";
 import { useTransactionsQuery } from "@/services/queries/transactions";
-import { useKiiAddressQuery } from "@/services/queries/kiiAddress";
 import { useDelegationsQuery } from "@/services/queries/delegations";
 import { useRewardsQuery } from "@/services/queries/rewards";
 import { useWithdrawalsQuery } from "@/services/queries/withdrawals";
@@ -25,6 +24,7 @@ import {
   useRedelegateMutation,
   useUndelegateMutation,
 } from "@/services/mutations/staking";
+import { evmAddrToCosmos } from "@/utils/address";
 
 interface Theme {
   bgColor: string;
@@ -293,14 +293,13 @@ export default function AddressPage() {
     withdrawalsPercentage: "0",
   });
 
-  const formatAmount = (amount: string, decimals: number = 6) => {
+  const formatAmount = (amount: string, decimals: number = 18) => {
     const value = parseInt(amount);
     if (isNaN(value)) return "0";
     return (value / Math.pow(10, decimals)).toFixed(2);
   };
 
-  const { data: kiiAddressData } = useKiiAddressQuery(paramAddress as string);
-  const kiiAddress = kiiAddressData?.kii_address || paramAddress;
+  const kiiAddress = evmAddrToCosmos(paramAddress as string);
 
   const {
     data: transactionsData,
@@ -352,11 +351,11 @@ export default function AddressPage() {
 
       let totalRewards = 0;
       if (rewardsData.total) {
-        const ukiiRewards = rewardsData.total.find(
-          (reward: { denom: string }) => reward.denom === "ukii"
+        const akiiRewards = rewardsData.total.find(
+          (reward: { denom: string }) => reward.denom === "akii"
         );
-        if (ukiiRewards) {
-          totalRewards = parseInt(ukiiRewards.amount);
+        if (akiiRewards) {
+          totalRewards = parseInt(akiiRewards.amount);
         }
       }
 
@@ -366,11 +365,11 @@ export default function AddressPage() {
 
       let totalWithdrawn = 0;
       if (withdrawHistoryData?.rewards) {
-        const ukiiWithdraws = withdrawHistoryData.rewards.find(
-          (reward: { denom: string }) => reward.denom === "ukii"
+        const akiiWithdraws = withdrawHistoryData.rewards.find(
+          (reward: { denom: string }) => reward.denom === "akii"
         );
-        if (ukiiWithdraws) {
-          totalWithdrawn = parseInt(ukiiWithdraws.amount);
+        if (akiiWithdraws) {
+          totalWithdrawn = parseInt(akiiWithdraws.amount);
         }
       }
 
@@ -385,7 +384,7 @@ export default function AddressPage() {
         ),
         stakingPercentage: ((stakingBalance / totalWithdrawn) * 100).toFixed(2),
         rewardsPercentage: (
-          (totalRewards / Math.pow(10, 6) / totalWithdrawn) *
+          (totalRewards / Math.pow(10, 18) / totalWithdrawn) *
           100
         ).toFixed(2),
         withdrawalsPercentage: (
@@ -403,13 +402,13 @@ export default function AddressPage() {
           (del: DelegationResponse) => ({
             delegation: {
               ...del.delegation,
-              delegator_address: kiiAddress,
+              delegator_address: kiiAddress!,
               shares: formatAmount(del.delegation.shares),
               moniker:
                 validatorMap[del.delegation.validator_address] || "Unknown",
             },
             balance: {
-              ...del.balance,
+              denom: "Kii",
               amount: formatAmount(del.balance.amount),
             },
           })
@@ -478,6 +477,7 @@ export default function AddressPage() {
         ]}
       />
       <WithdrawalsTable withdrawals={[]} />
+
       <StakesTable
         delegations={delegations}
         validators={validatorMap}
@@ -490,12 +490,14 @@ export default function AddressPage() {
         isUndelegateModalOpen={isUndelegateModalOpen}
         isOwner={isOwner}
       />
+
       <TransactionsTable
         transactions={transactions}
         onLoadMore={() => fetchNextPage()}
         hasMore={hasNextPage}
         isLoading={isFetchingNextPage}
       />
+
       <AccountInfo
         account={typeof paramAddress === "string" ? paramAddress : ""}
       />

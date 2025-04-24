@@ -127,7 +127,9 @@ export function StakingDashboard() {
           );
 
           const amount = delegation?.balance?.amount || "0";
-          const formattedAmount = (parseInt(amount) / 1000000).toLocaleString();
+          const formattedAmount = (
+            parseInt(amount) / 1000000000000000000
+          ).toLocaleString();
 
           return (
             <div
@@ -135,7 +137,7 @@ export function StakingDashboard() {
               style={{ color: theme.primaryTextColor }}
             >
               {formattedAmount}{" "}
-              {formatDenom(validatorsData?.params.bondDenom || "ukii")}
+              {formatDenom(validatorsData?.params.bondDenom || "akii")}
             </div>
           );
         },
@@ -145,8 +147,8 @@ export function StakingDashboard() {
         key: "votingPower",
         render: (item: ValidatorTableItem) => (
           <div className="text-base" style={{ color: theme.primaryTextColor }}>
-            {(parseInt(item.tokens) / 1000000).toLocaleString()}{" "}
-            {formatDenom(validatorsData?.params.bondDenom || "ukii")}
+            {(parseInt(item.tokens) / 1000000000000000000).toLocaleString()}{" "}
+            {formatDenom(validatorsData?.params.bondDenom || "akii")}
           </div>
         ),
       },
