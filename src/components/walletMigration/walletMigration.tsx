@@ -10,8 +10,6 @@ import {
 import { useAccount, useDisconnect } from "wagmi";
 import { ArrowDownIcon } from "../ui/icons";
 import { useAppKit } from "@reown/appkit/react";
-import { Coin } from "@cosmjs/stargate";
-import { kiichain } from "@kiichain/kiijs-proto";
 import { getSigningKiiChainClient } from "@kiichain/kiijs-proto";
 import { useMigrateCosmosTokensMutation } from "@/services/mutations/migration";
 import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
@@ -88,7 +86,7 @@ export function WalletMigrationDashboard() {
       balance();
       setFetchBalance(false);
     }
-  }, [fetchBalance]);
+  }, [fetchBalance, keplrAddress, keplrClient]);
 
   // handleConnectKeplr connects keplr wallet, obtain user wallet and signer
   const handleConnectKeplr = async () => {
