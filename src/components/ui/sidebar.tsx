@@ -781,7 +781,7 @@ const menuItems = [
   {
     icon: <Icons.MigrateWalletIcon className="h-8 w-8" />,
     label: "Migrate Keplr wallet",
-    href: "/walletMigration",
+    href: "/wallet-migration",
   },
   {
     icon: <Icons.GovernanceIcon className="h-8 w-8" />,
