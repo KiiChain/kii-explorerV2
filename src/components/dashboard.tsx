@@ -66,8 +66,8 @@ export default function Dashboard() {
       if (!address) return null;
 
       const [totalStaked, totalRewards] = await Promise.all([
-        cosmosService.getDelegations(cosmosAddress),
-        cosmosService.getRewards(cosmosAddress),
+        cosmosService.getDelegations(cosmosAddress!),
+        cosmosService.getRewards(cosmosAddress!),
       ]);
 
       return {

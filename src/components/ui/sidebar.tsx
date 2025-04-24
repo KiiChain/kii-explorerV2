@@ -830,9 +830,9 @@ const menuItems = [
     href: "/smartContracts",
   },
   {
-    icon: <Icons.SmartContractsIcon className="h-8 w-8" />,
-    label: "Account Migration",
-    href: "/smartContracts",
+    icon: <Icons.MigrateWalletIcon className="h-8 w-8" />,
+    label: "Migrate Keplr wallet",
+    href: "/walletMigration",
   },
 ];
 

@@ -288,7 +288,7 @@ export function StakesTable({
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { cosmosAddress } = useHexToBech(address!);
-  const { data: redelegations } = useRedelegations(cosmosAddress);
+  const { data: redelegations } = useRedelegations(cosmosAddress!);
   const validatorQueries = useValidatorQueries(delegations);
   const rewardsQueries = useValidatorRewardsQueries(
     cosmosAddress!,
