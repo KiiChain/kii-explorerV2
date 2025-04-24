@@ -31,6 +31,23 @@ interface DelegateMutationParams {
   validatorAddress: string;
 }
 
+interface RedelegationResponse {
+  redelegation: {
+    validator_dst_address: string;
+  };
+  entries: Array<{
+    redelegation_entry: {
+      completion_time: string;
+    };
+  }>;
+}
+
+interface RedelegationEntry {
+  redelegation_entry: {
+    completion_time: string;
+  };
+}
+
 interface ContractError extends Error {
   data?: string;
 }

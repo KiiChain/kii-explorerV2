@@ -4,12 +4,13 @@ import { kiichain } from "@kiichain/kiijs-proto";
 import { useMutation } from "wagmi/query";
 import { toast } from "sonner";
 import { Dispatch, SetStateAction } from "react";
+import { SigningStargateClient } from "@cosmjs/stargate";
 
 export const useMigrateCosmosTokensMutation = () => {
   type props = {
     cosmosAddr: string;
     evmAddr: string;
-    cosmosClient: any;
+    cosmosClient: SigningStargateClient;
     setFetchBalance: Dispatch<SetStateAction<boolean>>;
   };
 
@@ -37,7 +38,7 @@ export const useMigrateCosmosTokensMutation = () => {
 async function migrateTokens(
   cosmosAddr: string,
   evmAddr: string,
-  cosmosClient: any
+  cosmosClient: SigningStargateClient
 ) {
   // Create message structure
   const { send } = kiichain.kiichain3.evm.MessageComposer.withTypeUrl;
