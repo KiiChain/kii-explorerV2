@@ -99,9 +99,7 @@ declare global {
         data: string
       ) => Promise<{ signature: string }>;
       enable: (chainId: string) => Promise<void>;
-      getOfflineSigner: (chainId: string) => {
-        getAccounts: () => Promise<Array<{ address: string }>>;
-      };
+      getOfflineSigner: any;
       getKey: (chainId: string) => Promise<{ address: string }>;
       experimentalSuggestChain: (chainInfo: ChainInfo) => Promise<void>;
     };

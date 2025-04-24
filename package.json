@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@cosmjs/encoding": "^0.32.4",
+    "@cosmjs/stargate": "^0.33.1",
     "@ethereumjs/common": "^4.4.0",
     "@ethereumjs/vm": "^8.1.1",
     "@kiichain/kiijs-evm": "^0.2.0",
+    "@kiichain/kiijs-proto": "^0.1.2",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-collapsible": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.4",
@@ -45,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@keplr-wallet/types": "^0.12.223",
     "@svgr/webpack": "^8.1.0",
     "@types/node": "^20",
     "@types/react": "^19",

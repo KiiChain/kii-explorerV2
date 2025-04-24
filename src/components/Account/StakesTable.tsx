@@ -288,11 +288,14 @@ export function StakesTable({
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { cosmosAddress } = useHexToBech(address!);
-  const { data: redelegations } = useRedelegations(cosmosAddress);
+  const { data: redelegations } = useRedelegations(cosmosAddress!);
   const validatorQueries = useValidatorQueries(delegations);
-  const rewardsQueries = useValidatorRewardsQueries(cosmosAddress, delegations);
+  const rewardsQueries = useValidatorRewardsQueries(
+    cosmosAddress!,
+    delegations
+  );
   const redelegateMutation = useRedelegateMutation();
-  const { data: delegationHistory } = useDelegationHistory(cosmosAddress);
+  const { data: delegationHistory } = useDelegationHistory(cosmosAddress!);
 
   const [relocateButtonStates, setRelocateButtonStates] = useState<{
     [key: string]: string;
