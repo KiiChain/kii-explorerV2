@@ -1,8 +1,10 @@
+import { CHAIN_LCD_ENDPOINT, CHAIN_RPC_ENDPOINT } from "@/config/chain";
+
 export const KII_TESTNET = {
   chainId: "kiichain3",
   chainName: "KiiChain Testnet Oro",
-  rpc: "https://rpc.plata-404.kiivalidator.com",
-  rest: "https://lcd.plata-404.kiivalidator.com",
+  rpc: CHAIN_RPC_ENDPOINT,
+  rest: CHAIN_LCD_ENDPOINT,
   bip44: {
     coinType: 118,
   },
