@@ -104,7 +104,7 @@ export function SmartContractsIcon(props: React.SVGProps<SVGSVGElement>) {
       style={{ margin: 0, padding: 0 }}
       {...props}
     >
-      <g transform="translate(4, 4) scale(0.375)">
+      <g transform="translate(5, 4) scale(0.375)">
         <path
           d="M4 14.6667C3.44444 14.6667 2.97222 14.4722 2.58333 14.0833C2.19444 13.6945 2 13.2222 2 12.6667V10.6667H4V1.33334H14V12.6667C14 13.2222 13.8056 13.6945 13.4167 14.0833C13.0278 14.4722 12.5556 14.6667 12 14.6667H4ZM12 13.3333C12.1889 13.3333 12.3473 13.2693 12.4753 13.1413C12.6033 13.0133 12.6671 12.8551 12.6667 12.6667V2.66668H5.33333V10.6667H11.3333V12.6667C11.3333 12.8556 11.3973 13.014 11.5253 13.142C11.6533 13.27 11.8116 13.3338 12 13.3333ZM6 6.00001V4.66668H12V6.00001H6ZM6 8.00001V6.66668H12V8.00001H6ZM4 13.3333H10V12H3.33333V12.6667C3.33333 12.8556 3.39733 13.014 3.52533 13.142C3.65333 13.27 3.81156 13.3338 4 13.3333ZM4 13.3333H3.33333H10H4Z"
           fill="#D2AAFA"
@@ -400,6 +400,43 @@ export function GovernanceIcon(props: React.SVGProps<SVGSVGElement>) {
           fill="#d2aafa"
         />
       </g>
+    </svg>
+  );
+}
+
+export function MigrateWalletIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 48 40" fill="none" {...props}>
+      <g transform="translate(15,8) scale(0.8)">
+        <path
+          d="M13 14L7 14M13 14L10.5 11.5M13 14L10.5 16.5M21 12V11.2C21 10.08 21 9.52 20.782 9.092C20.59 8.716 20.284 8.41 19.908 8.218C19.48 8 18.92 8 17.8 8H3M21 12V16M21 12H19C17.895 12 17 12.895 17 14C17 15.105 17.895 16 19 16H21M21 16V16.8C21 17.92 21 18.48 20.782 18.908C20.59 19.284 20.284 19.59 19.908 19.782C19.48 20 18.92 20 17.8 20H6.2C5.08 20 4.52 20 4.092 19.782C3.716 19.59 3.41 19.284 3.218 18.908C3 18.48 3 17.92 3 16.8V8M18 8V7.2C18 6.08 18 5.52 17.782 5.092C17.59 4.716 17.284 4.41 16.908 4.218C16.48 4 15.92 4 14.8 4H6.2C5.08 4 4.52 4 4.092 4.218C3.716 4.41 3.41 4.716 3.218 5.092C3 5.52 3 6.08 3 7.2V8"
+          stroke="#d2aafa"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+    </svg>
+  );
+}
+
+export function ArrowDownIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="40"
+      height="40"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M8 11L12 15M12 15L16 11M12 15V3M7 4.51555C4.58803 6.13007 3 8.87958 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 8.87958 19.412 6.13007 17 4.51555"
+        stroke="#d2aafa"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
