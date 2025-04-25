@@ -19,7 +19,6 @@ import { HiChevronDown } from "react-icons/hi";
 export function WalletMigrationDashboard() {
   const { theme } = useTheme();
   const [keplrConnected, setKeplrConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [keplrAddress, setKeplrAddress] = useState("");
   const [kiiBalance, setKiiBalance] = useState("");
   const [oroBalance, setOroBalance] = useState("");
@@ -30,7 +29,7 @@ export function WalletMigrationDashboard() {
   const { address: evmAddress, isConnected } = useAccount();
   const { open } = useAppKit();
   const { disconnect } = useDisconnect();
-  const MigrateCosmosTokensMutation = useMigrateCosmosTokensMutation();
+  const migrateCosmosTokensMutation = useMigrateCosmosTokensMutation();
 
   const evmDropdownRef = useRef<HTMLDivElement>(null);
   const keplrDropdownRef = useRef<HTMLDivElement>(null);
@@ -160,14 +159,12 @@ export function WalletMigrationDashboard() {
       return;
     }
 
-    setIsLoading(true);
-    MigrateCosmosTokensMutation.mutate({
+    migrateCosmosTokensMutation.mutate({
       cosmosAddr: keplrAddress,
       evmAddr: evmAddress!,
       cosmosClient: keplrClient!,
       setFetchBalance,
     });
-    setIsLoading(false);
   };
 
   return (
@@ -216,7 +213,7 @@ export function WalletMigrationDashboard() {
                   style={{
                     backgroundColor: theme.faucetColor2,
                     color: theme.faucetTextColor2,
-                    opacity: isLoading ? 0.7 : 1,
+                    opacity: migrateCosmosTokensMutation.isPending ? 0.7 : 1,
                   }}
                   className="w-full py-3 px-4 font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg flex justify-center items-center relative"
                   onClick={() => {
@@ -270,7 +267,7 @@ export function WalletMigrationDashboard() {
                   style={{
                     backgroundColor: theme.faucetColor2,
                     color: theme.faucetTextColor2,
-                    opacity: isLoading ? 0.7 : 1,
+                    opacity: migrateCosmosTokensMutation.isPending ? 0.7 : 1,
                   }}
                   className="w-full py-3 px-4 font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg flex justify-center items-center relative"
                   onClick={() => {
@@ -317,13 +314,13 @@ export function WalletMigrationDashboard() {
                     style={{
                       backgroundColor: theme.faucetColor2,
                       color: theme.faucetTextColor2,
-                      opacity: isLoading ? 0.7 : 1,
+                      opacity: migrateCosmosTokensMutation.isPending ? 0.7 : 1,
                     }}
                     className="w-full py-3 text-center font-bold rounded-lg hover:opacity-90 transition-opacity shadow-lg"
                     onClick={handleMigrateFunds}
-                    disabled={isLoading}
+                    disabled={migrateCosmosTokensMutation.isPending}
                   >
-                    {isLoading
+                    {migrateCosmosTokensMutation.isPending
                       ? "Migrating..."
                       : `Migrate ${kiiBalance} Kii and ${oroBalance} Oro`}
                   </button>
