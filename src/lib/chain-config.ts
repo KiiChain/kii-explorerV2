@@ -1,4 +1,8 @@
-import { CHAIN_LCD_ENDPOINT, CHAIN_RPC_ENDPOINT } from "@/config/chain";
+import {
+  CHAIN_LCD_ENDPOINT,
+  CHAIN_RPC_ENDPOINT,
+  KIICHAIN_SYMBOL,
+} from "@/config/chain";
 
 export const KII_TESTNET = {
   chainId: "kiichain3",
@@ -19,7 +23,7 @@ export const KII_TESTNET = {
   currencies: [
     {
       coinDenom: "KII",
-      coinMinimalDenom: "ukii",
+      coinMinimalDenom: KIICHAIN_SYMBOL,
       coinDecimals: 6,
       coinGeckoId: "kii",
       coinImageUrl:
@@ -37,7 +41,7 @@ export const KII_TESTNET = {
   feeCurrencies: [
     {
       coinDenom: "KII",
-      coinMinimalDenom: "ukii",
+      coinMinimalDenom: KIICHAIN_SYMBOL,
       coinDecimals: 6,
       coinGeckoId: "kii",
       coinImageUrl:
@@ -51,7 +55,7 @@ export const KII_TESTNET = {
   ],
   stakeCurrency: {
     coinDenom: "KII",
-    coinMinimalDenom: "ukii",
+    coinMinimalDenom: KIICHAIN_SYMBOL,
     coinDecimals: 6,
     coinGeckoId: "kii",
     coinImageUrl:

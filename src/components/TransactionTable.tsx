@@ -1,3 +1,4 @@
+import { KIICHAIN_SYMBOL } from "@/config/chain";
 import { useTheme } from "@/context/ThemeContext";
 
 interface Transaction {
@@ -66,8 +67,10 @@ export function TransactionTable({
                     }}
                     className="px-3 py-1 rounded-full text-center inline-block w-fit cursor-pointer hover:opacity-80"
                   >
-                    {parseInt(transaction.amount) / 1000000}{" "}
-                    {transaction.denom.includes("ukii") ? "KII" : "ORO"}
+                    {parseInt(transaction.amount) / 1000000}
+                    {transaction.denom.includes(KIICHAIN_SYMBOL)
+                      ? "KII"
+                      : "ORO"}
                   </span>
                 </div>
               </td>

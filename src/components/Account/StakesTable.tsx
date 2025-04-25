@@ -15,6 +15,7 @@ import { useDelegationHistory } from "../../services/queries/delegationHistory";
 import { Table } from "@/components/ui/Table/Table";
 import { formatAmount } from "../../utils/format";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
+import { KIICHAIN_SYMBOL } from "@/config/chain";
 
 interface Theme {
   boxColor: string;
@@ -452,7 +453,7 @@ export function StakesTable({
           const validatorAddress = delegation.delegation?.validator_address;
           const validatorRewards = getValidatorRewards(validatorAddress);
           const formattedRewards = validatorRewards
-            .filter((reward) => reward.denom === "ukii")
+            .filter((reward) => reward.denom === KIICHAIN_SYMBOL)
             .map((reward) => formatAmount(reward.amount))
             .join(" ");
 

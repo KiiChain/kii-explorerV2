@@ -1,4 +1,8 @@
-import { CHAIN_LCD_ENDPOINT, CHAIN_RPC_ENDPOINT } from "@/config/chain";
+import {
+  CHAIN_LCD_ENDPOINT,
+  CHAIN_RPC_ENDPOINT,
+  KIICHAIN_SYMBOL,
+} from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
 
 interface BankSupply {
@@ -47,7 +51,7 @@ export const useSupplyData = () => {
         const genesisData: GenesisResponse = await genesisResponse.json();
 
         const totalSupply = supplyData.supply.find(
-          (s) => s.denom === "ukii"
+          (s) => s.denom === KIICHAIN_SYMBOL
         )?.amount;
 
         if (!totalSupply) return [];
@@ -55,7 +59,7 @@ export const useSupplyData = () => {
         const balances = genesisData.genesis.app_state.bank.balances
           .map((balance) => {
             const ukiiCoin = balance.coins.find(
-              (coin) => coin.denom === "ukii"
+              (coin) => coin.denom === KIICHAIN_SYMBOL
             );
             if (!ukiiCoin) return null;
 

@@ -25,6 +25,7 @@ import {
   useUndelegateMutation,
 } from "@/services/mutations/staking";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
+import { KIICHAIN_BASE_DENOM, KIICHAIN_SYMBOL } from "@/config/chain";
 
 interface Theme {
   bgColor: string;
@@ -352,7 +353,7 @@ export default function AddressPage() {
       let totalRewards = 0;
       if (rewardsData.total) {
         const ukiiRewards = rewardsData.total.find(
-          (reward: { denom: string }) => reward.denom === "ukii"
+          (reward: { denom: string }) => reward.denom === KIICHAIN_BASE_DENOM
         );
         if (ukiiRewards) {
           totalRewards = parseInt(ukiiRewards.amount);
@@ -366,7 +367,7 @@ export default function AddressPage() {
       let totalWithdrawn = 0;
       if (withdrawHistoryData?.rewards) {
         const ukiiWithdraws = withdrawHistoryData.rewards.find(
-          (reward: { denom: string }) => reward.denom === "ukii"
+          (reward: { denom: string }) => reward.denom === KIICHAIN_BASE_DENOM
         );
         if (ukiiWithdraws) {
           totalWithdrawn = parseInt(ukiiWithdraws.amount);
@@ -393,9 +394,15 @@ export default function AddressPage() {
         ).toFixed(2),
       });
 
-      walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
-      walletData.reward = `${formatAmount(totalRewards.toString())} KII`;
-      walletData.withdrawals = `${formatAmount(totalWithdrawn.toString())} KII`;
+      walletData.staking = `${formatAmount(
+        totalStaking.toString()
+      )} ${KIICHAIN_SYMBOL}`;
+      walletData.reward = `${formatAmount(
+        totalRewards.toString()
+      )} ${KIICHAIN_SYMBOL}`;
+      walletData.withdrawals = `${formatAmount(
+        totalWithdrawn.toString()
+      )} ${KIICHAIN_SYMBOL}`;
 
       if (delegationsData.delegation_responses) {
         const formattedDelegations = delegationsData.delegation_responses.map(
