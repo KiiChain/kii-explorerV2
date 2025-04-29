@@ -829,11 +829,6 @@ const menuItems = [
     label: "Smart Contracts deployed",
     href: "/smartContracts",
   },
-  {
-    icon: <Icons.MigrateWalletIcon className="h-8 w-8" />,
-    label: "Migrate Keplr wallet",
-    href: "/walletMigration",
-  },
 ];
 
 const SidebarOverlay = React.forwardRef<

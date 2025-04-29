@@ -25,6 +25,7 @@ import {
   useUndelegateMutation,
 } from "@/services/mutations/staking";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
+import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
 
 interface Theme {
   bgColor: string;
@@ -351,7 +352,7 @@ export default function AddressPage() {
       let totalRewards = 0;
       if (rewardsData.total) {
         const akiiRewards = rewardsData.total.find(
-          (reward: { denom: string }) => reward.denom === "akii"
+          (reward: { denom: string }) => reward.denom === KIICHAIN_BASE_DENOM
         );
         if (akiiRewards) {
           totalRewards = parseInt(akiiRewards.amount);
@@ -365,7 +366,7 @@ export default function AddressPage() {
       let totalWithdrawn = 0;
       if (withdrawHistoryData?.rewards) {
         const akiiWithdraws = withdrawHistoryData.rewards.find(
-          (reward: { denom: string }) => reward.denom === "akii"
+          (reward: { denom: string }) => reward.denom === KIICHAIN_BASE_DENOM
         );
         if (akiiWithdraws) {
           totalWithdrawn = parseInt(akiiWithdraws.amount);

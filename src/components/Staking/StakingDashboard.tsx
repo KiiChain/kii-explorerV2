@@ -12,6 +12,8 @@ import { Table } from "@/components/ui/Table/Table";
 import { useAccount } from "wagmi";
 import { useDelegationsQuery } from "@/services/queries/delegations";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
+import { formatAmount } from "@/utils/format";
+import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
 
 interface ValidatorTableItem {
   rank: number;
@@ -65,7 +67,8 @@ export function StakingDashboard() {
     setCurrentPage(pageNumber);
   };
 
-  const formatDenom = (denom: string) => (denom === "akii" ? "kii" : denom);
+  const formatDenom = (denom: string) =>
+    denom === KIICHAIN_BASE_DENOM ? "kii" : denom;
 
   const validatorColumns = useMemo(
     () => [
@@ -128,9 +131,7 @@ export function StakingDashboard() {
           );
 
           const amount = delegation?.balance?.amount || "0";
-          const formattedAmount = (
-            parseInt(amount) / 1000000000000000000
-          ).toLocaleString();
+          const formattedAmount = formatAmount(amount);
 
           return (
             <div
@@ -138,7 +139,9 @@ export function StakingDashboard() {
               style={{ color: theme.primaryTextColor }}
             >
               {formattedAmount}
-              {formatDenom(validatorsData?.params.bondDenom || "akii")}
+              {formatDenom(
+                validatorsData?.params.bondDenom || KIICHAIN_BASE_DENOM
+              )}
             </div>
           );
         },
@@ -148,8 +151,10 @@ export function StakingDashboard() {
         key: "votingPower",
         render: (item: ValidatorTableItem) => (
           <div className="text-base" style={{ color: theme.primaryTextColor }}>
-            {(parseInt(item.tokens) / 1000000000000000000).toLocaleString()}{" "}
-            {formatDenom(validatorsData?.params.bondDenom || "akii")}
+            {formatAmount(item.tokens)}
+            {formatDenom(
+              validatorsData?.params.bondDenom || KIICHAIN_BASE_DENOM
+            )}
           </div>
         ),
       },

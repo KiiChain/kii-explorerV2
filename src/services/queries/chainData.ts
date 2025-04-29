@@ -1,4 +1,6 @@
 import { CHAIN_LCD_ENDPOINT, CHAIN_RPC_ENDPOINT } from "@/config/chain";
+import { formatAmount } from "@/utils/format";
+import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
 import { useQuery } from "@tanstack/react-query";
 
 interface ChainData {
@@ -40,29 +42,23 @@ export const useChainData = () => {
         : null;
 
       const bondedKii = stakingData
-        ? (
-            parseInt(stakingData.pool.bonded_tokens) / 1_000_000_000_000_000_000
-          ).toFixed(2)
+        ? formatAmount(stakingData.pool.bonded_tokens)
         : "0.0";
 
       const communityPoolAmount = communityPoolData?.pool?.find(
-        (item: { denom: string }) => item.denom === "akii"
+        (item: { denom: string }) => item.denom === KIICHAIN_BASE_DENOM
       )?.amount;
 
       const communityPoolKii = communityPoolAmount
-        ? (parseFloat(communityPoolAmount) / 1_000_000_000_000_000_000).toFixed(
-            1
-          )
+        ? formatAmount(communityPoolAmount)
         : "0.0";
 
       const totalSupply = totalSupplyData?.supply?.find(
-        (item: { denom: string }) => item.denom === "akii"
+        (item: { denom: string }) => item.denom === KIICHAIN_BASE_DENOM
       );
 
       const totalSupplyKii = totalSupply
-        ? (parseFloat(totalSupply.amount) / 1_000_000_000_000_000_000).toFixed(
-            1
-          )
+        ? formatAmount(communityPoolAmount)
         : "0.0";
 
       return {

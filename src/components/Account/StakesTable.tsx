@@ -305,9 +305,6 @@ export function StakesTable({
     [key: string]: string;
   }>({});
 
-  console.log("Cosmos Address:", cosmosAddress);
-  console.log("Redelegations:", redelegations);
-
   const getValidatorMoniker = (operatorAddress: string): string => {
     if (!operatorAddress) return "Unknown";
 

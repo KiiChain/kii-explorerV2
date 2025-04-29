@@ -2,7 +2,7 @@ import { useAppKit } from "@reown/appkit/react";
 import { useAccount, useDisconnect, useChainId } from "wagmi";
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useRef, useEffect } from "react";
-import { TESTNET_ORO_EVM } from "@/config/chain";
+import { CHAIN_RPC_ENDPOINT, TESTNET_ORO_EVM } from "@/config/chain";
 import { GoArrowUpRight } from "react-icons/go";
 
 interface WagmiConnectButtonProps {
@@ -72,7 +72,7 @@ export const WagmiConnectButton = ({
                     symbol: "UORO",
                     decimals: 18,
                   },
-                  rpcUrls: ["https://rpc.testnet.kiichain.org"],
+                  rpcUrls: [CHAIN_RPC_ENDPOINT],
                   blockExplorerUrls: ["https://testnet.kiiexplorer.io"],
                 },
               ],

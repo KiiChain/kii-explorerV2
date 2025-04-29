@@ -1,4 +1,6 @@
 import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
+import { formatAmount } from "@/utils/format";
+import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
 
 interface DelegationResponse {
   balance?: {
@@ -25,7 +27,7 @@ export const cosmosService = {
       data.delegation_responses?.reduce(
         (acc: number, curr: DelegationResponse) => {
           const amount = curr.balance?.amount
-            ? parseFloat(curr.balance.amount) / 1_000_000_000_000_000_000
+            ? parseFloat(formatAmount(curr.balance.amount))
             : 0;
           return acc + amount;
         },
@@ -42,10 +44,10 @@ export const cosmosService = {
     return (
       data.rewards?.reduce((acc: number, reward: ValidatorReward) => {
         const kiiReward = reward.reward?.find(
-          (r: Reward) => r.denom === "akii"
+          (r: Reward) => r.denom === KIICHAIN_BASE_DENOM
         );
         const amount = kiiReward
-          ? parseFloat(kiiReward.amount) / 1_000_000_000_000_000_000
+          ? parseFloat(formatAmount(kiiReward.amount))
           : 0;
         return acc + amount;
       }, 0) || 0

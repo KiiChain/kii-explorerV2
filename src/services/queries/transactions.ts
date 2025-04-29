@@ -1,4 +1,5 @@
 import { EVM_INDEXER } from "@/config/chain";
+import { formatAmount } from "@/utils/format";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 interface EVMTransaction {
@@ -33,7 +34,7 @@ export const useTransactionsQuery = (address?: string) => {
         to: tx.to_address,
         amount:
           tx.method === "0x00000000"
-            ? (BigInt(tx.value) / BigInt("1000000000000000000")).toString()
+            ? formatAmount(tx.value)
             : "EVM CONTRACT CALL",
         denom: tx.method === "0x00000000" ? "KII" : "",
         timestamp: new Date(parseInt(tx.timestamp) * 1000).toLocaleString(),
