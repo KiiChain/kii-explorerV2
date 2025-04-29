@@ -1,5 +1,6 @@
 "use client";
 
+import { CHAIN_RPC_ENDPOINT } from "@/config/chain";
 import { useTheme } from "@/context/ThemeContext";
 import { useStateSyncInfo } from "@/services/queries/stateSync";
 
@@ -116,8 +117,7 @@ export function StateSyncDashboard() {
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#FFFFFF" }}> rpc_servers = </span>
                 <span style={{ color: "#FFFFFF" }}>
-                  &quot;https://rpc.uno.sentry.testnet.v3.kiivalidator.com,
-                  https://rpc.dos.sentry.testnet.v3.kiivalidator.com&quot;
+                  &quot;{CHAIN_RPC_ENDPOINT}&quot;
                 </span>
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
@@ -132,7 +132,6 @@ export function StateSyncDashboard() {
                 <br />
                 <span style={{ color: "#787779" }}>{">"}</span>
                 <span style={{ color: "#00F9A6" }}>
-                  {" "}
                   # 2/3 of unbonding time
                 </span>
                 <br />

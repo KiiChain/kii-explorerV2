@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQueries } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface DelegationInfo {
   delegation?: {
@@ -28,7 +28,7 @@ export const useValidatorRewardsQueries = (
           throw new Error("Required addresses missing");
         }
         const response = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/distribution/v1beta1/delegators/${cosmosAddress}/rewards/${delegation.delegation.validator_address}`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/distribution/v1beta1/delegators/${cosmosAddress}/rewards/${delegation.delegation.validator_address}`
         );
         const data = await response.json();
         return data.rewards || [];

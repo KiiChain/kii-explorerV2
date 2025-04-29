@@ -4,16 +4,16 @@ import { useAccount, useWriteContract } from "wagmi";
 import { parseEther } from "viem";
 import { toast } from "sonner";
 import { useProposalQuery, useProposalVoteStatus } from "../queries/proposals";
-import { useKiiAddressQuery } from "../queries/kiiAddress";
+import { useHexToBech } from "./addressConvertion";
 
 export const useProposalDetail = (proposalId: string) => {
   const { address } = useAccount();
-  const { data: kiiAddressData } = useKiiAddressQuery(address);
+  const { cosmosAddress } = useHexToBech(address);
 
   const { data: proposal, isLoading, error } = useProposalQuery(proposalId);
   const { data: voteStatus = { hasVoted: false } } = useProposalVoteStatus(
     proposalId,
-    kiiAddressData!
+    cosmosAddress!
   );
 
   const { writeContract, isPending: isWritePending } = useWriteContract();

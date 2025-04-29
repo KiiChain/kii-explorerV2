@@ -1,5 +1,5 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface BlockInfo {
   height: string;
@@ -12,14 +12,14 @@ export const useStateSyncInfo = () => {
     queryFn: async (): Promise<BlockInfo> => {
       try {
         const latestResponse = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/latest`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/latest`
         );
         const latestData = await latestResponse.json();
         const currentHeight = parseInt(latestData.block.header.height);
         const trustHeight = currentHeight - 500;
 
         const trustResponse = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/base/tendermint/v1beta1/blocks/${trustHeight}`
+          `${CHAIN_LCD_ENDPOINT}/cosmos/base/tendermint/v1beta1/blocks/${trustHeight}`
         );
         const trustData = await trustResponse.json();
 

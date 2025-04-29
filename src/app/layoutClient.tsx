@@ -17,10 +17,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { createAppKit } from "@reown/appkit/react";
-import { TESTNET_ORO_EVM } from "@/config/chain";
 import { defineChain } from "@reown/appkit/networks";
 import { Toaster } from "sonner";
 import { Footer } from "@/components/ui/Footer";
+import { TESTNET_ORO_EVM } from "@/config/chain";
 
 const montserrat = Montserrat({
   subsets: ["latin"],

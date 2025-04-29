@@ -1,5 +1,9 @@
+import {
+  CHAIN_LCD_ENDPOINT,
+  CHAIN_RPC_ENDPOINT,
+  KIICHAIN_SYMBOL,
+} from "@/config/chain";
 import { useQuery } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 
 interface BankSupply {
   id: string;
@@ -38,16 +42,16 @@ export const useSupplyData = () => {
       try {
         const [supplyResponse, genesisResponse] = await Promise.all([
           fetch(
-            `${API_ENDPOINTS.LCD}/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true`
+            `${CHAIN_LCD_ENDPOINT}/cosmos/bank/v1beta1/supply?pagination.limit=20&pagination.count_total=true`
           ),
-          fetch(`${API_ENDPOINTS.RPC}/genesis`),
+          fetch(`${CHAIN_RPC_ENDPOINT}/genesis`),
         ]);
 
         const supplyData: SupplyResponse = await supplyResponse.json();
         const genesisData: GenesisResponse = await genesisResponse.json();
 
         const totalSupply = supplyData.supply.find(
-          (s) => s.denom === "ukii"
+          (s) => s.denom === KIICHAIN_SYMBOL
         )?.amount;
 
         if (!totalSupply) return [];
@@ -55,7 +59,7 @@ export const useSupplyData = () => {
         const balances = genesisData.genesis.app_state.bank.balances
           .map((balance) => {
             const ukiiCoin = balance.coins.find(
-              (coin) => coin.denom === "ukii"
+              (coin) => coin.denom === KIICHAIN_SYMBOL
             );
             if (!ukiiCoin) return null;
 

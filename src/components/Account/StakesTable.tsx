@@ -3,7 +3,6 @@ import { useAccount, useWalletClient } from "wagmi";
 
 import { toast } from "react-toastify";
 import { useRedelegations } from "../../services/queries/redelegations";
-import { useCosmosAddress } from "@/services/queries/cosmosAddress";
 
 import { useValidatorQueries } from "@/services/queries/validators";
 import { useValidatorRewardsQueries } from "@/services/queries/validatorRewards";
@@ -15,6 +14,8 @@ import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { useDelegationHistory } from "../../services/queries/delegationHistory";
 import { Table } from "@/components/ui/Table/Table";
 import { formatAmount } from "../../utils/format";
+import { useHexToBech } from "@/services/hooks/addressConvertion";
+import { KIICHAIN_SYMBOL } from "@/config/chain";
 
 interface Theme {
   boxColor: string;
@@ -287,8 +288,8 @@ export function StakesTable({
 }: StakeProps) {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const { data: cosmosAddress } = useCosmosAddress(address);
-  const { data: redelegations } = useRedelegations(cosmosAddress);
+  const { cosmosAddress } = useHexToBech(address!);
+  const { data: redelegations } = useRedelegations(cosmosAddress!);
   const validatorQueries = useValidatorQueries(delegations);
   const rewardsQueries = useValidatorRewardsQueries(
     cosmosAddress!,
@@ -303,9 +304,6 @@ export function StakesTable({
   const [withdrawButtonStates, setWithdrawButtonStates] = useState<{
     [key: string]: string;
   }>({});
-
-  console.log("Cosmos Address:", cosmosAddress);
-  console.log("Redelegations:", redelegations);
 
   const getValidatorMoniker = (operatorAddress: string): string => {
     if (!operatorAddress) return "Unknown";
@@ -452,7 +450,7 @@ export function StakesTable({
           const validatorAddress = delegation.delegation?.validator_address;
           const validatorRewards = getValidatorRewards(validatorAddress);
           const formattedRewards = validatorRewards
-            .filter((reward) => reward.denom === "ukii")
+            .filter((reward) => reward.denom === KIICHAIN_SYMBOL)
             .map((reward) => formatAmount(reward.amount))
             .join(" ");
 

@@ -1,8 +1,14 @@
+import {
+  CHAIN_LCD_ENDPOINT,
+  CHAIN_RPC_ENDPOINT,
+  KIICHAIN_SYMBOL,
+} from "@/config/chain";
+
 export const KII_TESTNET = {
   chainId: "kiichain3",
   chainName: "KiiChain Testnet Oro",
-  rpc: "https://rpc.uno.sentry.testnet.v3.kiivalidator.com",
-  rest: "https://lcd.uno.sentry.testnet.v3.kiivalidator.com",
+  rpc: CHAIN_RPC_ENDPOINT,
+  rest: CHAIN_LCD_ENDPOINT,
   bip44: {
     coinType: 118,
   },
@@ -17,7 +23,7 @@ export const KII_TESTNET = {
   currencies: [
     {
       coinDenom: "KII",
-      coinMinimalDenom: "ukii",
+      coinMinimalDenom: KIICHAIN_SYMBOL,
       coinDecimals: 6,
       coinGeckoId: "kii",
       coinImageUrl:
@@ -35,11 +41,11 @@ export const KII_TESTNET = {
   feeCurrencies: [
     {
       coinDenom: "KII",
-      coinMinimalDenom: "ukii",
+      coinMinimalDenom: KIICHAIN_SYMBOL,
       coinDecimals: 6,
       coinGeckoId: "kii",
       coinImageUrl:
-      "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
+        "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assets/coin_256_256.png",
       gasPriceStep: {
         low: 0.01,
         average: 0.025,
@@ -49,7 +55,7 @@ export const KII_TESTNET = {
   ],
   stakeCurrency: {
     coinDenom: "KII",
-    coinMinimalDenom: "ukii",
+    coinMinimalDenom: KIICHAIN_SYMBOL,
     coinDecimals: 6,
     coinGeckoId: "kii",
     coinImageUrl:

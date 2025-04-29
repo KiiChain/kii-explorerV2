@@ -1,6 +1,6 @@
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { API_ENDPOINTS } from "@/constants/endpoints";
 import { useValidatorsData } from "./uptime";
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 
 interface ValidatorDetails {
   moniker: string;
@@ -40,7 +40,7 @@ const fetchValidatorDetails = async (
   operatorAddress: string
 ): Promise<ValidatorDetails> => {
   const response = await fetch(
-    `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators/${operatorAddress}`
+    `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/validators/${operatorAddress}`
   );
   const data = await response.json();
   if (!data.validator) {
@@ -78,7 +78,7 @@ export const useValidators = () => {
     queryFn: async () => {
       try {
         const [paramsRes] = await Promise.all([
-          fetch(`${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/params`),
+          fetch(`${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/params`),
         ]);
 
         if (validatorsRes.isError || !paramsRes.ok) {
@@ -194,7 +194,7 @@ export const useValidatorsWithUptime = () => {
     queryKey: ["validators-uptime"],
     queryFn: async () => {
       const response = await fetch(
-        `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/validators`
+        `${CHAIN_LCD_ENDPOINT}/cosmos/staking/v1beta1/validators`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch validators data");

@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ethers, Contract } from "ethers";
-import {
-  STAKING_PRECOMPILE_ABI,
-  STAKING_PRECOMPILE_ADDRESS,
-} from "@/lib/abi/staking";
 import { toast } from "sonner";
 import { type WalletClient } from "viem";
-import { API_ENDPOINTS } from "@/constants/endpoints";
-import { bech32 } from "bech32";
+import * as kiiEvm from "@kiichain/kiijs-evm";
+
+interface IStakingContractInfo {
+  contract: Contract;
+  address: string;
+}
 
 interface StakingMutationParams {
   walletClient: WalletClient;
@@ -31,47 +31,18 @@ interface DelegateMutationParams {
   validatorAddress: string;
 }
 
-interface RedelegationResponse {
-  redelegation: {
-    validator_dst_address: string;
-  };
-  entries: Array<{
-    redelegation_entry: {
-      completion_time: string;
-    };
-  }>;
-}
-
-interface RedelegationEntry {
-  redelegation_entry: {
-    completion_time: string;
-  };
-}
-
 interface ContractError extends Error {
   data?: string;
 }
 
-const getStakingContract = async (walletClient: WalletClient) => {
+const getStakingContract = async (
+  walletClient: WalletClient
+): Promise<IStakingContractInfo> => {
   const provider = new ethers.BrowserProvider(walletClient.transport);
   const signer = await provider.getSigner();
-  return new Contract(
-    STAKING_PRECOMPILE_ADDRESS,
-    STAKING_PRECOMPILE_ABI,
-    signer
-  );
-};
+  const contract = kiiEvm.getStakingPrecompileEthersV6Contract(signer);
 
-const evmToCosmosAddress = (evmAddress: string): string => {
-  try {
-    const addressBytes = Buffer.from(evmAddress.slice(2), "hex");
-
-    const words = bech32.toWords(addressBytes);
-    return bech32.encode("kii", words);
-  } catch (error) {
-    console.error("Error converting address:", error);
-    return "";
-  }
+  return { contract, address: signer.address };
 };
 
 export const useRedelegateMutation = () => {
@@ -89,52 +60,18 @@ export const useRedelegateMutation = () => {
           throw new Error("Wallet not connected");
         }
 
-        const cosmosAddress = evmToCosmosAddress(walletClient.account.address);
-        if (!cosmosAddress) {
-          throw new Error("Failed to convert address");
-        }
+        // get staking contract
+        const { contract, address } = await getStakingContract(walletClient);
 
-        const redelegationsResponse = await fetch(
-          `${API_ENDPOINTS.LCD}/cosmos/staking/v1beta1/delegators/${cosmosAddress}/redelegations`
-        );
-        const redelegationsData = await redelegationsResponse.json();
-
-        const hasActiveRedelegation =
-          redelegationsData.redelegation_responses?.some(
-            (r: RedelegationResponse) => {
-              return (
-                r.redelegation.validator_dst_address === destinationAddr &&
-                r.entries.some((entry: RedelegationEntry) => {
-                  const completionTime = new Date(
-                    entry.redelegation_entry.completion_time
-                  );
-                  return completionTime > new Date();
-                })
-              );
-            }
-          );
-
-        if (hasActiveRedelegation) {
-          throw new Error("Active redelegation exists for this validator");
-        }
-
-        const stakingContract = await getStakingContract(walletClient);
         const amountInWei = ethers.parseUnits(amount, 6);
+        const amountIn18Dec = amountInWei * BigInt(10 ** 12);
 
-        console.log("Redelegation Details:", {
-          sourceValidator: validatorAddress,
-          destinationValidator: destinationAddr,
-          amount,
-          amountInWei: amountInWei.toString(),
-        });
-
-        const tx = await stakingContract.redelegate(
+        return await contract.redelegate(
+          address,
           validatorAddress,
           destinationAddr,
-          amountInWei
+          amountIn18Dec
         );
-
-        return await tx.wait();
       } catch (error) {
         if (error instanceof Error) {
           if (error.message.includes("Active redelegation exists")) {
@@ -185,15 +122,15 @@ export const useUndelegateMutation = () => {
       amount,
       walletClient,
     }: UndelegateMutationParams) => {
-      const stakingContract = await getStakingContract(walletClient);
+      const { contract, address } = await getStakingContract(walletClient);
       const amountInWei = ethers.parseUnits(amount, 6);
+      const amountIn18Dec = amountInWei * BigInt(10 ** 12);
 
-      const tx = await stakingContract.undelegate(
+      return await contract.undelegate(
+        address,
         validatorAddress,
-        amountInWei
+        amountIn18Dec
       );
-
-      return await tx.wait();
     },
     onSuccess: () => {
       toast.success("Successfully withdrawn your stake", {
@@ -218,21 +155,12 @@ export const useDelegateMutation = () => {
       amount,
       validatorAddress,
     }: DelegateMutationParams) => {
-      const stakingContract = await getStakingContract(walletClient);
+      const { contract, address } = await getStakingContract(walletClient);
+
       const amountInWei = ethers.parseUnits(amount, 6);
       const amountIn18Dec = amountInWei * BigInt(10 ** 12);
 
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const feeData = await provider.getFeeData();
-
-      const tx = await stakingContract.delegate(validatorAddress, {
-        value: amountIn18Dec,
-        maxFeePerGas: feeData.maxFeePerGas,
-        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
-        gasLimit: 300000,
-      });
-
-      return await tx.wait();
+      return await contract.delegate(address, validatorAddress, amountIn18Dec);
     },
     onError: (error: unknown) => {
       console.error("Delegation error:", error);

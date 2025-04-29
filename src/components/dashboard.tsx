@@ -27,6 +27,8 @@ import { useChainData } from "@/services/queries/chainData";
 import { useValidatorSet } from "@/services/queries/validatorSet";
 import { useLatestBlocks } from "@/services/queries/blocks";
 import { useTransactionsQuery } from "@/services/queries/transactions";
+import { KIICHAIN_BASE_DENOM } from "@/config/chain";
+import { useHexToBech } from "@/services/hooks/addressConvertion";
 
 export interface WalletSession {
   balance: string;
@@ -40,10 +42,6 @@ export interface WalletSession {
   }[];
 }
 
-export function connectWallet() {
-  console.log("Connecting wallet...");
-}
-
 export default function Dashboard() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -51,6 +49,12 @@ export default function Dashboard() {
   const { data: balanceData } = useBalance({
     address: address,
   });
+
+  const { data: chainData } = useChainData();
+  const { data: validatorSetData } = useValidatorSet();
+  const { data: latestBlocks = [] } = useLatestBlocks();
+  const { data: transactionsData } = useTransactionsQuery();
+  const { cosmosAddress } = useHexToBech(address!);
 
   const formatBalance = (value: string | number): string => {
     return Number(value).toFixed(2);
@@ -61,12 +65,9 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!address) return null;
 
-      const cosmosData = await cosmosService.getKiiAddress(address);
-      if (!cosmosData?.kii_address) return null;
-
       const [totalStaked, totalRewards] = await Promise.all([
-        cosmosService.getDelegations(cosmosData.kii_address),
-        cosmosService.getRewards(cosmosData.kii_address),
+        cosmosService.getDelegations(cosmosAddress!),
+        cosmosService.getRewards(cosmosAddress!),
       ]);
 
       return {
@@ -87,13 +88,6 @@ export default function Dashboard() {
     withdrawals: formatBalance("0") + " KII",
     stakes: [],
   };
-
-  console.log("Connected account:", address);
-
-  const { data: chainData } = useChainData();
-  const { data: validatorSetData } = useValidatorSet();
-  const { data: latestBlocks = [] } = useLatestBlocks();
-  const { data: transactionsData } = useTransactionsQuery();
 
   const latestTransactions =
     transactionsData?.pages[0]?.txs.map((tx) => ({
@@ -161,7 +155,7 @@ export default function Dashboard() {
             >
               <p style={{ color: theme.primaryTextColor }}>Staked</p>
               <p style={{ color: theme.secondaryTextColor }}>
-                {formatBalance(cosmosBalances?.stakingBalance ?? "0")} KII
+                {session.staking}
               </p>
             </div>
             <div
@@ -170,7 +164,7 @@ export default function Dashboard() {
             >
               <p style={{ color: theme.primaryTextColor }}>Rewards</p>
               <p style={{ color: theme.secondaryTextColor }}>
-                {formatBalance(cosmosBalances?.rewardsBalance ?? "0")} KII
+                {session.reward}
               </p>
             </div>
             <div
@@ -206,151 +200,151 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-6" style={{ backgroundColor: theme.bgColor }}>
-      <div className="px-6 pt-12"></div>
-
+    <div
+      className="p-6 rounded-xl mb-6 pt-12"
+      style={{ backgroundColor: theme.bgColor }}
+    >
+      {/* Upper and bigger cards */}
       <div
-        className="rounded-xl mb-6"
+        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8"
         style={{ backgroundColor: theme.bgColor }}
       >
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8"
-          style={{ backgroundColor: theme.bgColor }}
+        <StatCard title="KII Price" value="N/A" unit="TESTNET" />
+        <StatCard title="Gas Price" value="2500" unit={KIICHAIN_BASE_DENOM} />
+        <StatCard title="Block Height" value={latestBlocks[0]?.height || "0"} />
+      </div>
+
+      {/* Small cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+        <StatCard
+          title="Height"
+          value={latestBlocks[0]?.height || "0"}
+          icon={
+            <HeightIcon
+              className="w-5 h-5"
+              style={{ color: theme.secondaryTextColor }}
+            />
+          }
+          variant="horizontal"
+        />
+        <StatCard
+          title="Validators"
+          value={validatorSetData?.toString() ?? "0"}
+          icon={
+            <ValidatorsIcon
+              className="w-5 h-5"
+              style={{ color: theme.secondaryTextColor }}
+            />
+          }
+          variant="horizontal"
+        />
+        <StatCard
+          title="Supply"
+          value={chainData?.totalSupply ?? "0.00"}
+          unit="KII"
+          icon={
+            <CashIcon
+              className="w-5 h-5"
+              style={{ color: theme.secondaryTextColor }}
+            />
+          }
+          variant="horizontal"
+        />
+      </div>
+
+      {/* Medium cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+        <StatCard
+          title="Bonded Tokens"
+          value={chainData?.bondedTokens ?? "0.00"}
+          unit="KII"
+          icon={
+            <BondedTokensIcon
+              className="w-5 h-5"
+              style={{ color: theme.secondaryTextColor }}
+            />
+          }
+          variant="horizontal"
+        />
+        <StatCard
+          title="Inflation"
+          value="0%"
+          icon={
+            <InflationIcon
+              className="w-4 h-4"
+              style={{ color: theme.secondaryTextColor }}
+            />
+          }
+          variant="horizontal"
+        />
+        <StatCard
+          title="Community Pool"
+          value={chainData?.communityPool ?? "0.00"}
+          icon={
+            <CommunityPoolIcon
+              className="w-5 h-5"
+              style={{ color: theme.secondaryTextColor }}
+            />
+          }
+          variant="horizontal"
+        />
+      </div>
+
+      {/* My wallet section */}
+      {renderWalletSection()}
+
+      {/* Latest transaction and blocks section */}
+      <div className="mt-6">
+        <Card
+          style={{
+            backgroundColor: theme.boxColor,
+            boxShadow:
+              "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          }}
+          className="border-0"
         >
-          <StatCard title="KII Price" value="N/A" unit="TESTNET" />
-          <StatCard title="Gas Price" value="2500" unit="Ukii" />
-          <StatCard
-            title="Block Height"
-            value={latestBlocks[0]?.height || "0"}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
-          <StatCard
-            title="Height"
-            value={latestBlocks[0]?.height || "0"}
-            icon={
-              <HeightIcon
-                className="w-5 h-5"
-                style={{ color: theme.secondaryTextColor }}
-              />
-            }
-            variant="horizontal"
-          />
-          <StatCard
-            title="Validators"
-            value={validatorSetData?.toString() ?? "0"}
-            icon={
-              <ValidatorsIcon
-                className="w-5 h-5"
-                style={{ color: theme.secondaryTextColor }}
-              />
-            }
-            variant="horizontal"
-          />
-          <StatCard
-            title="Supply"
-            value="1,800,000,000"
-            icon={
-              <CashIcon
-                className="w-5 h-5"
-                style={{ color: theme.secondaryTextColor }}
-              />
-            }
-            variant="horizontal"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
-          <StatCard
-            title="Bonded Tokens"
-            value={chainData?.bondedTokens ?? "0.00"}
-            unit="KII"
-            icon={
-              <BondedTokensIcon
-                className="w-5 h-5"
-                style={{ color: theme.secondaryTextColor }}
-              />
-            }
-            variant="horizontal"
-          />
-          <StatCard
-            title="Inflation"
-            value="0%"
-            icon={
-              <InflationIcon
-                className="w-4 h-4"
-                style={{ color: theme.secondaryTextColor }}
-              />
-            }
-            variant="horizontal"
-          />
-          <StatCard
-            title="Community Pool"
-            value={chainData?.communityPool ?? "0.00"}
-            icon={
-              <CommunityPoolIcon
-                className="w-5 h-5"
-                style={{ color: theme.secondaryTextColor }}
-              />
-            }
-            variant="horizontal"
-          />
-        </div>
-
-        {renderWalletSection()}
-
-        <div className="mt-6">
-          <Card
-            style={{
-              backgroundColor: theme.boxColor,
-              boxShadow:
-                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-            }}
-            className="border-0"
+          <div
+            className="p-6 rounded-lg"
+            style={{ backgroundColor: theme.boxColor }}
           >
-            <div
-              className="p-6 rounded-lg"
-              style={{ backgroundColor: theme.boxColor }}
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex gap-6 flex-1">
-                  <div style={{ color: theme.primaryTextColor }}>
-                    Latest Blocks
-                  </div>
-                  <div
-                    style={{ color: theme.primaryTextColor }}
-                    className="ml-[30%]"
-                  >
-                    Latest transactions
-                  </div>
+            <div className="flex justify-between items-center">
+              <div className="flex gap-6 flex-1">
+                <div style={{ color: theme.primaryTextColor }}>
+                  Latest Blocks
                 </div>
-                <div className="text-gray-400 hover:text-white cursor-pointer whitespace-nowrap ml-4">
-                  View All
+                <div
+                  style={{ color: theme.primaryTextColor }}
+                  className="ml-[30%]"
+                >
+                  Latest transactions
                 </div>
               </div>
-              <BlockTable
-                latestBlocks={latestBlocks}
-                latestTransactions={latestTransactions}
-                handleBlockClick={handleNavigation}
-                handleAddressClick={handleNavigation}
-              />
+              <div className="text-gray-400 hover:text-white cursor-pointer whitespace-nowrap ml-4">
+                View All
+              </div>
             </div>
-          </Card>
-        </div>
+            <BlockTable
+              latestBlocks={latestBlocks}
+              latestTransactions={latestTransactions}
+              handleBlockClick={handleNavigation}
+              handleAddressClick={handleNavigation}
+            />
+          </div>
+        </Card>
+      </div>
 
-        <div className="mt-6">
-          <Card
-            style={{
-              backgroundColor: theme.bgColor,
-              boxShadow:
-                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-            }}
-            className="border-0"
-          >
-            <ApplicationVersions />
-          </Card>
-        </div>
+      {/* Application info section */}
+      <div className="mt-6">
+        <Card
+          style={{
+            backgroundColor: theme.bgColor,
+            boxShadow:
+              "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          }}
+          className="border-0"
+        >
+          <ApplicationVersions />
+        </Card>
       </div>
     </div>
   );

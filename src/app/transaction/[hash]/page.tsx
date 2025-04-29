@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { CHAIN_JSON_RPC_ENDPOINT, CHAIN_LCD_ENDPOINT } from "@/config/chain";
 
 interface TransactionDetails {
   tx_hash: string;
@@ -114,7 +115,7 @@ export default function TransactionPage({
           };
 
           const responseTransaction = await fetch(
-            "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
+            CHAIN_JSON_RPC_ENDPOINT,
             requestOptions
           );
 
@@ -165,7 +166,7 @@ export default function TransactionPage({
             };
 
             const responseReceipt = await fetch(
-              "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com",
+              CHAIN_JSON_RPC_ENDPOINT,
               receiptRequestOptions
             );
 
@@ -187,7 +188,7 @@ export default function TransactionPage({
           }
         } else {
           const response = await fetch(
-            `https://uno.sentry.testnet.v3.kiivalidator.com/tx/v1beta1/txs/${hash}`
+            `${CHAIN_LCD_ENDPOINT}/tx/v1beta1/txs/${hash}`
           );
 
           if (!response.ok) throw new Error("Network response was not ok");
