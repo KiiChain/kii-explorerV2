@@ -40,6 +40,15 @@ const nextConfig = {
 
     return config;
   },
+  async redirects() {
+    return [
+      {
+        source: "/tx/:hash",
+        destination: "/transaction/:hash",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
