@@ -18,7 +18,6 @@ import {
   StakingIcon,
   GovernanceIcon,
   SmartContractIaIcon,
-  MigrateWalletIcon,
 } from "./icons";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -70,7 +69,6 @@ const Icons = {
   StakingIcon,
   GovernanceIcon,
   SmartContractIaIcon,
-  MigrateWalletIcon,
 };
 
 const SidebarProvider = React.forwardRef<
@@ -777,11 +775,6 @@ const menuItems = [
     icon: <Icons.StakingIcon className="h-8 w-8" />,
     label: "Staking",
     href: "/staking",
-  },
-  {
-    icon: <Icons.MigrateWalletIcon className="h-8 w-8" />,
-    label: "Migrate Keplr wallet",
-    href: "/wallet-migration",
   },
   {
     icon: <Icons.GovernanceIcon className="h-8 w-8" />,
