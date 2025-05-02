@@ -18,6 +18,7 @@ import { WagmiConnectButton } from "@/components/ui/WagmiConnectButton";
 import { useValidatorHistory } from "@/services/queries/validatorHistory";
 import { Table } from "@/components/ui/Table/Table";
 import { OfflineSigner } from "@cosmjs/proto-signing";
+import { formatAmount } from "@/utils/format";
 
 interface SignDoc {
   chain_id: string;
@@ -155,13 +156,6 @@ const formatNumber = (value: string | number) => {
   return num.toFixed(4);
 };
 
-const formatAmount = (amount: string, decimals: number = 6) => {
-  const value = parseInt(amount);
-  if (isNaN(value)) return "0";
-  const converted = value / Math.pow(10, decimals);
-  return formatNumber(converted);
-};
-
 const DelegateModal = ({
   isOpen,
   onClose,
@@ -182,7 +176,7 @@ const DelegateModal = ({
 
   const delegateMutation = useDelegateMutation();
 
-  const availableBalance = formatAmount(balance?.value?.toString() || "0", 18);
+  const availableBalance = formatAmount(balance?.value?.toString() || "0");
   const formattedCommission = (parseFloat(validator.commission) * 100).toFixed(
     4
   );
@@ -514,12 +508,6 @@ export default function ValidatorPage({
                     >
                       {validator?.description?.moniker}
                     </h1>
-                    <p
-                      className="text-xs font-bold mb-1 break-all"
-                      style={{ color: theme.secondaryTextColor }}
-                    >
-                      {validator.operator_address}
-                    </p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -722,6 +710,7 @@ export default function ValidatorPage({
             </div>
           </div>
 
+          {/* Total bonded tokens */}
           <div className="flex flex-col gap-4">
             <div className="py-6">
               <div
@@ -760,6 +749,7 @@ export default function ValidatorPage({
                 </div>
               </div>
 
+              {/* Self bonded tokens */}
               <div
                 className="p-3 rounded-lg mt-1"
                 style={{ backgroundColor: theme.bgColor }}
@@ -812,6 +802,7 @@ export default function ValidatorPage({
                 </div>
               </div>
 
+              {/* Bonded Tokens */}
               <div
                 className="p-3 rounded-lg mt-1"
                 style={{ backgroundColor: theme.bgColor }}
@@ -851,6 +842,8 @@ export default function ValidatorPage({
                   </div>
                 </div>
               </div>
+
+              {/* Commission */}
               <div
                 className="p-3 rounded-lg mt-1"
                 style={{ backgroundColor: theme.bgColor }}
@@ -893,6 +886,8 @@ export default function ValidatorPage({
                   </div>
                 </div>
               </div>
+
+              {/* Validator Address */}
               <div
                 className="p-3 rounded-lg mt-1"
                 style={{ backgroundColor: theme.bgColor }}
@@ -924,13 +919,13 @@ export default function ValidatorPage({
                       className="text-xs font-bold"
                       style={{ color: theme.primaryTextColor }}
                     >
-                      {formatAmount(validator.tokens)} KII
+                      Operator Address
                     </div>
                     <div
                       className="text-sm"
                       style={{ color: theme.secondaryTextColor }}
                     >
-                      99.86%
+                      {validator.operator_address}
                     </div>
                   </div>
                 </div>

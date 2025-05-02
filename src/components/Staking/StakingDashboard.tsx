@@ -13,7 +13,7 @@ import { useAccount } from "wagmi";
 import { useDelegationsQuery } from "@/services/queries/delegations";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
 import { formatAmount } from "@/utils/format";
-import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
+import { KIICHAIN_BASE_DENOM, KIICHAIN_SYMBOL } from "@/config/chain";
 
 interface ValidatorTableItem {
   rank: number;
@@ -139,9 +139,7 @@ export function StakingDashboard() {
               style={{ color: theme.primaryTextColor }}
             >
               {formattedAmount}
-              {formatDenom(
-                validatorsData?.params.bondDenom || KIICHAIN_BASE_DENOM
-              )}
+              {KIICHAIN_SYMBOL}
             </div>
           );
         },
@@ -152,9 +150,7 @@ export function StakingDashboard() {
         render: (item: ValidatorTableItem) => (
           <div className="text-base" style={{ color: theme.primaryTextColor }}>
             {formatAmount(item.tokens)}
-            {formatDenom(
-              validatorsData?.params.bondDenom || KIICHAIN_BASE_DENOM
-            )}
+            {KIICHAIN_SYMBOL}
           </div>
         ),
       },
@@ -320,7 +316,7 @@ export function StakingDashboard() {
                 className="text-lg font-bold"
                 style={{ color: theme.primaryTextColor }}
               >
-                {validatorsData?.params.bondDenom}
+                {KIICHAIN_SYMBOL}
               </div>
               <div
                 className="text-base pt-2"
