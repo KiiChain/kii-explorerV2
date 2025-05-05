@@ -26,7 +26,7 @@ export const useTransactionsQuery = (address?: string) => {
   return useInfiniteQuery<TransactionResponse>({
     queryKey: ["transactions", address],
     queryFn: async (): Promise<TransactionResponse> => {
-      const response = await fetch(`${EVM_INDEXER}/transactions`);
+      const response = await fetch(`${EVM_INDEXER}/transactions?limit=20`);
       const transactions: EVMTransaction[] = await response.json();
 
       const formattedTxs = transactions.map((tx) => ({

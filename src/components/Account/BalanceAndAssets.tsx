@@ -87,7 +87,7 @@ export function BalanceAndAssets({ assets }: BalanceAndAssetsProps) {
                     ][index],
                   }}
                 ></div>
-                <span className="text-sm text-white">{asset.name}</span>
+                <span className="text-sm text-white">{asset.percentage}</span>
               </div>
             ))}
           </div>
@@ -107,7 +107,7 @@ export function BalanceAndAssets({ assets }: BalanceAndAssetsProps) {
                   </div>
                   <div>
                     <div style={{ color: theme.primaryTextColor }}>
-                      {asset.amount}
+                      {asset.name}
                     </div>
                     <div className="text-xs text-gray-400">
                       {asset.percentage}

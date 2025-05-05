@@ -35,6 +35,10 @@ export function BlockTable({
     router.push(`/blocksID/${height}`);
   };
 
+  const handleTxClick = (hash: string) => {
+    router.push(`/transaction/${hash}`);
+  };
+
   const convertWeiToKii = (wei: string): string => {
     const kii = Number(wei);
     return kii.toFixed(2);
@@ -84,7 +88,13 @@ export function BlockTable({
                 </div>
                 <span className="col-span-1 lg:col-span-2 flex items-center gap-2">
                   <ContractIcon className="w-4 h-4" />
-                  <span style={{ color: theme.secondaryTextColor }}>
+                  <span
+                    style={{ color: theme.secondaryTextColor }}
+                    className="cursor-pointer hover:opacity-80"
+                    onClick={() =>
+                      handleTxClick(latestTransactions[index]?.hash)
+                    }
+                  >
                     {latestTransactions[index]?.hash
                       ? `${latestTransactions[index].hash.slice(0, 10)}...`
                       : "N/A"}
