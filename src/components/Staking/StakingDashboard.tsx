@@ -13,7 +13,7 @@ import { useAccount } from "wagmi";
 import { useDelegationsQuery } from "@/services/queries/delegations";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
 import { formatAmount } from "@/utils/format";
-import { KIICHAIN_BASE_DENOM, KIICHAIN_SYMBOL } from "@/config/chain";
+import { KIICHAIN_SYMBOL } from "@/config/chain";
 
 interface ValidatorTableItem {
   rank: number;
@@ -66,9 +66,6 @@ export function StakingDashboard() {
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
-
-  const formatDenom = (denom: string) =>
-    denom === KIICHAIN_BASE_DENOM ? "kii" : denom;
 
   const validatorColumns = useMemo(
     () => [

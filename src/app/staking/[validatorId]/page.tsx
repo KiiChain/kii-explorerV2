@@ -145,17 +145,6 @@ interface TransactionItem {
   status: string;
 }
 
-const formatNumber = (value: string | number) => {
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0";
-
-  if (Number.isInteger(num)) {
-    return num.toString();
-  }
-
-  return num.toFixed(4);
-};
-
 const DelegateModal = ({
   isOpen,
   onClose,
