@@ -1,56 +1,95 @@
+import { KIICHAIN_SYMBOL } from "@/config/chain";
 import { useTheme } from "@/context/ThemeContext";
-
-interface Withdrawal {
-  creationHeight: string;
-  initialBalance: string;
-  balance: string;
-  completionTime: string;
-}
+import { useUnbondingDelegationsQuery } from "@/services/queries/unbondingDelegations";
+import { formatAmount } from "@/utils/format";
 
 interface WithdrawalsTableProps {
-  withdrawals: Withdrawal[];
+  cosmosAddress: string;
 }
 
-export function WithdrawalsTable({ withdrawals }: WithdrawalsTableProps) {
+export function WithdrawalsTable({ cosmosAddress }: WithdrawalsTableProps) {
   const { theme } = useTheme();
+  const { data: unbonds } = useUnbondingDelegationsQuery(cosmosAddress);
+
+  const flattenedUnbonds = unbonds?.flatMap((response) =>
+    response.entries.map((entry) => ({
+      ...entry,
+      validator_address: response.validator_address,
+      delegator_address: response.delegator_address,
+    }))
+  );
 
   return (
-    <div className={`mt-8 p-6 bg-[${theme.boxColor}] rounded-lg`}>
+    <div
+      className="mt-8 p-6 rounded-lg"
+      style={{ backgroundColor: theme.boxColor }}
+    >
       <div className="mb-6">
-        <div className={`text-[${theme.primaryTextColor}] mb-4 text-xl`}>
+        <div className="mb-4 text-xl" style={{ color: theme.primaryTextColor }}>
           Withdrawals
         </div>
-        <table className="w-full">
-          <thead>
-            <tr className={`text-left text-[${theme.secondaryTextColor}]`}>
-              <th className="pb-4">Creation Height</th>
-              <th className="pb-4">Initial Balance</th>
-              <th className="pb-4">Balance</th>
-              <th className="pb-4">Completion Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {withdrawals.map((withdrawal, index) => (
-              <tr
-                key={index}
-                className={`border-b border-[${theme.borderColor}]`}
-              >
-                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
-                  {withdrawal.creationHeight}
-                </td>
-                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
-                  {withdrawal.initialBalance}
-                </td>
-                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
-                  {withdrawal.balance}
-                </td>
-                <td className="py-4 text-left pl-4 text-[${theme.primaryTextColor}]">
-                  {withdrawal.completionTime}
-                </td>
+        <div className="w-full overflow-x-auto">
+          <table className="w-full" style={{ backgroundColor: theme.bgColor }}>
+            <thead>
+              <tr>
+                <th
+                  className="p-4 text-left"
+                  style={{ color: theme.secondaryTextColor }}
+                >
+                  Creation Height
+                </th>
+                <th
+                  className="p-4 text-left"
+                  style={{ color: theme.secondaryTextColor }}
+                >
+                  Initial Balance
+                </th>
+                <th
+                  className="p-4 text-left"
+                  style={{ color: theme.secondaryTextColor }}
+                >
+                  Balance
+                </th>
+                <th
+                  className="p-4 text-left"
+                  style={{ color: theme.secondaryTextColor }}
+                >
+                  Completion Time
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {flattenedUnbonds?.map((unbond, index) => (
+                <tr key={index}>
+                  <td
+                    className="p-4 text-left"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    {unbond.creation_height}
+                  </td>
+                  <td
+                    className="p-4 text-left"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    {formatAmount(unbond.initial_balance)} {KIICHAIN_SYMBOL}
+                  </td>
+                  <td
+                    className="p-4 text-left"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    {formatAmount(unbond.balance)} {KIICHAIN_SYMBOL}
+                  </td>
+                  <td
+                    className="p-4 text-left"
+                    style={{ color: theme.primaryTextColor }}
+                  >
+                    {new Date(unbond.completion_time).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

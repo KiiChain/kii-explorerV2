@@ -476,7 +476,7 @@ export default function AddressPage() {
           },
         ]}
       />
-      <WithdrawalsTable withdrawals={[]} />
+      <WithdrawalsTable cosmosAddress={cosmosAddress!} />
 
       <StakesTable
         delegations={delegations}

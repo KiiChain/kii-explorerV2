@@ -521,34 +521,6 @@ export function StakesTable({
                   ))}
                 </div>
               )}
-
-              {(validatorHistory?.unbondings ?? []).length > 0 && (
-                <div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: theme.primaryTextColor }}
-                  >
-                    Unbondings:
-                  </span>
-                  {(validatorHistory?.unbondings ?? []).map((unbond, idx) => (
-                    <div
-                      key={idx}
-                      className="ml-2 flex items-center justify-between"
-                    >
-                      <span style={{ color: theme.secondaryTextColor }}>
-                        {formatAmount(unbond.amount)} KII
-                      </span>
-                      <span
-                        className="text-xs"
-                        style={{ color: theme.secondaryTextColor }}
-                      >
-                        (completes{" "}
-                        {new Date(unbond.completion_time).toLocaleDateString()})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           );
         },
