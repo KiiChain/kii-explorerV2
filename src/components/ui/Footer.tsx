@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   FaXTwitter,
   FaDiscord,
-  FaTelegram,
   FaGithub,
   FaMedium,
   FaLinkedin,
@@ -25,7 +24,6 @@ export function Footer() {
       icon: <FaDiscord size={20} />,
       href: "https://discord.com/invite/kiichain",
     },
-    { icon: <FaTelegram size={20} />, href: "https://t.me/KiiChainGlobal" },
     { icon: <FaGithub size={20} />, href: "https://github.com/KiiChain" },
     {
       icon: <FaTiktok size={20} />,
