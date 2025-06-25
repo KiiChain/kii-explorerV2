@@ -53,7 +53,7 @@ export function FaucetDashboard() {
 
       setSuccess("Successfully claimed the faucet");
       setWalletAddress("");
-    } catch (err: any) {
+    } catch (err) {
       setError(
         err instanceof Error
           ? err.message
