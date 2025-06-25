@@ -1,17 +1,18 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import ReCAPTCHA from "react-google-recaptcha";
+import React, { useState } from "react";
 import { WalletIcon } from "@/components/ui/icons";
 import { useTheme } from "@/context/ThemeContext";
 import { CAPTCHA_KEY, FAUCET_BACKEND } from "@/constants/captcha";
+import Turnstile from "react-turnstile";
 
 export function FaucetDashboard() {
   const [walletAddress, setWalletAddress] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaKey, setCaptchaKey] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const { theme } = useTheme();
 
   const handleClaimTokens = async () => {
@@ -20,39 +21,39 @@ export function FaucetDashboard() {
       return;
     }
 
+    if (!captchaToken) {
+      setError("CAPTCHA is required");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      const captchaToken = recaptchaRef.current?.getValue()
-      recaptchaRef.current?.reset()
-
       // Send request to backend with CAPTCHA token
-      const response = await fetch(
-        `${FAUCET_BACKEND}/api/faucet`,
-        {
-          method: "POST",
-          mode: "cors",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            address: walletAddress,
-            captcha: captchaToken,
-          }),
-        }
-      );
+      const response = await fetch(`${FAUCET_BACKEND}/api/faucet`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          address: walletAddress,
+          captcha: captchaToken,
+        }),
+      });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`
+        );
       }
 
       setSuccess("Successfully claimed the faucet");
       setWalletAddress("");
-    } catch (err: Error | unknown) {
+    } catch (err) {
       setError(
         err instanceof Error
           ? err.message
@@ -61,6 +62,8 @@ export function FaucetDashboard() {
       console.error("Faucet error:", err);
     } finally {
       setIsLoading(false);
+      setCaptchaToken("");
+      setCaptchaKey((prev) => prev + 1);
     }
   };
 
@@ -151,13 +154,17 @@ export function FaucetDashboard() {
                 {isLoading ? "Claiming..." : "Claim your tokens"}
               </button>
 
-              {/* Invisible reCAPTCHA */}
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={CAPTCHA_KEY}
-                size="normal"
-                style={{display: "flex", justifyContent: "center", alignItems: "center"}}
-              />
+              {/* Cloudflare Turnstile CAPTCHA */}
+              <div className="flex justify-center">
+                <Turnstile
+                  sitekey={CAPTCHA_KEY}
+                  onSuccess={(token) => setCaptchaToken(token)}
+                  refreshExpired="auto"
+                  theme="auto"
+                  key={captchaKey}
+                  fixedSize={true}
+                />
+              </div>
             </div>
           </div>
         </div>
