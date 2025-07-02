@@ -47,6 +47,11 @@ const nextConfig = {
         destination: "/transaction/:hash",
         permanent: true,
       },
+      {
+        source: "/address/:hash",
+        destination: "/account/:hash",
+        permanent: true,
+      },
     ];
   },
 };
