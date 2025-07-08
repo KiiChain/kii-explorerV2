@@ -26,6 +26,7 @@ export interface IConnection {
   status: "active" | "inactive";
   channel: string;
   prefix: string;
+  explorer: string;
 }
 
 interface BridgeCardProps {
@@ -260,6 +261,21 @@ export default function BridgeCard({ connection, balances }: BridgeCardProps) {
             </div>
           )}
         </Button>
+
+        {/* Show explorer */}
+        <div className="mt-4 text-center">
+          <p className="text-sm" style={{ color: theme.secondaryTextColor }}>
+            {`Want to verify balances on ${connection.name}? `}
+            <a
+              href={connection.explorer}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-[#D2AAFA] hover:text-[#c299f0] transition-colors"
+            >
+              View on Explorer
+            </a>
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

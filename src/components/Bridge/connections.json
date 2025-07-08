@@ -6,6 +6,7 @@
     "chainId": "provider",
     "status": "active",
     "channel": "channel-3",
-    "prefix": "cosmos"
+    "prefix": "cosmos",
+    "explorer": "https://explorer.polypore.xyz/provider"
   }
 ]
