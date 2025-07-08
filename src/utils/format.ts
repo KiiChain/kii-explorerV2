@@ -15,6 +15,7 @@ export async function SendIBCTokens(
   channel: string,
   amount: string,
   memo: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   walletClient: any,
   exponent: number,
   denom: string

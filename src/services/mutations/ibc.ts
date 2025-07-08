@@ -12,6 +12,7 @@ export function useSendIBC() {
     amount: string;
     denom: string;
     exponent: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     walletClient: any;
   };
 
@@ -27,7 +28,7 @@ export function useSendIBC() {
         data.denom
       ),
 
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       // validate if the transfer was successfully
       if (data.status != 1) {
         toast.error("Transaction has failed, please try later");
@@ -37,7 +38,10 @@ export function useSendIBC() {
       toast.success("IBC Transfer Successfully Completed");
 
       // Invalidate all user-related queries
-      queryClient.invalidateQueries({ queryKey: ["user"], exact: false });
+      queryClient.invalidateQueries({
+        queryKey: ["user", "cosmosTokens"],
+        exact: false,
+      });
     },
 
     onError: ({ message }) => {

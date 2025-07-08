@@ -55,18 +55,26 @@ export default function BridgeCard({ connection, balances }: BridgeCardProps) {
       return;
     }
 
-    sendIBCMutation.mutate({
+    const amountToSend = ethers.parseUnits(amount, selectedTokenInfo.exponent);
+    const available = BigInt(selectedTokenInfo.amount);
+
+    if (amountToSend > available) {
+      toast.error("Insufficient funds to send");
+      return;
+    }
+
+    const mutData = {
       amount,
       denom: selectedTokenInfo.base,
       ibc_channel: connection.channel,
       toAddress: address,
       walletClient,
       exponent: selectedTokenInfo?.exponent,
-    });
+    };
 
-    setSelectedToken("");
+    await sendIBCMutation.mutate(mutData);
+
     setAmount("");
-    setAddress("");
   };
 
   const selectedTokenInfo = useMemo(() => {

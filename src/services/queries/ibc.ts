@@ -16,10 +16,28 @@ export interface IBCToken {
   name: string;
 }
 
+interface assetList {
+  chain_name: string;
+  assets: asset[];
+}
+
+interface asset {
+  description: string;
+  denom_units: {
+    denom: string;
+    exponent: number;
+  }[];
+  base: string;
+  name: string;
+  display: string;
+  symbol: string;
+}
+
 // useCosmosTokens retrieves the user tokens on its cosmos-side account using the Bank precompile
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const useCosmosTokens = (walletClient: any) => {
-  return useQuery<EvmBalance[], Error, EvmBalance[], ["cosmosTokens"]>({
-    queryKey: ["cosmosTokens"],
+  return useQuery<EvmBalance[], Error, EvmBalance[], ["user", "cosmosTokens"]>({
+    queryKey: ["user", "cosmosTokens"],
     queryFn: async (): Promise<EvmBalance[]> => {
       try {
         if (!walletClient) throw new Error("Wallet not connected");
@@ -58,15 +76,13 @@ export const useQueryIBCAssetList = () => {
     queryFn: async (): Promise<IBCToken[]> => {
       try {
         const res = await fetch(CHAIN_ASSET_LIST_URL);
-        const json = await res.json();
+        const json: assetList = await res.json();
 
-        const ibcAssets = json.assets.filter((a: any) =>
-          a.base.startsWith("ibc/")
-        );
+        const ibcAssets = json.assets.filter((a) => a.base.startsWith("ibc/"));
 
-        const mappedBalances: IBCToken[] = ibcAssets.map((asset: any) => {
+        const mappedBalances: IBCToken[] = ibcAssets.map((asset) => {
           const exponent =
-            asset.denom_units.find((d: any) => d.denom === asset.display)
+            asset.denom_units.find((d) => d.denom === asset.display)
               ?.exponent ?? 6;
 
           return {
@@ -74,6 +90,7 @@ export const useQueryIBCAssetList = () => {
             name: asset.symbol,
             exponent,
             base: asset.base,
+            amount: "",
           };
         });
 

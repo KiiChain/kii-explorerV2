@@ -23,10 +23,6 @@ export default function BridgeDashboard() {
   const { data: ercTokens } = useCosmosTokens(walletClient);
   const { data: ibcAssets } = useQueryIBCAssetList();
 
-  const assetMap: Record<string, string> = {
-    "0x1E643c8fDc9bA4B99AE598e9b0Ed98fe3A2319f9": "atom",
-  };
-
   const combinedBalances = useMemo(() => {
     if (!ercTokens || !balance || !ibcAssets) return [];
 
@@ -40,18 +36,22 @@ export default function BridgeDashboard() {
 
     const mappedErc = ercTokens
       .map((token) => {
-        const denom = assetMap[token.contractAddress];
-        if (!denom) return null;
+        const matchingAsset = ibcAssets.find((a) => {
+          return (
+            a.base.startsWith("ibc/") &&
+            a.base.slice(-40).toLowerCase() ===
+              token.contractAddress.toLowerCase().slice(2)
+          );
+        });
 
-        const assetInfo = ibcAssets.find((a) => a.denom == denom);
-        if (!assetInfo) return null;
+        if (!matchingAsset) return null;
 
         const balanceInfo: IBCToken = {
           amount: token.amount.toString(),
-          denom: denom,
-          exponent: assetInfo.exponent,
-          base: assetInfo.base,
-          name: assetInfo.name,
+          denom: matchingAsset.denom,
+          exponent: matchingAsset.exponent,
+          base: matchingAsset.base,
+          name: matchingAsset.name,
         };
 
         return balanceInfo;
