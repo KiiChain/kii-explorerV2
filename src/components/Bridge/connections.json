@@ -1,0 +1,11 @@
+[
+  {
+    "id": "cosmoshub",
+    "name": "Cosmos Hub Testnet",
+    "iconUrl": "/images/cosmos-logo.png",
+    "chainId": "provider",
+    "status": "active",
+    "channel": "channel-3",
+    "prefix": "cosmos"
+  }
+]

@@ -8,6 +8,8 @@ export const CHAIN_RPC_ENDPOINT =
   "https://rpc.uno.sentry.testnet.v3.kiivalidator.com";
 export const CHAIN_JSON_RPC_ENDPOINT =
   "https://json-rpc.uno.sentry.testnet.v3.kiivalidator.com/";
+export const CHAIN_ASSET_LIST_URL =
+  "https://raw.githubusercontent.com/KiiChain/testnets/main/testnet_oro/assetlist.json";
 
 export const TESTNET_ORO_EVM = kiiEvm.TESTNET_ORO_EVM;
 export const KIICHAIN_BASE_DENOM = kiiEvm.KIICHAIN_BASE_DENOM;
