@@ -15,3 +15,16 @@ export const TESTNET_ORO_EVM = kiiEvm.TESTNET_ORO_EVM;
 export const KIICHAIN_BASE_DENOM = kiiEvm.KIICHAIN_BASE_DENOM;
 export const KIICHAIN_SYMBOL = kiiEvm.TESTNET_ORO_EVM.nativeCurrency.symbol;
 export const KIICHAIN_ORO_DENOM = kiiEvm.ORO_DENOM;
+
+export const IBC_CONNECTIONS = [
+  {
+    id: "cosmoshub",
+    name: "Cosmos Hub Testnet",
+    iconUrl: "/images/cosmos-logo.png",
+    chainId: "provider",
+    status: "active",
+    channel: "channel-3",
+    prefix: "cosmos",
+    explorer: "https://explorer.polypore.xyz/provider",
+  },
+];

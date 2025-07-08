@@ -8,12 +8,12 @@ import {
   useCosmosTokens,
   useQueryIBCAssetList,
 } from "@/services/queries/ibc";
-import rawConnections from "./connections.json";
 import type { IConnection } from "./BridgeCard";
 import { useMemo } from "react";
+import { IBC_CONNECTIONS } from "@/config/chain";
 
 export default function BridgeDashboard() {
-  const connections = rawConnections as IConnection[];
+  const connections = IBC_CONNECTIONS as IConnection[];
 
   const { theme } = useTheme();
   const { data: walletClient } = useWalletClient();
