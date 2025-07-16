@@ -1,4 +1,3 @@
-import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { getDistributionPrecompileEthersV6Contract } from "@kiichain/kiijs-evm";
 import { ethers } from "ethers";
 import { WalletClient } from "viem";
