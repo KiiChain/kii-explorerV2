@@ -1,3 +1,4 @@
+import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { getDistributionPrecompileEthersV6Contract } from "@kiichain/kiijs-evm";
 import { ethers } from "ethers";
 import { WalletClient } from "viem";
@@ -37,7 +38,11 @@ export async function WithdrawAllRewards(walletClient: WalletClient) {
     const address = signer.address;
     const distPrecompile = getDistributionPrecompileEthersV6Contract(signer);
 
-    const tx = await distPrecompile.claimRewards(address, 50);
+    // SAFE_MAX_VAL is the safe amount of delegations to iterate, values higher than this will return gas error
+    // this means users only claim rewards for their first 50 delegations using this button
+    // other rewards must be claim manually
+    const SAFE_MAX_VAL = 50;
+    const tx = await distPrecompile.claimRewards(address, SAFE_MAX_VAL);
 
     return await tx.wait();
   } catch (error) {
