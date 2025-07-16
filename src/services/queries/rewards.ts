@@ -6,7 +6,11 @@ interface ValidatorReward {
   amount: string;
 }
 
-interface RewardsResponse {
+export interface RewardsResponse {
+  rewards: Array<{
+    validator_address: string;
+    reward: ValidatorReward[];
+  }>;
   total: Array<{
     denom: string;
     amount: string;

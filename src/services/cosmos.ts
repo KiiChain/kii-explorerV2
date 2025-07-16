@@ -1,6 +1,7 @@
 import { CHAIN_LCD_ENDPOINT } from "@/config/chain";
 import { formatAmount } from "@/utils/format";
 import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
+import { formatUnits } from "ethers";
 
 interface DelegationResponse {
   balance?: {
@@ -11,10 +12,6 @@ interface DelegationResponse {
 interface Reward {
   denom: string;
   amount: string;
-}
-
-interface ValidatorReward {
-  reward?: Reward[];
 }
 
 export const cosmosService = {
@@ -41,16 +38,10 @@ export const cosmosService = {
       `${CHAIN_LCD_ENDPOINT}/cosmos/distribution/v1beta1/delegators/${kiiAddress}/rewards`
     );
     const data = await response.json();
-    return (
-      data.rewards?.reduce((acc: number, reward: ValidatorReward) => {
-        const kiiReward = reward.reward?.find(
-          (r: Reward) => r.denom === KIICHAIN_BASE_DENOM
-        );
-        const amount = kiiReward
-          ? parseFloat(formatAmount(kiiReward.amount))
-          : 0;
-        return acc + amount;
-      }, 0) || 0
+    const kiiReward = data.total.find(
+      (r: Reward) => r.denom == KIICHAIN_BASE_DENOM
     );
+
+    return formatUnits(kiiReward.amount.split(".")[0]) ?? 0;
   },
 };

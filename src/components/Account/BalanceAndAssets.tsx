@@ -26,7 +26,7 @@ export function BalanceAndAssets({ assets }: BalanceAndAssetsProps) {
     return {
       ...asset,
       amount: amount.toFixed(4) + " KII",
-      value: parseFloat(asset.value.replace("$", "")).toFixed(4),
+      value: parseFloat(asset.value.replace("$", "")).toFixed(6),
       percentage: `${isNaN(percentage) ? "0" : percentage.toFixed(2)}%`,
       numericPercentage: isNaN(percentage) ? 0 : Number(percentage.toFixed(2)),
     };

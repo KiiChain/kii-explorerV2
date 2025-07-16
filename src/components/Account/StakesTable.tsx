@@ -17,7 +17,7 @@ import { formatAmount } from "../../utils/format";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
 import { KIICHAIN_SYMBOL } from "@/config/chain";
 
-interface Theme {
+export interface Theme {
   boxColor: string;
   primaryTextColor: string;
   bgColor: string;

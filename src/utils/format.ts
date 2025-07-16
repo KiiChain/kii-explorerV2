@@ -1,5 +1,6 @@
 import * as kiiEvm from "@kiichain/kiijs-evm";
 import { ethers } from "ethers";
+import { WalletClient } from "viem";
 
 export const formatAmount = (amount: string): string => {
   const num = parseFloat(amount) / 1_000_000_000_000_000_000;
@@ -15,8 +16,7 @@ export async function SendIBCTokens(
   channel: string,
   amount: string,
   memo: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  walletClient: any,
+  walletClient: WalletClient,
   exponent: number,
   denom: string
 ) {

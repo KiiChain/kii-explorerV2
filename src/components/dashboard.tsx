@@ -84,7 +84,7 @@ export default function Dashboard() {
       balanceData?.symbol ?? "KII"
     }`,
     staking: `${formatBalance(cosmosBalances?.stakingBalance ?? "0")} KII`,
-    reward: `${formatBalance(cosmosBalances?.rewardsBalance ?? "0")} KII`,
+    reward: `${cosmosBalances?.rewardsBalance ?? "0"} KII`,
     withdrawals: formatBalance("0") + " KII",
     stakes: [],
   };
