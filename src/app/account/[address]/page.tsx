@@ -363,7 +363,6 @@ export default function AddressPage() {
 
       const normalBalance = parseFloat(balance?.formatted || "0");
       const stakingBalance = parseFloat(formatAmount(totalStaking.toString()));
-      const totalBalance = normalBalance + stakingBalance;
 
       let totalWithdrawn = 0;
       if (withdrawHistoryData?.rewards) {
@@ -378,25 +377,21 @@ export default function AddressPage() {
       const withdrawBalance = parseFloat(
         formatAmount(totalWithdrawn.toString())
       );
-      const totalWithWithdraws = totalBalance + withdrawBalance;
+      const totalBalance =
+        normalBalance + withdrawBalance + totalRewards + totalStaking;
 
-      setPercentages({
-        balancePercentage: ((normalBalance / totalWithWithdraws) * 100).toFixed(
+      const percentages = {
+        balancePercentage: ((normalBalance / totalBalance) * 100).toFixed(2),
+        stakingPercentage: ((stakingBalance / totalBalance) * 100).toFixed(2),
+        rewardsPercentage: ((totalRewards / totalBalance) * 100).toFixed(2),
+        withdrawalsPercentage: ((withdrawBalance / totalBalance) * 100).toFixed(
           2
         ),
-        stakingPercentage: ((stakingBalance / totalWithdrawn) * 100).toFixed(2),
-        rewardsPercentage: (
-          (totalRewards / Math.pow(10, 18) / totalWithdrawn) *
-          100
-        ).toFixed(2),
-        withdrawalsPercentage: (
-          (withdrawBalance / totalWithdrawn) *
-          100
-        ).toFixed(2),
-      });
+      };
+      setPercentages(percentages);
 
       walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
-      walletData.reward = `${formatUnits(totalRewards)} KII`;
+      walletData.reward = `${formatUnits(BigInt(totalRewards))} KII`;
       walletData.withdrawals = `${formatAmount(totalWithdrawn.toString())} KII`;
 
       if (delegationsData.delegation_responses) {
