@@ -26,6 +26,8 @@ import {
 } from "@/services/mutations/staking";
 import { useHexToBech } from "@/services/hooks/addressConvertion";
 import { KIICHAIN_BASE_DENOM } from "@kiichain/kiijs-evm";
+import { formatUnits } from "ethers";
+import { RewardsTable } from "@/components/Account/RewardsTable";
 
 interface Theme {
   bgColor: string;
@@ -394,7 +396,7 @@ export default function AddressPage() {
       });
 
       walletData.staking = `${formatAmount(totalStaking.toString())} KII`;
-      walletData.reward = `${formatAmount(totalRewards.toString())} KII`;
+      walletData.reward = `${formatUnits(totalRewards)} KII`;
       walletData.withdrawals = `${formatAmount(totalWithdrawn.toString())} KII`;
 
       if (delegationsData.delegation_responses) {
@@ -477,6 +479,13 @@ export default function AddressPage() {
         ]}
       />
       <WithdrawalsTable cosmosAddress={cosmosAddress!} />
+
+      <RewardsTable
+        rewardsData={rewardsData}
+        theme={theme}
+        validators={validatorMap}
+        isOwner={isOwner}
+      />
 
       <StakesTable
         delegations={delegations}
